@@ -4,6 +4,7 @@
 # NPM
 /node_modules
 npm-*
+/blockdia-scratch-gui-*.tgz
 
 # Testing
 /.nyc_output

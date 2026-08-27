@@ -1,4 +1,8 @@
-scratch-gui modified for use in [TurboWarp](https://turbowarp.org/)
+# @blockdia/scratch-gui
+
+Blockdia's graphical editor, based on [TurboWarp](https://turbowarp.org/) and Scratch 3.0.
+
+The initial Blockdia `0.1.0` release is based on TurboWarp commit `a2946eeb9a9dca7857d7ab53d766b54288c7a2ff`.
 
 ## Setup
 

@@ -1,5 +1,5 @@
 import storage from './storage';
-import {inlineSvgFonts} from '@turbowarp/scratch-svg-renderer';
+import {inlineSvgFonts} from '@blockdia/scratch-svg-renderer';
 
 // Contains 'font-family', but doesn't only contain 'font-family="none"'
 const HAS_FONT_REGEXP = 'font-family(?!="none")';

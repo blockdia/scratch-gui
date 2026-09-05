@@ -1,0 +1,14 @@
+{
+    "zh-cn": {
+        "blockdia.backpack.pin": "固定到积木栏",
+        "blockdia.backpack.unpin": "取消固定到积木栏",
+        "blockdia.backpack.category": "已固定",
+        "blockdia.backpack.unavailable": "请先加载此脚本所需的扩展。"
+    },
+    "zh-tw": {
+        "blockdia.backpack.pin": "固定到積木欄",
+        "blockdia.backpack.unpin": "取消固定到積木欄",
+        "blockdia.backpack.category": "已固定",
+        "blockdia.backpack.unavailable": "請先載入此腳本所需的擴充功能。"
+    }
+}

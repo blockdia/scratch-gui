@@ -83,6 +83,23 @@ const SpriteSelectorItem = props => (
                         />
                     </MenuItem>
                 ) : null}
+                {props.onPinButtonClick ? (
+                    <MenuItem onClick={props.onPinButtonClick}>
+                        {props.pinned ? (
+                            <FormattedMessage
+                                defaultMessage="Unpin from toolbox"
+                                description="Remove a backpack script from the toolbox"
+                                id="blockdia.backpack.unpin"
+                            />
+                        ) : (
+                            <FormattedMessage
+                                defaultMessage="Pin to toolbox"
+                                description="Keep a backpack script in the toolbox"
+                                id="blockdia.backpack.pin"
+                            />
+                        )}
+                    </MenuItem>
+                ) : null}
                 {props.onDeleteButtonClick ? (
                     <DangerousMenuItem onClick={props.onDeleteButtonClick}>
                         <FormattedMessage
@@ -110,6 +127,8 @@ SpriteSelectorItem.propTypes = {
     onDuplicateButtonClick: PropTypes.func,
     onExportButtonClick: PropTypes.func,
     onRenameButtonClick: PropTypes.func,
+    onPinButtonClick: PropTypes.func,
+    pinned: PropTypes.bool,
     onMouseDown: PropTypes.func,
     onMouseEnter: PropTypes.func,
     onMouseLeave: PropTypes.func,

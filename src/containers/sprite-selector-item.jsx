@@ -23,6 +23,7 @@ class SpriteSelectorItem extends React.PureComponent {
             'handleDuplicate',
             'handleExport',
             'handleRename',
+            'handlePin',
             'handleMouseEnter',
             'handleMouseLeave',
             'handleMouseDown',
@@ -102,6 +103,10 @@ class SpriteSelectorItem extends React.PureComponent {
         e.stopPropagation();
         this.props.onExportButtonClick(this.props.id);
     }
+    handlePin (e) {
+        e.stopPropagation();
+        this.props.onPinButtonClick(this.props.id);
+    }
     handleRename (e) {
         e.stopPropagation();
         this.props.onRenameButtonClick(this.props.id);
@@ -127,6 +132,7 @@ class SpriteSelectorItem extends React.PureComponent {
             onDuplicateButtonClick,
             onExportButtonClick,
             onRenameButtonClick,
+            onPinButtonClick,
             dragPayload,
             receivedBlocks,
             costumeURL,
@@ -143,6 +149,7 @@ class SpriteSelectorItem extends React.PureComponent {
                 onDeleteButtonClick={onDeleteButtonClick ? this.handleDelete : null}
                 onDuplicateButtonClick={onDuplicateButtonClick ? this.handleDuplicate : null}
                 onExportButtonClick={onExportButtonClick ? this.handleExport : null}
+                onPinButtonClick={onPinButtonClick ? this.handlePin : null}
                 onRenameButtonClick={onRenameButtonClick ? this.handleRename : null}
                 onMouseDown={this.handleMouseDown}
                 onMouseEnter={this.handleMouseEnter}
@@ -170,6 +177,7 @@ SpriteSelectorItem.propTypes = {
     onClick: PropTypes.func,
     onDeleteButtonClick: PropTypes.func,
     onRenameButtonClick: PropTypes.func,
+    onPinButtonClick: PropTypes.func,
     onDrag: PropTypes.func.isRequired,
     onDuplicateButtonClick: PropTypes.func,
     onExportButtonClick: PropTypes.func,

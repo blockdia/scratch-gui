@@ -1,4 +1,5 @@
 import twTranslations from './generated-translations.json';
+import blockdiaTranslations from './blockdia-translations.json';
 
 const addAdditionalTranslations = editorMessages => {
     for (const locale of Object.keys(editorMessages)) {
@@ -6,6 +7,7 @@ const addAdditionalTranslations = editorMessages => {
         if (toMixIn) {
             Object.assign(editorMessages[locale], toMixIn);
         }
+        Object.assign(editorMessages[locale], blockdiaTranslations[locale.toLowerCase()]);
     }
 
     // We reuse our `es` translations for `es-419` instead of maintaining separate translations.

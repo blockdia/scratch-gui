@@ -1,6 +1,7 @@
 import bindAll from 'lodash.bindall';
 import debounce from 'lodash.debounce';
 import defaultsDeep from 'lodash.defaultsdeep';
+import {categoryXML, subscribe as subscribePins} from '../lib/backpack/pinned-scripts';
 import makeToolboxXML from '../lib/make-toolbox-xml';
 import PropTypes from 'prop-types';
 import React from 'react';
@@ -47,6 +48,16 @@ import {gentlyRequestPersistentStorage} from '../lib/tw-persistent-storage.js';
 
 // TW: Strings we add to scratch-blocks are localized here
 const messages = defineMessages({
+    pinnedBackpack: {
+        defaultMessage: 'Pinned',
+        description: 'Toolbox category for pinned backpack scripts',
+        id: 'blockdia.backpack.category'
+    },
+    pinnedUnavailable: {
+        defaultMessage: 'Load the required extensions to use this script.',
+        description: 'A pinned script contains unavailable blocks',
+        id: 'blockdia.backpack.unavailable'
+    },
     PROCEDURES_RETURN: {
         defaultMessage: 'return {v}',
         // eslint-disable-next-line max-len
@@ -217,6 +228,10 @@ class Blocks extends React.Component {
         });
 
         this.attachVM();
+        this.unsubscribePins = subscribePins(() => {
+            const xml = this.getToolboxXML();
+            if (xml) this.props.updateToolboxState(xml);
+        });
         // Only update blocks/vm locale when visible to avoid sizing issues
         // If locale changes while not visible it will get handled in didUpdate
         if (this.props.isVisible) {
@@ -285,6 +300,7 @@ class Blocks extends React.Component {
         }
     }
     componentWillUnmount () {
+        if (this.unsubscribePins) this.unsubscribePins();
         this.detachVM();
         this.unmounted = true;
         this.workspace.dispose();
@@ -452,12 +468,17 @@ class Blocks extends React.Component {
                 this.props.vm.runtime.getBlocksXML(target),
                 this.props.theme
             );
-            return makeToolboxXML(false, target.isStage, target.id, dynamicBlocksXML,
+            const xml = makeToolboxXML(false, target.isStage, target.id, dynamicBlocksXML,
                 targetCostumes[targetCostumes.length - 1].name,
                 stageCostumes[stageCostumes.length - 1].name,
                 targetSounds.length > 0 ? targetSounds[targetSounds.length - 1].name : '',
                 this.props.theme.getBlockColors()
             );
+            return xml.replace('</xml>', `${categoryXML(
+                this.ScratchBlocks,
+                this.props.intl.formatMessage(messages.pinnedBackpack),
+                this.props.intl.formatMessage(messages.pinnedUnavailable)
+            )}</xml>`);
         } catch {
             return null;
         }

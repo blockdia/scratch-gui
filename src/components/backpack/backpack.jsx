@@ -53,6 +53,8 @@ const Backpack = ({
     onToggle,
     onDelete,
     onRename,
+    onPin,
+    pinnedIds,
     onMouseEnter,
     onMouseLeave,
     onMore
@@ -123,6 +125,8 @@ const Backpack = ({
                                         key={item.id}
                                         name={intl.formatMessage(labelMap[item.type])}
                                         selected={false}
+                                        pinned={pinnedIds.includes(item.id)}
+                                        onPinButtonClick={item.type === 'script' ? onPin : null}
                                         onClick={noop}
                                         onDeleteButtonClick={onDelete}
                                         // Currently, renaming sprites is not supported.
@@ -174,6 +178,8 @@ Backpack.propTypes = {
     loading: PropTypes.bool,
     onDelete: PropTypes.func,
     onRename: PropTypes.func,
+    onPin: PropTypes.func,
+    pinnedIds: PropTypes.arrayOf(PropTypes.string),
     onMore: PropTypes.func,
     onMouseEnter: PropTypes.func,
     onMouseLeave: PropTypes.func,
@@ -184,6 +190,7 @@ Backpack.propTypes = {
 Backpack.defaultProps = {
     blockDragOver: false,
     contents: [],
+    pinnedIds: [],
     dragOver: false,
     expanded: false,
     loading: false,

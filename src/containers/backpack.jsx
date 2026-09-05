@@ -14,6 +14,8 @@ import {
     codePayload,
     LOCAL_API
 } from '../lib/backpack-api';
+import {itemKey, readPins, subscribe, scriptToXML, pinScript, unpinScript, renameScript}
+    from '../lib/backpack/pinned-scripts';
 import DragConstants from '../lib/drag-constants';
 import DropAreaHOC from '../lib/drop-area-hoc.jsx';
 
@@ -46,7 +48,9 @@ class Backpack extends React.Component {
             'handleMouseLeave',
             'handleBlockDragEnd',
             'handleBlockDragUpdate',
-            'handleMore'
+            'handleMore',
+            'handlePin',
+            'handlePinsChanged'
         ]);
         this.state = {
             // While the DroppableHOC manages drop interactions for asset tiles,
@@ -59,7 +63,8 @@ class Backpack extends React.Component {
             moreToLoad: false,
             loading: false,
             expanded: false,
-            contents: []
+            contents: [],
+            pinnedKeys: readPins().map(pin => pin.key)
         };
 
         // If a host is given, add it as a web source to the storage module
@@ -73,12 +78,40 @@ class Backpack extends React.Component {
         }
     }
     componentDidMount () {
+        this.unsubscribePins = subscribe(this.handlePinsChanged);
         this.props.vm.addListener('BLOCK_DRAG_END', this.handleBlockDragEnd);
         this.props.vm.addListener('BLOCK_DRAG_UPDATE', this.handleBlockDragUpdate);
     }
     componentWillUnmount () {
+        this.unsubscribePins();
         this.props.vm.removeListener('BLOCK_DRAG_END', this.handleBlockDragEnd);
         this.props.vm.removeListener('BLOCK_DRAG_UPDATE', this.handleBlockDragUpdate);
+    }
+    getPinKey (id) {
+        return itemKey(this.props.host, this.props.username, id);
+    }
+    handlePinsChanged () {
+        this.setState({pinnedKeys: readPins().map(pin => pin.key)});
+    }
+    async handlePin (id) {
+        const key = this.getPinKey(id);
+        this.setState({loading: true, error: false});
+        try {
+            if (readPins().some(pin => pin.key === key)) {
+                unpinScript(key);
+            } else {
+                const item = this.findItemById(id);
+                if (!item || item.type !== 'script') return;
+                const response = await fetch(item.bodyUrl);
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                const xml = scriptToXML(await response.json(), this.props.vm);
+                pinScript(key, item.name, xml);
+            }
+        } catch (error) {
+            this.setState({error: String(error)});
+        } finally {
+            this.setState({loading: false});
+        }
     }
     getBackpackAssetURL (asset) {
         return `${this.props.host}/${asset.assetId}.${asset.dataFormat}`;
@@ -164,6 +197,7 @@ class Backpack extends React.Component {
                 id: id
             })
                 .then(() => {
+                    unpinScript(this.getPinKey(id));
                     this.setState({
                         loading: false,
                         contents: this.state.contents.filter(o => o.id !== id)
@@ -192,6 +226,7 @@ class Backpack extends React.Component {
                 name: newName
             })
                 .then(newItem => {
+                    renameScript(this.getPinKey(id), newItem.name);
                     this.setState({
                         loading: false,
                         contents: this.state.contents.map(i => (i === item ? newItem : i))
@@ -271,6 +306,9 @@ class Backpack extends React.Component {
                 showMore={this.state.moreToLoad}
                 onDelete={this.handleDelete}
                 onRename={this.handleRename}
+                onPin={this.handlePin}
+                pinnedIds={this.state.contents.filter(item =>
+                    this.state.pinnedKeys.includes(this.getPinKey(item.id))).map(item => item.id)}
                 onDrop={this.handleDrop}
                 onMore={this.handleMore}
                 onMouseEnter={this.handleMouseEnter}

@@ -134,7 +134,7 @@
     "gamepad/browser-support": "Ta brskalnik in operacijski sistem imata znane napake, ki lahko naredijo uporabo tega dodatka težjo. Če pride do težav, preizkusite drug brskalnik.",
     "gamepad/button-n": "Gumb {n}",
     "gamepad/clear": "Izbriši vse",
-    "gamepad/config-header": "Ta komentar vsebuje nastavitve za podporo igralnih ploščkov v orodju ali spletnih straneh, kot je https://turbowarp.org/\nNe spreminjajte ročno",
+    "gamepad/config-header": "Ta komentar vsebuje nastavitve za podporo igralnih ploščkov v orodju ali spletnih straneh, kot je https://editor.blockdia.com/\nNe spreminjajte ročno",
     "gamepad/key-click": "Klik miške",
     "gamepad/key-down": "Dol",
     "gamepad/key-left": "Levo",

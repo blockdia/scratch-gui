@@ -128,29 +128,29 @@ const Footer = () => (
                     </a>
                 </div>
                 <div className={styles.footerSection}>
-                    <a href="https://desktop.turbowarp.org/">
+                    <a href="https://desktop.blockdia.com/">
                         {/* Do not translate */}
-                        {'TurboWarp Desktop'}
+                        {'Blockdia Desktop'}
                     </a>
-                    <a href="https://packager.turbowarp.org/">
+                    <a href="https://packager.blockdia.com/">
                         {/* Do not translate */}
-                        {'TurboWarp Packager'}
+                        {'Blockdia Packager'}
                     </a>
-                    <a href="https://docs.turbowarp.org/embedding">
+                    <a href="https://docs.blockdia.com/embedding">
                         <FormattedMessage
                             defaultMessage="Embedding"
                             description="Link in footer to embedding documentation for embedding link"
                             id="tw.footer.embed"
                         />
                     </a>
-                    <a href="https://docs.turbowarp.org/url-parameters">
+                    <a href="https://docs.blockdia.com/url-parameters">
                         <FormattedMessage
                             defaultMessage="URL Parameters"
                             description="Link in footer to URL parameters documentation"
                             id="tw.footer.parameters"
                         />
                     </a>
-                    <a href="https://docs.turbowarp.org/">
+                    <a href="https://docs.blockdia.com/">
                         <FormattedMessage
                             defaultMessage="Documentation"
                             description="Link in footer to additional documentation"
@@ -159,14 +159,14 @@ const Footer = () => (
                     </a>
                 </div>
                 <div className={styles.footerSection}>
-                    <a href="https://scratch.mit.edu/users/GarboMuffin/#comments">
+                    <a href="https://github.com/blockdia/scratch-gui/issues">
                         <FormattedMessage
                             defaultMessage="Feedback & Bugs"
                             description="Link to feedback/bugs page"
                             id="tw.feedback"
                         />
                     </a>
-                    <a href="https://github.com/TurboWarp/">
+                    <a href="https://github.com/blockdia/scratch-gui">
                         <FormattedMessage
                             defaultMessage="Source Code"
                             description="Link to source code"
@@ -285,11 +285,11 @@ class Interface extends React.Component {
                                             values={{
                                                 link: (
                                                     <a
-                                                        href="https://docs.turbowarp.org/unshared-projects"
+                                                        href="https://docs.blockdia.com/unshared-projects"
                                                         target="_blank"
                                                         rel="noopener noreferrer"
                                                     >
-                                                        {'https://docs.turbowarp.org/unshared-projects'}
+                                                        {'https://docs.blockdia.com/unshared-projects'}
                                                     </a>
                                                 )
                                             }}

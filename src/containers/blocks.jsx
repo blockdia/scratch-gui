@@ -204,6 +204,8 @@ class Blocks extends React.Component {
         });
         toolboxWorkspace.registerButtonCallback('OPEN_RETURN_DOCS', () => {
             window.open('https://docs.turbowarp.org/return', '_blank');
+            // TODO: Use Blockdia's own docs for return block
+            // window.open('https://docs.blockdia.com/return', '_blank');
         });
 
         // Store the xml of the toolbox that is actually rendered.

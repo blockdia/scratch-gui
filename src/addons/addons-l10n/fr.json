@@ -124,7 +124,7 @@
     "gamepad/browser-support": "Ce navigateur et ce système d'exploitation ont des bugs connus qui peuvent rendre cet addon difficile à utiliser. Essayez un autre navigateur si vous rencontrez des problèmes.",
     "gamepad/button-n": "Bouton {n}",
     "gamepad/clear": "Effacer tous les contrôles",
-    "gamepad/config-header": "Ce commentaire contient la configuration pour le support de la manette dans d'autres outils et sites web, tels que https://turbowarp.org/\nNe le modifiez pas à la main",
+    "gamepad/config-header": "Ce commentaire contient la configuration pour le support de la manette dans d'autres outils et sites web, tels que https://editor.blockdia.com/\nNe le modifiez pas à la main",
     "gamepad/key-click": "Clic",
     "gamepad/key-down": "Bas",
     "gamepad/key-enter": "Entrée",

@@ -108,7 +108,7 @@
     "gamepad/browser-support": "這個瀏覽器和操作系統有些已知錯誤，可能使這個插件難以使用，如果你碰到了一些問題，請試試其它的瀏覽器。",
     "gamepad/button-n": "按鈕 {n}",
     "gamepad/clear": "清空所有控制設置",
-    "gamepad/config-header": "這個註解包含第三方工具或網站（如 https://turbowarp.org/）中的遊戲手柄配置。\n請勿手動修改",
+    "gamepad/config-header": "這個註解包含第三方工具或網站（如 https://editor.blockdia.com/）中的遊戲手柄配置。\n請勿手動修改",
     "gamepad/key-click": "點擊",
     "gamepad/key-down": "向下鍵",
     "gamepad/key-enter": "Enter 鍵",

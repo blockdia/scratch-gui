@@ -11,6 +11,8 @@ const shuffle = list => {
 const fromHardcoded = ({userID = '0', username}) => {
     const result = {
         image: `https://trampoline.turbowarp.org/avatars/${userID}`,
+        // TODO: Use Blockdia's own avatar URL
+        // image: `https://trampoline.blockdia.com/avatars/${userID}`,
         text: username
     };
     if (username && userID !== '0') {

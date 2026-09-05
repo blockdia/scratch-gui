@@ -139,7 +139,7 @@
     "gamepad/browser-support": "This browser and operating system have known bugs that may make this addon difficult to use. Try another browser if you encounter problems.",
     "gamepad/button-n": "Button {n}",
     "gamepad/clear": "Clear all controls",
-    "gamepad/config-header": "This comment contains configuration for gamepad support in third-party tools or websites such as https://turbowarp.org/\nDo not edit by hand",
+    "gamepad/config-header": "This comment contains configuration for gamepad support in third-party tools or websites such as https://editor.blockdia.com/\nDo not edit by hand",
     "gamepad/key-click": "Click",
     "gamepad/key-down": "Down",
     "gamepad/key-enter": "Enter",

@@ -139,7 +139,7 @@
     "gamepad/browser-support": "Tässä selaimessa ja käyttöjärjestelmässä on tiedossa olevia bugeja, jotka voivat vaikeuttaa tämän lisäosan käyttöä. Kokeile toista selainta, jos kohtaat ongelmia.",
     "gamepad/button-n": "Painike {n}",
     "gamepad/clear": "Tyhjennä kaikki ohjaimet",
-    "gamepad/config-header": "Tämä kommentti sisältää peliohjaintuen määritykset kolmannen osapuolen työkaluissa tai verkkosivustoissa, kuten https://turbowarp.org/\nÄlä muokkaa käsin",
+    "gamepad/config-header": "Tämä kommentti sisältää peliohjaintuen määritykset kolmannen osapuolen työkaluissa tai verkkosivustoissa, kuten https://editor.blockdia.com/\nÄlä muokkaa käsin",
     "gamepad/key-click": "Napautus",
     "gamepad/key-down": "Alas",
     "gamepad/key-left": "Vasen",

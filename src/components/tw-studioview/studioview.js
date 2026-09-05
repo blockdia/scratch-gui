@@ -299,14 +299,18 @@ StudioView.prototype.onpageload = function () { };
 StudioView.prototype.onend = function () { };
 
 StudioView.STUDIO_API = 'https://trampoline.turbowarp.org/api/studios/$id/projects?offset=$offset';
+// TODO: Use Blockdia's own API
+// StudioView.STUDIO_API = 'https://trampoline.blockdia.com/api/studios/$id/projects?offset=$offset';
 
 // The URL to download thumbnails from.
 // $id is replaced with the project's ID.
 StudioView.THUMBNAIL_SRC = 'https://trampoline.turbowarp.org/thumbnails/$id?width=144&height=108';
+// StudioView.THUMBNAIL_SRC = 'https://trampoline.blockdia.com/thumbnails/$id?width=144&height=108';
 
 // The URL for project pages.
 // $id is replaced with the project ID.
 StudioView.PROJECT_PAGE = 'https://turbowarp.org/$id';
+// StudioView.PROJECT_PAGE = 'https://editor.blockdia.com/$id';
 
 // The URL for studio pages.
 // $id is replaced with the studio ID.

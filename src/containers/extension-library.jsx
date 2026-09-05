@@ -43,6 +43,8 @@ let cachedGallery = null;
 
 const fetchLibrary = async () => {
     const res = await fetch('https://extensions.turbowarp.org/generated-metadata/extensions-v0.json');
+    // TODO: Use Blockdia's own extension metadata
+    // const res = await fetch('https://extensions.blockdia.com/generated-metadata/extensions-v0.json');
     if (!res.ok) {
         throw new Error(`HTTP status ${res.status}`);
     }
@@ -53,6 +55,7 @@ const fetchLibrary = async () => {
         description: extension.description,
         descriptionTranslations: extension.descriptionTranslations || {},
         extensionId: extension.id,
+        // TODO: Use Blockdia's own extension URLs
         extensionURL: `https://extensions.turbowarp.org/${extension.slug}.js`,
         iconURL: `https://extensions.turbowarp.org/${extension.image || 'images/unknown.svg'}`,
         tags: ['tw'],
@@ -74,6 +77,7 @@ const fetchLibrary = async () => {
             }
             return credit.name;
         }),
+        // TODO: Use Blockdia's own docs
         docsURI: extension.docs ? `https://extensions.turbowarp.org/${extension.slug}` : null,
         samples: extension.samples ? extension.samples.map(sample => ({
             href: `${process.env.ROOT}editor?project_url=https://extensions.turbowarp.org/samples/${encodeURIComponent(sample)}.sb3`,

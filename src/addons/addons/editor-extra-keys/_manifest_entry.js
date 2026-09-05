@@ -23,7 +23,7 @@ const manifest = {
     },
     {
       "type": "warning",
-      "text": "The \"TurboWarp keys\" will only work in TurboWarp, not in Scratch.",
+      "text": "The \"Blockdia keys\" will only work in Blockdia, not in Scratch.",
       "id": "twKeysWarn"
     }
   ],
@@ -44,7 +44,7 @@ const manifest = {
     },
     {
       "dynamic": true,
-      "name": "Show TurboWarp keys",
+      "name": "Show Blockdia keys",
       "id": "twKeys",
       "type": "boolean",
       "default": false

@@ -125,7 +125,7 @@
     "gamepad/browser-support": "Deze browser en besturingssysteem hebben bekende bugs die deze addon mogelijk lastig maken om te gebruiken. Probeer een andere browser als je problemen ervaart.",
     "gamepad/button-n": "Knop {n}",
     "gamepad/clear": "Alle besturingen verwijderen",
-    "gamepad/config-header": "Deze opmerking bevat configuratie voor gamepad-ondersteuning in hulpmiddelen of websites van derde partijen, zoals https://turbowarp.org/\nNiet met de hand bewerken",
+    "gamepad/config-header": "Deze opmerking bevat configuratie voor gamepad-ondersteuning in hulpmiddelen of websites van derde partijen, zoals https://editor.blockdia.com/\nNiet met de hand bewerken",
     "gamepad/key-click": "Klik",
     "gamepad/key-down": "Omlaag",
     "gamepad/key-left": "Links",

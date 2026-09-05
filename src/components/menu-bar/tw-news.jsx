@@ -19,7 +19,7 @@ const NewsBody = () => (
         </div>
         <div>
             {/* eslint-disable-next-line max-len */}
-            {'We reported this to Scratch two years ago, but no fix has been released yet. The latest TurboWarp is not affected. '}
+            {'We reported this to Scratch two years ago, but no fix has been released yet. The latest Blockdia is not affected. '}
             <a
                 href="https://muffin.ink/blog/scratch-vulnerability-disclosure/"
                 target="_blank"

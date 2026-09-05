@@ -14,6 +14,8 @@ export const fetchProjectMeta = async projectId => {
         `https://trampoline.turbowarp.org/api/projects/${projectId}${cacheBuster}`,
         `https://trampoline.turbowarp.xyz/api/projects/${projectId}${cacheBuster}`
     ];
+    // TODO: Use Blockdia's trampoline
+    // const urls = [`https://trampoline.blockdia.com/api/projects/${projectId}${cacheBuster}`];
     let firstError;
     for (const url of urls) {
         try {
@@ -74,6 +76,8 @@ const TWProjectMetaFetcherHOC = function (WrappedComponent) {
                         }
                         const authorName = data.author.username;
                         const authorThumbnail = `https://trampoline.turbowarp.org/avatars/${data.author.id}`;
+                        // TODO: Use Blockdia's own avatar URL
+                        // const authorThumbnail = `https://trampoline.blockdia.com/avatars/${data.author.id}`;
                         this.props.onSetAuthor(authorName, authorThumbnail);
                         const instructions = data.instructions || '';
                         const credits = data.description || '';

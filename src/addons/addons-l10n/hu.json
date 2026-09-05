@@ -133,7 +133,7 @@
     "gamepad/browser-support": "Ennek a böngészőnek és operációs rendszernek ismert hibái vannak, amik lehet, hogy megnehezítik ennek a kiegészítőnek a használatát. Próbálj ki egy másik böngészőt, ha problémákat észlelsz.",
     "gamepad/button-n": "Gomb {n}",
     "gamepad/clear": "Vezérlők eltávolítása",
-    "gamepad/config-header": "Ez a komment gamepad támogatáshoz szükséges konfigurációkat tartalmaz harmadik féltől származó eszközökhöz, vagy weboldalakhoz, mint például: https://turbowarp.org/\nNe szerkeszd kézileg!",
+    "gamepad/config-header": "Ez a komment gamepad támogatáshoz szükséges konfigurációkat tartalmaz harmadik féltől származó eszközökhöz, vagy weboldalakhoz, mint például: https://editor.blockdia.com/\nNe szerkeszd kézileg!",
     "gamepad/key-click": "Kattintás",
     "gamepad/key-down": "Le",
     "gamepad/key-left": "Balra",

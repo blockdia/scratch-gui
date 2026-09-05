@@ -24,8 +24,9 @@ const manuallyTrustExtension = url => {
  * @returns {boolean} True if the extension can is trusted
  */
 const isTrustedExtension = url => (
-    // Always trust our official extension repostiory.
+    // Always trust our official extension repostiory and Turbowarp's.
     url.startsWith('https://extensions.turbowarp.org/') ||
+    url.startsWith('https://extensions.blockdia.com/') ||
 
     // For development.
     url.startsWith('http://localhost:8000/') ||
@@ -67,6 +68,9 @@ const isAlwaysTrustedForFetching = parsed => (
     parsed.origin === 'https://turbowarp.org' ||
     parsed.origin.endsWith('.turbowarp.org') ||
     parsed.origin.endsWith('.turbowarp.xyz') ||
+    // Any Blockdia service
+    parsed.origin === 'https://editor.blockdia.com' ||
+    parsed.origin.endsWith('.blockdia.com') ||
 
     // GitHub API
     // GitHub Pages allows redirects, so not included here.

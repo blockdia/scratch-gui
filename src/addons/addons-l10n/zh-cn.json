@@ -138,7 +138,7 @@
     "gamepad/browser-support": "此浏览器和操作系统存在已知错误，可能使此插件难以使用。如果遇到问题，请尝试其他浏览器。",
     "gamepad/button-n": "按钮 {n}",
     "gamepad/clear": "清除设置",
-    "gamepad/config-header": "此注释包含第三方工具或网站（例如 https://turbowarp.org/）中的游戏手柄支持配置\n请勿手动编辑",
+    "gamepad/config-header": "此注释包含第三方工具或网站（例如 https://editor.blockdia.com/）中的游戏手柄支持配置\n请勿手动编辑",
     "gamepad/key-click": "点击",
     "gamepad/key-down": "下键",
     "gamepad/key-enter": "回车键",

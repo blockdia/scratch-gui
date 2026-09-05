@@ -131,7 +131,7 @@
     "gamepad/browser-support": "Dieser Browser und dieses Betriebssystem haben bekannte Bugs, die die Verwendung dieses Addons erschweren könnten. Versuche einen anderen Browser, falls du auf Probleme stößt.",
     "gamepad/button-n": "Knopf {n}",
     "gamepad/clear": "Alle Steuerungen löschen",
-    "gamepad/config-header": "Dieser Kommentar enthält die Konfiguration für Gamepad-Steuerung in Tools von Drittanbietern oder Websites wie https://turbowarp.org/\nNicht eigenhändig bearbeiten",
+    "gamepad/config-header": "Dieser Kommentar enthält die Konfiguration für Gamepad-Steuerung in Tools von Drittanbietern oder Websites wie https://editor.blockdia.com/\nNicht eigenhändig bearbeiten",
     "gamepad/key-click": "Klicken",
     "gamepad/key-down": "Unten",
     "gamepad/key-left": "Links",

@@ -9,7 +9,7 @@ import {APP_NAME} from '../../lib/brand';
 const hosts = [
     {
         name: 'US East',
-        cloudHost: 'wss://clouddata.turbowarp.org'
+        cloudHost: 'wss://clouddata.blockdia.com'
     }
 ];
 
@@ -79,7 +79,7 @@ const CloudVariableBadge = props => {
                 <FormattedMessage
                     defaultMessage="Using a custom cloud variable server: {server}"
                     // eslint-disable-next-line max-len
-                    description="Appears when using a non-TurboWarp provided cloud variable server. {server} is replaced with the server's URL, eg. wss://clouddata.turbowarp.org"
+                    description="Appears when using a non-TurboWarp provided cloud variable server. {server} is replaced with the server's URL, eg. wss://clouddata.blockdia.com"
                     id="tw.customCloudServer"
                     values={{
                         server: props.cloudHost
@@ -109,7 +109,7 @@ const CloudVariableBadge = props => {
             <a
                 target="_blank"
                 rel="noreferrer"
-                href="https://docs.turbowarp.org/cloud-variables"
+                href="https://docs.blockdia.com/cloud-variables"
             >
                 <FormattedMessage
                     defaultMessage="Learn more about cloud variables."

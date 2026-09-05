@@ -127,7 +127,7 @@
     "gamepad/browser-support": "Ta przeglądarka i system operacyjny zawierają znane błędy, które mogą utrudniać korzystanie z tego dodatku. Wypróbuj inną przeglądarkę, jeśli napotkasz problemy. ",
     "gamepad/button-n": "Przycisk {n}",
     "gamepad/clear": "Wyczyść wszystkie ustawione przyciski",
-    "gamepad/config-header": "Ten komentarz zawiera konfigurację dla obsług pada do gier w programach jak https://turbowarp.org/\nNie edytuj ręcznie!",
+    "gamepad/config-header": "Ten komentarz zawiera konfigurację dla obsług pada do gier w programach jak https://editor.blockdia.com/\nNie edytuj ręcznie!",
     "gamepad/key-click": "Kliknięcie",
     "gamepad/key-down": "Dół",
     "gamepad/key-left": "Lewo",

@@ -106,7 +106,7 @@
     "gamepad/browser-support": "Esse navegador e sistema operacional têm bugs que dificultam o uso desse addon. Tente outro navegador se você encontrar problemas.",
     "gamepad/button-n": "Botão {n}",
     "gamepad/clear": "Limpar todos os controles",
-    "gamepad/config-header": "Esse comentário contém configuração de suporte para controle em sites e ferramentas de terceiros como https://turbowarp.org/\nNão edite manualmente",
+    "gamepad/config-header": "Esse comentário contém configuração de suporte para controle em sites e ferramentas de terceiros como https://editor.blockdia.com/\nNão edite manualmente",
     "gamepad/key-click": "Clique",
     "gamepad/key-down": "Baixo",
     "gamepad/key-left": "Esquerda",

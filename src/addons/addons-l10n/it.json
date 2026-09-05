@@ -130,7 +130,7 @@
     "gamepad/browser-support": "Questo browser e sistema operativo hanno bug noti che possono rendere questo addon difficile da usare. Prova un diverso browser se riscontri dei problemi.",
     "gamepad/button-n": "Pulsante {n}",
     "gamepad/clear": "Rimuovi tutti i controli",
-    "gamepad/config-header": "Questo commento contiene impostazioni di configurazione per il supporto di gamepad support in tool di terze parti o in siti come https://turbowarp.org/\nNon modificare a mano",
+    "gamepad/config-header": "Questo commento contiene impostazioni di configurazione per il supporto di gamepad support in tool di terze parti o in siti come https://editor.blockdia.com/\nNon modificare a mano",
     "gamepad/key-down": "Giù",
     "gamepad/key-enter": "Invio",
     "gamepad/key-left": "Sinistra",

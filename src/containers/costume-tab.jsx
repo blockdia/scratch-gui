@@ -136,6 +136,7 @@ class CostumeTab extends React.Component {
     }
     handleDeleteCostume (costumeIndex) {
         const restoreCostumeFun = this.props.vm.deleteCostume(costumeIndex);
+        if (!restoreCostumeFun) return;
         this.props.dispatchUpdateRestore({
             restoreFun: restoreCostumeFun,
             deletedItem: 'Costume'
@@ -269,8 +270,10 @@ class CostumeTab extends React.Component {
         const addLibraryFunc = isStage ? onNewLibraryBackdropClick : onNewLibraryCostumeClick;
         const addLibraryIcon = isStage ? addLibraryBackdropIcon : addLibraryCostumeIcon;
 
-        const costumeData = target.costumes ? target.costumes.map(costume => ({
+        const costumeData = target.costumes ? target.costumes.map((costume, index) => ({
             name: costume.name,
+            deletable: !target.clones.some(clone => clone.componentController &&
+                clone.component.parts.some(part => part.costumeIndex === index)),
             asset: costume.asset,
             details: costume.size ? this.formatCostumeDetails(costume.size, costume.bitmapResolution) : null,
             dragPayload: costume

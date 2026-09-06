@@ -64,6 +64,34 @@ npm start
 ```
 Then go to [http://localhost:8601/](http://localhost:8601/) - the playground outputs the default GUI component
 
+## Components development
+
+The built-in Slider, Button, Toggle, and Progress Bar implementation spans this repository and the sibling
+`scratch-vm` and `scratch-render` repositories. To run their current sources together:
+
+```bash
+BLOCKDIA_LOCAL_COMPONENTS=1 PORT=8603 npm start
+```
+
+Open [the local editor](http://localhost:8603/editor.html), choose **Add component** above the sprite list,
+and edit behavior properties there. **Costumes → Track guides** edits Slider/Progress geometry with draggable
+endpoints, arrow keys, and separate guide undo/redo. Part artwork stays editable in the costume editor.
+Component sprites interact by default; the existing draggable setting switches them to whole-sprite dragging.
+
+`BLOCKDIA_LOCAL_COMPONENTS=1` also applies to builds. Without it, the existing installed packages are used;
+the component creation panel requires a VM with `addComponent`. Published package releases are a separate step.
+
+Run the browser checks with a current Playwright installation:
+
+```bash
+node scripts/verify-components.cjs
+```
+
+Optional environment variables: `COMPONENTS_EDITOR_URL`, `COMPONENTS_PLAYWRIGHT_PATH` (module path), and
+`COMPONENTS_CHROME_PATH` (browser executable). The checks cover pointer interaction, transforms, guides,
+clones, sensing, interpreted/compiled blocks, and SB3 assets; screenshots are written to `/tmp/components-*.png`.
+See the [shared architecture notes](../docs/12-预制组件系统.md) for data contracts and current limitations.
+
 ## Developing alongside other Scratch repositories
 
 ### Getting another repo to point to this code

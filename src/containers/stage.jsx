@@ -234,7 +234,7 @@ class Stage extends React.Component {
         if (this.state.mouseDown && this.state.isDragging) {
             // Editor drag style only updates the drag canvas, does full update at the end of drag
             // Non-editor drag style just updates the sprite continuously.
-            if (this.props.useEditorDragStyle) {
+            if (this.props.useEditorDragStyle && !this.state.dragComponent) {
                 this.positionDragCanvas(mousePosition[0], mousePosition[1]);
             } else {
                 const spritePosition = this.getScratchCoords(mousePosition[0], mousePosition[1]);
@@ -411,9 +411,10 @@ class Stage extends React.Component {
         this.setState({
             isDragging: true,
             dragId: targetId,
+            dragComponent: Boolean(target.componentController),
             dragOffset: [offsetX, offsetY]
         });
-        if (this.props.useEditorDragStyle) {
+        if (this.props.useEditorDragStyle && !target.componentController) {
             // Extract the drawable art
             const drawableData = this.renderer.extractDrawableScreenSpace(drawableId);
             this.drawDragCanvas(drawableData, x, y);
@@ -429,10 +430,11 @@ class Stage extends React.Component {
             this.setState({
                 isDragging: false,
                 dragOffset: null,
-                dragId: null
+                dragId: null,
+                dragComponent: false
             });
         };
-        if (this.props.useEditorDragStyle) {
+        if (this.props.useEditorDragStyle && !this.state.dragComponent) {
             // Need to sequence these actions to prevent flickering.
             const spriteInfo = {visible: true};
             // First update the sprite position if dropped in the stage.

@@ -78,7 +78,7 @@ const Selector = props => {
                             number={index + 1 /* 1-indexed */}
                             selected={index === selectedItemIndex}
                             onClick={onItemClick}
-                            onDeleteButtonClick={onDeleteClick}
+                            onDeleteButtonClick={item.deletable === false ? null : onDeleteClick}
                             onDuplicateButtonClick={onDuplicateClick}
                             onExportButtonClick={onExportClick}
                         />
@@ -102,6 +102,7 @@ Selector.propTypes = {
     draggingType: PropTypes.oneOf(Object.keys(DragConstants)),
     isRtl: PropTypes.bool,
     items: PropTypes.arrayOf(PropTypes.shape({
+        deletable: PropTypes.bool,
         url: PropTypes.string,
         name: PropTypes.any // modified by folders addon
     })),

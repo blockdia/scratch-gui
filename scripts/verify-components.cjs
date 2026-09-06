@@ -34,7 +34,7 @@ const assert = require('assert/strict');
       window.sliderTarget = vm.editingTarget;
       sliderTarget.setXY(-80, 70);
     });
-    const stage = await page.evaluate(() => {
+    const readStage = () => page.evaluate(() => {
       const r = vm.renderer.canvas.getBoundingClientRect();
       return {
         x: r.x,
@@ -43,10 +43,30 @@ const assert = require('assert/strict');
         h: r.height
       };
     });
+    let stage = await readStage();
     const point = (x, y) => ({
       x: stage.x + (x / 480 + 0.5) * stage.w,
       y: stage.y + (0.5 - y / 360) * stage.h
     });
+    // Editor dragging remains available even when the component is not draggable.
+    const editorStart = point(-80, 70);
+    await page.mouse.move(editorStart.x, editorStart.y);
+    await page.mouse.down();
+    await page.mouse.move(editorStart.x + 30, editorStart.y + 30, {steps: 8});
+    assert.ok(await page.evaluate(() => sliderTarget.dragging));
+    assert.equal(await page.evaluate(() => sliderTarget.x), -80, 'editor preview does not move target yet');
+    assert.equal(await page.evaluate(() => vm.runtime.ioDevices.mouse.componentCapture), null);
+    assert.ok(await page.evaluate(() => Array.from(document.querySelectorAll('canvas')).some(canvas =>
+      canvas.style.display === 'block' && canvas.style.width && parseFloat(canvas.style.width) > 150)),
+      'standard editor preview contains the whole component');
+    await page.mouse.up();
+    assert.deepEqual(await page.evaluate(() => [sliderTarget.x, sliderTarget.y]), [-50, 40]);
+    assert.equal(await page.evaluate(() => sliderTarget.component.properties.value), 50);
+    await page.evaluate(() => sliderTarget.setXY(-80, 70));
+    console.log('PASS standard editor drag for non-draggable component');
+    await page.locator('img[title="Full Screen Control"], img[title="全屏控制"]').click();
+    await page.getByRole('img', {name: /Exit full screen mode|退出全屏/}).waitFor({state: 'visible'});
+    stage = await readStage();
     let a = point(-80, 70),
       b = point(4, 70);
     await page.mouse.move(a.x, a.y);
@@ -78,6 +98,9 @@ const assert = require('assert/strict');
       sliderTarget.setXY(-80, 70);
     });
     console.log('PASS rotated and scaled slider drag');
+    await page.getByRole('img', {name: /Exit full screen mode|退出全屏/}).click();
+    await page.locator('select').filter({has: page.locator('option[value=slider]')}).waitFor({state: 'visible'});
+    stage = await readStage();
     await page.getByRole('tab', {
       name: /造型|Costumes/
     }).click();

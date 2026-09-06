@@ -76,7 +76,10 @@ BLOCKDIA_LOCAL_COMPONENTS=1 PORT=8603 npm start
 Open [the local editor](http://localhost:8603/editor.html), choose **Add component** above the sprite list,
 and edit behavior properties there. **Costumes → Track guides** edits Slider/Progress geometry with draggable
 endpoints, arrow keys, and separate guide undo/redo. Part artwork stays editable in the costume editor.
-Component sprites interact by default; the existing draggable setting switches them to whole-sprite dragging.
+Components follow the same stage drag rules as ordinary sprites: the editor can drag any sprite, while
+player/presentation mode only drags sprites marked draggable. Clicks still reach both ordinary Scratch hats
+and component behavior. Once standard target dragging starts, it cancels the current internal gesture;
+merely setting draggable does not disable component clicks.
 
 `BLOCKDIA_LOCAL_COMPONENTS=1` also applies to builds. Without it, the existing installed packages are used;
 the component creation panel requires a VM with `addComponent`. Published package releases are a separate step.

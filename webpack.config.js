@@ -11,6 +11,9 @@ const autoprefixer = require('autoprefixer');
 const postcssVars = require('postcss-simple-vars');
 const postcssImport = require('postcss-import');
 
+// Opt in to sibling sources when developing changes across VM and renderer.
+const localComponents = process.env.BLOCKDIA_LOCAL_COMPONENTS === '1';
+
 const STATIC_PATH = process.env.STATIC_PATH || '/static';
 const {APP_NAME} = require('./src/lib/brand');
 
@@ -61,6 +64,10 @@ const base = {
     resolve: {
         symlinks: false,
         alias: {
+            ...(localComponents ? {
+                'scratch-vm$': path.resolve(__dirname, '../scratch-vm/src/index.js'),
+                'scratch-render$': path.resolve(__dirname, '../scratch-render/src/index.js')
+            } : {}),
             'text-encoding$': path.resolve(__dirname, 'src/lib/tw-text-encoder'),
             'scratch-render-fonts$': path.resolve(__dirname, 'src/lib/tw-scratch-render-fonts')
         }
@@ -71,6 +78,8 @@ const base = {
             loader: 'babel-loader',
             include: [
                 path.resolve(__dirname, 'src'),
+                ...(localComponents ? [path.resolve(__dirname, '../scratch-vm/src'),
+                    path.resolve(__dirname, '../scratch-render/src')] : []),
                 /node_modules[\\/]scratch-[^\\/]+[\\/]src/,
                 /node_modules[\\/]pify/,
                 /node_modules[\\/]@vernier[\\/]godirect/

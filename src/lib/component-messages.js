@@ -1,0 +1,32 @@
+import {defineMessages} from 'react-intl';
+
+export default defineMessages({
+    add: {id: 'gui.components.add', defaultMessage: 'Add component', description: 'Create a component sprite'},
+    slider: {id: 'gui.components.slider', defaultMessage: 'Slider', description: 'Slider component'},
+    button: {id: 'gui.components.button', defaultMessage: 'Button', description: 'Button component'},
+    toggle: {id: 'gui.components.toggle', defaultMessage: 'Toggle', description: 'Toggle component'},
+    progress: {id: 'gui.components.progress', defaultMessage: 'Progress Bar', description: 'Progress component'},
+    min: {id: 'gui.components.min', defaultMessage: 'Minimum', description: 'Component minimum'},
+    max: {id: 'gui.components.max', defaultMessage: 'Maximum', description: 'Component maximum'},
+    value: {id: 'gui.components.value', defaultMessage: 'Value', description: 'Component value'},
+    step: {id: 'gui.components.step', defaultMessage: 'Step', description: 'Slider step'},
+    checked: {id: 'gui.components.checked', defaultMessage: 'Checked', description: 'Toggle checked state'},
+    disabled: {id: 'gui.components.disabled', defaultMessage: 'Disabled', description: 'Disable interaction'},
+    clickTrackToJump: {id: 'gui.components.clickTrackToJump',
+        defaultMessage: 'Click track to jump',
+        description: 'Slider track interaction'},
+    guides: {id: 'gui.components.guides', defaultMessage: 'Track guides', description: 'Edit component geometry'},
+    start: {id: 'gui.components.start', defaultMessage: 'Start', description: 'Track start handle'},
+    end: {id: 'gui.components.end', defaultMessage: 'End', description: 'Track end handle'},
+    undo: {id: 'gui.components.undo', defaultMessage: 'Undo guide change', description: 'Undo component geometry'},
+    redo: {id: 'gui.components.redo', defaultMessage: 'Redo guide change', description: 'Redo component geometry'},
+    invalid: {id: 'gui.components.invalid',
+        defaultMessage: 'Check the range, step and value.',
+        description: 'Component property validation error'},
+    failed: {id: 'gui.components.failed',
+        defaultMessage: 'Could not create the component.',
+        description: 'Component creation failed'},
+    unavailable: {id: 'gui.components.unavailable',
+        defaultMessage: 'This component is unavailable.',
+        description: 'Unsupported component fallback'}
+});

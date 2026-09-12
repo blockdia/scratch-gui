@@ -31,8 +31,19 @@
         "components.whenClicked": "当按钮被点击",
         "components.isChecked": "已选中？",
         "components.setChecked": "将选中状态设为 [CHECKED]",
-        "components.whenStateChanged": "当状态改变",
-        "gui.components.settings": "设置"
+        "components.whenStateChanged": "当选中状态改变",
+        "gui.components.settings": "设置",
+        "components.changeValue": "将值增加 [VALUE]",
+        "components.min": "最小值",
+        "components.max": "最大值",
+        "components.step": "步长",
+        "components.myself": "自己",
+        "components.noComponents": "没有匹配的组件",
+        "components.targetProperty": "[TARGET] 的 [PROPERTY]",
+        "components.changeTargetProperty": "将 [TARGET] 的 [PROPERTY] 增加 [VALUE]",
+        "components.setTargetProperty": "将 [TARGET] 的 [PROPERTY] 设为 [VALUE]",
+        "components.targetIsChecked": "[TARGET] 已选中？",
+        "components.setTargetChecked": "将 [TARGET] 的选中状态设为 [CHECKED]"
     },
     "zh-tw": {
         "blockdia.backpack.pin": "固定到積木欄",
@@ -66,7 +77,18 @@
         "components.whenClicked": "當按鈕被點擊",
         "components.isChecked": "已選取？",
         "components.setChecked": "將選取狀態設為 [CHECKED]",
-        "components.whenStateChanged": "當狀態改變",
-        "gui.components.settings": "設定"
+        "components.whenStateChanged": "當選取狀態改變",
+        "gui.components.settings": "設定",
+        "components.changeValue": "將值增加 [VALUE]",
+        "components.min": "最小值",
+        "components.max": "最大值",
+        "components.step": "步長",
+        "components.myself": "自己",
+        "components.noComponents": "沒有符合的元件",
+        "components.targetProperty": "[TARGET] 的 [PROPERTY]",
+        "components.changeTargetProperty": "將 [TARGET] 的 [PROPERTY] 增加 [VALUE]",
+        "components.setTargetProperty": "將 [TARGET] 的 [PROPERTY] 設為 [VALUE]",
+        "components.targetIsChecked": "[TARGET] 已選取？",
+        "components.setTargetChecked": "將 [TARGET] 的選取狀態設為 [CHECKED]"
     }
 }

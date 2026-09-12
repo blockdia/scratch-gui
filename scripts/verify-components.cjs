@@ -284,6 +284,36 @@ const assert = require('assert/strict');
         y
       });
     }
+    const paletteResults = await page.evaluate(() => {
+      const expected = {slider: ['value', 'changeValue', 'setValue', 'whenValueChanged'],
+        progress: ['value', 'changeValue', 'setValue', 'whenValueChanged'],
+        toggle: ['isChecked', 'setChecked', 'whenStateChanged'], button: ['whenClicked']};
+      return vm.runtime.targets.map(target => {
+        const xml = vm.runtime.getBlocksXML(target).find(category => category.id === 'components').xml;
+        const doc = new DOMParser().parseFromString(xml, 'text/xml');
+        const types = Array.from(doc.documentElement.children).filter(node => node.tagName === 'block')
+          .map(node => node.getAttribute('type'));
+        const self = types.filter(type => !type.includes('Target') && !type.includes('target'));
+        return {self, expected: (target.component ? expected[target.component.type] : []).map(x => 'components_' + x),
+          cross: types.includes('components_targetProperty'),
+          shadows: doc.querySelectorAll('shadow[type="components_menu_numericTargets"]').length,
+          separators: doc.querySelectorAll('sep').length};
+      });
+    });
+    for (const result of paletteResults) {
+      assert.deepEqual(result.self, result.expected);
+      assert.ok(result.cross && result.shadows === 3 && result.separators >= 1);
+    }
+    await page.evaluate(() => vm.setEditingTarget(sliderTarget.id));
+    await page.locator('.scratchCategoryId-components').click();
+    await page.waitForFunction(() => Array.from(document.querySelectorAll('.blocklyFlyout')).some(el =>
+      /change value by|将值增加/.test(el.textContent)));
+    await page.screenshot({path: '/tmp/components-toolbox-slider.png'});
+    await page.evaluate(() => vm.setEditingTarget(toggleTarget.id));
+    await page.waitForFunction(() => Array.from(document.querySelectorAll('.blocklyFlyout')).some(el =>
+      /when checked state changes|当选中状态改变/.test(el.textContent)));
+    await page.screenshot({path: '/tmp/components-toolbox-toggle.png'});
+    console.log('PASS type-filtered toolbox, dropdown shadows, separators and checked event label');
     stage = await readStage();
     a = point(100, -40);
     await page.mouse.click(a.x, a.y);
@@ -456,6 +486,42 @@ const assert = require('assert/strict');
       assert.equal(Number(execution.value), enabled ? 73 : 62);
       assert.equal(Boolean(execution.compiled), enabled);
       console.log('PASS component setter and reporter', enabled ? 'compiled' : 'interpreted');
+    }
+    for (const enabled of [false, true]) {
+      const execution = await page.evaluate(enabled => {
+        vm.stopAll();
+        vm.runtime.setCompilerOptions({enabled});
+        const owner = vm.runtime.targets.find(t => !t.isStage && !t.component);
+        const prefix = 'cross-' + enabled;
+        const id = name => prefix + name;
+        const variable = id('result');
+        owner.createVariable(variable, prefix, '', false);
+        const block = (name, opcode, parent, next, inputs = {}, fields = {}, shadow = false) =>
+          owner.blocks.createBlock({id: id(name), opcode, parent: parent && id(parent), next: next && id(next),
+            inputs, fields, shadow, topLevel: !parent});
+        const input = name => ({name, block: id(name), shadow: id(name)});
+        block('hat', 'event_whenflagclicked', null, 'change');
+        block('change', 'components_changeTargetProperty', 'hat', 'record',
+          {TARGET: input('TARGET'), VALUE: input('VALUE')}, {PROPERTY: {name: 'PROPERTY', value: 'value'}});
+        block('TARGET', 'components_menu_numericTargets', 'change', null, {},
+          {numericTargets: {name: 'numericTargets', value: sliderTarget.getName()}}, true);
+        block('VALUE', 'math_number', 'change', null, {}, {NUM: {name: 'NUM', value: 7}}, true);
+        block('record', 'data_setvariableto', 'change', null, {VALUE: {name: 'VALUE', block: id('report')}},
+          {VARIABLE: {name: 'VARIABLE', id: variable, value: prefix}});
+        block('report', 'components_targetProperty', 'record', null, {TARGET: input('name')},
+          {PROPERTY: {name: 'PROPERTY', value: 'value'}});
+        // A text reporter replaces the dropdown shadow, just as a user can drag one into its input.
+        block('name', 'text', 'report', null, {}, {TEXT: {name: 'TEXT', value: sliderTarget.getName()}}, true);
+        vm.setComponentProperties(sliderTarget.id, {value: 20});
+        const threads = vm.runtime.startHats('event_whenflagclicked', null, owner);
+        for (let i = 0; i < 4; i++) vm.runtime._step();
+        const result = {value: owner.variables[variable].value, compiled: threads[0].isCompiled};
+        owner.blocks.deleteBlock(id('hat'));
+        return result;
+      }, enabled);
+      assert.equal(Number(execution.value), 27);
+      assert.equal(Boolean(execution.compiled), enabled);
+      console.log('PASS cross-component dropdown and reporter input', enabled ? 'compiled' : 'interpreted');
     }
     await page.evaluate(() => {
       sliderTarget.componentController.setProperties({

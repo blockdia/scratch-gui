@@ -86,6 +86,15 @@ player/presentation mode only drags sprites marked draggable. Clicks still reach
 and component behavior. Once standard target dragging starts, it cancels the current internal gesture;
 merely setting draggable does not disable component clicks.
 
+The Components toolbox shows only self blocks supported by the selected component. Stage and ordinary sprites
+still have cross-component blocks: read/change/set value, minimum, maximum, or step, and read/set checked state.
+Target inputs use standard reporter-compatible extension menu shadows; menus list matching original sprites,
+while “myself” addresses the executing target (including a clone). Missing targets or unsupported properties
+return 0/false or do nothing. Invalid ranges/steps are ignored; valid writes reuse component normalization and
+fire change events on the destination target. Selected menu targets follow sprite renames; text/reporter inputs use Scratch name-based lookup.
+Palette filtering preserves all opcode definitions and existing scripts. Numeric and checked-state operations
+are separated, and change-value blocks precede set-value blocks.
+
 `BLOCKDIA_LOCAL_COMPONENTS=1` also applies to builds. Without it, the existing installed packages are used;
 the component creation menu requires a VM with `addComponent`. Published package releases are a separate step.
 

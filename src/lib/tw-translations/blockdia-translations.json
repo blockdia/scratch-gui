@@ -4,7 +4,7 @@
         "blockdia.backpack.unpin": "取消固定到积木栏",
         "blockdia.backpack.category": "已固定",
         "blockdia.backpack.unavailable": "请先加载此脚本所需的扩展。",
-        "gui.components.add": "添加组件",
+        "gui.components.add": "选择一个组件",
         "gui.components.slider": "滑块",
         "gui.components.button": "按钮",
         "gui.components.toggle": "开关",
@@ -31,14 +31,15 @@
         "components.whenClicked": "当按钮被点击",
         "components.isChecked": "已选中？",
         "components.setChecked": "将选中状态设为 [CHECKED]",
-        "components.whenStateChanged": "当状态改变"
+        "components.whenStateChanged": "当状态改变",
+        "gui.components.settings": "设置"
     },
     "zh-tw": {
         "blockdia.backpack.pin": "固定到積木欄",
         "blockdia.backpack.unpin": "取消固定到積木欄",
         "blockdia.backpack.category": "已固定",
         "blockdia.backpack.unavailable": "請先載入此腳本所需的擴充功能。",
-        "gui.components.add": "新增元件",
+        "gui.components.add": "選擇一個元件",
         "gui.components.slider": "滑桿",
         "gui.components.button": "按鈕",
         "gui.components.toggle": "開關",
@@ -65,6 +66,7 @@
         "components.whenClicked": "當按鈕被點擊",
         "components.isChecked": "已選取？",
         "components.setChecked": "將選取狀態設為 [CHECKED]",
-        "components.whenStateChanged": "當狀態改變"
+        "components.whenStateChanged": "當狀態改變",
+        "gui.components.settings": "設定"
     }
 }

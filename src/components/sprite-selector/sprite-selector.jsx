@@ -5,6 +5,9 @@ import {defineMessages, injectIntl, intlShape} from 'react-intl';
 import Box from '../box/box.jsx';
 import SpriteInfo from '../../containers/sprite-info.jsx';
 import SpriteList from './sprite-list.jsx';
+import ComponentPanel from '../../containers/component-panel.jsx';
+import componentMessages from '../../lib/component-messages';
+import componentIcon from '../action-menu/icon--component.svg';
 import ActionMenu from '../action-menu/action-menu.jsx';
 import {STAGE_DISPLAY_SIZES} from '../../lib/layout-constants';
 import {isRtl} from '@turbowarp/scratch-l10n';
@@ -58,6 +61,7 @@ const SpriteSelectorComponent = function (props) {
         onExportSprite,
         onFileUploadClick,
         onNewSpriteClick,
+        onNewComponentClick,
         onPaintSpriteClick,
         onSelectSprite,
         onSpriteUpload,
@@ -81,25 +85,29 @@ const SpriteSelectorComponent = function (props) {
             {...componentProps}
         >
 
-            <SpriteInfo
-                direction={selectedSprite.direction}
-                disabled={spriteInfoDisabled}
-                name={selectedSprite.name}
-                rotationStyle={selectedSprite.rotationStyle}
-                size={selectedSprite.size}
-                stageSize={stageSize}
-                visible={selectedSprite.visible}
-                x={selectedSprite.x}
-                y={selectedSprite.y}
-                onChangeDirection={onChangeSpriteDirection}
-                onChangeName={onChangeSpriteName}
-                onChangeRotationStyle={onChangeSpriteRotationStyle}
-                onChangeSize={onChangeSpriteSize}
-                onChangeVisibility={onChangeSpriteVisibility}
-                onChangeX={onChangeSpriteX}
-                onChangeY={onChangeSpriteY}
-            />
+            {/* Keep the info section as one React child for sprite-list addons. */}
+            <React.Fragment>
+                <SpriteInfo
+                    direction={selectedSprite.direction}
+                    disabled={spriteInfoDisabled}
+                    name={selectedSprite.name}
+                    rotationStyle={selectedSprite.rotationStyle}
+                    size={selectedSprite.size}
+                    stageSize={stageSize}
+                    visible={selectedSprite.visible}
+                    x={selectedSprite.x}
+                    y={selectedSprite.y}
+                    onChangeDirection={onChangeSpriteDirection}
+                    onChangeName={onChangeSpriteName}
+                    onChangeRotationStyle={onChangeSpriteRotationStyle}
+                    onChangeSize={onChangeSpriteSize}
+                    onChangeVisibility={onChangeSpriteVisibility}
+                    onChangeX={onChangeSpriteX}
+                    onChangeY={onChangeSpriteY}
+                />
 
+                <ComponentPanel />
+            </React.Fragment>
             <SpriteList
                 editingTarget={editingTarget}
                 hoveredTarget={hoveredTarget}
@@ -116,6 +124,11 @@ const SpriteSelectorComponent = function (props) {
                 className={styles.addButton}
                 img={spriteIcon}
                 moreButtons={[
+                    ...(onNewComponentClick ? [{
+                        title: intl.formatMessage(componentMessages.add),
+                        img: componentIcon,
+                        onClick: onNewComponentClick
+                    }] : []),
                     {
                         title: intl.formatMessage(messages.addSpriteFromFile),
                         img: fileUploadIcon,
@@ -147,6 +160,7 @@ const SpriteSelectorComponent = function (props) {
 };
 
 SpriteSelectorComponent.propTypes = {
+    onNewComponentClick: PropTypes.func,
     editingTarget: PropTypes.string,
     hoveredTarget: PropTypes.shape({
         hoveredSprite: PropTypes.string,

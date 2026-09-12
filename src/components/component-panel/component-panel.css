@@ -1,31 +1,47 @@
 @import "../../css/colors.css";
 
 .panel {
-    padding: 0.45rem;
-    background: $ui-primary;
+    flex: 0 0 auto;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    background: $ui-white;
     color: $text-primary;
     border-bottom: 1px solid $ui-black-transparent;
     font-size: 0.75rem;
 }
-.panel select, .panel input, .guides button {
+.type { font-weight: bold; }
+.settings-button {
+    min-height: 2rem;
+    border: 1px solid $ui-black-transparent;
+    background: $ui-primary;
+    color: $text-primary;
+}
+.settings-button:hover, .settings-button:focus {
+    outline: none;
+    border-color: $motion-primary;
+    background: $ui-tertiary;
+}
+.popup {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    width: 17rem;
+    max-width: calc(100vw - 2rem);
+    padding: 1rem;
+    color: $text-primary;
+    font-size: 0.75rem;
+}
+.heading { font-weight: bold; }
+.guides button {
     color: inherit;
     background: $ui-white;
     border: 1px solid $ui-black-transparent;
     border-radius: 0.3rem;
     padding: 0.25rem;
 }
-.properties {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.4rem;
-    margin-top: 0.4rem;
-}
-.properties label {
-    display: flex;
-    align-items: center;
-    gap: 0.3rem;
-}
-.properties input[type="number"] { width: 4rem; }
 .guides {
     flex: 0 0 auto;
     color: $text-primary;
@@ -44,7 +60,7 @@
 .guides circle:focus { stroke: #ffab19; stroke-width: 3px; }
 .guides button { margin: 0.3rem 0.3rem 0 0; }
 @media (max-width: 680px) {
-    .panel input, .panel select { font-size: 16px; }
+    .panel input, .popup input { font-size: 16px; }
 }
 
 .editor {

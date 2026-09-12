@@ -25,15 +25,119 @@ const assert = require('assert/strict');
     await page.waitForFunction(() => window.vm && vm.editingTarget && vm.editingTarget.sprite.costumes.length, {
       timeout: 90000
     });
-    const add = type => page.locator('select').filter({
-      has: page.locator('option[value=slider]')
-    }).selectOption(type);
+    const add = async type => {
+      await page.mouse.move(10, 10);
+      await page.getByRole('button', {name: /Choose a Sprite|选择一个角色/, exact: true}).first().hover();
+      const entry = page.getByRole('button', {name: /Choose a Component|选择一个组件/, exact: true});
+      await entry.click().catch(async error => {
+        await page.screenshot({path: '/tmp/components-menu-error.png'});
+        throw error;
+      });
+      await page.waitForFunction(() => {
+        const icons = Array.from(document.querySelectorAll('img[class*="library-item_library-item-image"]'));
+        return icons.length === 4 && icons.every(icon => icon.complete && icon.naturalWidth > 0);
+      });
+      if (type === 'slider') await page.screenshot({path: '/tmp/components-library.png'});
+      const names = {slider: /^(Slider|滑块)$/, button: /^(Button|按钮)$/,
+        toggle: /^(Toggle|开关)$/, progress: /^(Progress Bar|进度条)$/};
+      await page.getByRole('button', {name: names[type]}).click();
+    };
     await add('slider');
     await page.waitForFunction(() => vm.editingTarget.componentController);
     await page.evaluate(() => {
       window.sliderTarget = vm.editingTarget;
       sliderTarget.setXY(-80, 70);
     });
+    const panel = page.getByRole('region', {name: /^(Slider|滑块)$/});
+    const settings = panel.getByRole('button', {name: /^(Settings|设置)$/});
+    assert.equal(await panel.getByRole('spinbutton').count(), 1, 'only value is inline');
+    const infoBounds = await page.locator('[class*="sprite-info_sprite-info"]').boundingBox();
+    const panelBounds = await panel.boundingBox();
+    assert.ok(panelBounds.y >= infoBounds.y + infoBounds.height - 1, 'component properties follow sprite info');
+    await settings.focus();
+    await page.keyboard.press('Enter');
+    const popup = page.getByRole('dialog', {name: /^(Settings|设置)$/});
+    await popup.waitFor();
+    assert.equal(await popup.getByRole('spinbutton').count(), 3);
+    const step = popup.getByRole('spinbutton', {name: /^(Step|步长)$/});
+    await step.fill('2');
+    await step.press('Enter');
+    assert.equal(await page.evaluate(() => sliderTarget.component.properties.step), 2);
+    const min = popup.getByRole('spinbutton', {name: /^(Minimum|最小值)$/});
+    await min.fill('100');
+    await min.press('Enter');
+    await popup.getByRole('alert').waitFor();
+    assert.equal(await page.evaluate(() => sliderTarget.component.properties.min), 0);
+    await step.fill('1');
+    await step.press('Enter');
+    await page.waitForFunction(() => Array.from(document.querySelectorAll('.Popover')).some(el =>
+      getComputedStyle(el).opacity === '1'));
+    await page.screenshot({path: '/tmp/components-properties.png'});
+    await page.keyboard.press('Escape');
+    await popup.waitFor({state: 'hidden'});
+    await settings.click();
+    await panel.getByRole('spinbutton').click();
+    await popup.waitFor({state: 'hidden'});
+    console.log('PASS Scratch property layout, buffered inputs and settings popup');
+    const clipping = await page.evaluate(async () => {
+      const target = sliderTarget;
+      const renderer = vm.renderer;
+      const fill = target.getCostumes()[1];
+      const original = new TextDecoder().decode(fill.asset.data);
+      // A fixed red stripe proves progress reveals artwork instead of stretching it.
+      vm.updateSvg(1, '<svg xmlns="http://www.w3.org/2000/svg" width="180" height="12">' +
+        '<rect width="180" height="12" fill="#4c97ff"/>' +
+        '<rect x="25" width="12" height="12" fill="#ff0000"/></svg>', 90, 6);
+      await new Promise(resolve => renderer._allSkins[fill.skinId]._svgImage.addEventListener('load', resolve,
+        {once: true}));
+      const sample = (x, y) => {
+        const canvas = renderer.canvas;
+        return renderer.extractColor((x / 480 + 0.5) * canvas.clientWidth,
+          (0.5 - y / 360) * canvas.clientHeight, 1).color;
+      };
+      const rows = [];
+      for (const direction of [90, 0]) {
+        for (const mirror of [false, true]) {
+          target.setRotationStyle(mirror ? 'left-right' : 'all around');
+          target.setDirection(mirror ? -90 : direction);
+          target.setSize(150);
+          const actual = mirror ? 90 : direction;
+          const angle = (90 - actual) * Math.PI / 180;
+          const point = x => [target.x + (x * (mirror ? -1 : 1) * 1.5 * Math.cos(angle)),
+            target.y + (x * (mirror ? -1 : 1) * 1.5 * Math.sin(angle))];
+          const row = [];
+          for (const value of [25, 75]) {
+            vm.setComponentProperties(target.id, {value});
+            renderer.draw();
+            const left = point(-59);
+            const right = point(65);
+            const id = target.componentController.parts.get('fill');
+            const hit = p => renderer.drawableTouching(id, (p[0] / 480 + 0.5) * renderer.canvas.clientWidth,
+              (0.5 - p[1] / 360) * renderer.canvas.clientHeight);
+            row.push({stripe: sample(...left), clipped: sample(...right),
+              leftHit: hit(left), rightHit: hit(right)});
+          }
+          rows.push(row);
+        }
+      }
+      target.setRotationStyle('all around');
+      target.setDirection(90);
+      target.setSize(100);
+      vm.updateSvg(1, original, 90, 6);
+      await new Promise(resolve => renderer._allSkins[fill.skinId]._svgImage.addEventListener('load', resolve,
+        {once: true}));
+      vm.setComponentProperties(target.id, {value: 50});
+      return rows;
+    });
+    for (const row of clipping) {
+      for (const result of row) {
+        assert.deepEqual(result.stripe, {r: 255, g: 0, b: 0, a: 255}, 'stripe stays at its costume position');
+        assert.deepEqual(result.clipped, {r: 214, g: 222, b: 234, a: 255}, 'clipped fill exposes track');
+        assert.equal(result.leftHit, true);
+        assert.equal(result.rightHit, false);
+      }
+    }
+    console.log('PASS WebGL clip, fixed artwork, rotated/mirrored picking and SVG updates');
     const readStage = () => page.evaluate(() => {
       const r = vm.renderer.canvas.getBoundingClientRect();
       return {
@@ -64,7 +168,7 @@ const assert = require('assert/strict');
     assert.equal(await page.evaluate(() => sliderTarget.component.properties.value), 50);
     await page.evaluate(() => sliderTarget.setXY(-80, 70));
     console.log('PASS standard editor drag for non-draggable component');
-    await page.locator('img[title="Full Screen Control"], img[title="全屏控制"]').click();
+    await page.locator('img[title="Full Screen Control"], img[title="全屏模式"]').click();
     await page.getByRole('img', {name: /Exit full screen mode|退出全屏/}).waitFor({state: 'visible'});
     stage = await readStage();
     let a = point(-80, 70),
@@ -99,7 +203,7 @@ const assert = require('assert/strict');
     });
     console.log('PASS rotated and scaled slider drag');
     await page.getByRole('img', {name: /Exit full screen mode|退出全屏/}).click();
-    await page.locator('select').filter({has: page.locator('option[value=slider]')}).waitFor({state: 'visible'});
+    await page.getByRole('button', {name: /Choose a Sprite|选择一个角色/, exact: true}).first().waitFor({state: 'visible'});
     stage = await readStage();
     await page.getByRole('tab', {
       name: /造型|Costumes/
@@ -155,6 +259,7 @@ const assert = require('assert/strict');
         y
       });
     }
+    stage = await readStage();
     a = point(100, -40);
     await page.mouse.click(a.x, a.y);
     assert.equal(await page.evaluate(() => toggleTarget.component.properties.checked), true);
@@ -378,6 +483,21 @@ const assert = require('assert/strict');
     await page.screenshot({
       path: '/tmp/components-compact.png'
     });
+    await page.evaluate(() => vm.setEditingTarget(vm.runtime.targets.find(t =>
+      t.component && t.component.type === 'slider').id));
+    const compactPanel = page.getByRole('region', {name: /^(Slider|滑块)$/});
+    await compactPanel.getByRole('button', {name: /^(Settings|设置)$/}).click();
+    const compactPopup = page.getByRole('dialog', {name: /^(Settings|设置)$/});
+    await compactPopup.waitFor();
+    const bounds = await compactPopup.boundingBox();
+    assert.ok(bounds.x >= 0 && bounds.x + bounds.width <= 1100 && bounds.y >= 0 &&
+      bounds.y + bounds.height <= 850, 'settings fit in the compact viewport');
+    await page.evaluate(() => vm.setEditingTarget(vm.runtime.targets.find(t =>
+      !t.isStage && !t.component).id));
+    await compactPopup.waitFor({state: 'hidden'});
+    assert.equal(await page.locator('section[class*="component-panel_panel"]').count(), 0,
+      'ordinary sprite has no component properties');
+    console.log('PASS compact popup and target-switch dismissal');
     console.log('PAGE_ERRORS', errors);
     assert.deepEqual(errors, []);
   } finally {

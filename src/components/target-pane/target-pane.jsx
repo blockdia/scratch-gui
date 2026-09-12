@@ -3,9 +3,8 @@ import React from 'react';
 
 import VM from 'scratch-vm';
 
-import ComponentPanel from '../../containers/component-panel.jsx';
 import SpriteLibrary from '../../containers/sprite-library.jsx';
-import SpriteSelectorComponent from '../sprite-selector/sprite-selector.jsx';
+import SpriteSelectorComponent from '../../containers/component-sprite-selector.jsx';
 import StageSelector from '../../containers/stage-selector.jsx';
 import {STAGE_DISPLAY_SIZES} from '../../lib/layout-constants';
 
@@ -54,8 +53,8 @@ const TargetPane = ({
     >
 
         <div className={styles.spriteColumn}>
-            <ComponentPanel />
             <SpriteSelectorComponent
+                onActivateBlocksTab={onActivateBlocksTab}
                 editingTarget={editingTarget}
                 hoveredTarget={hoveredTarget}
                 raised={raiseSprites}

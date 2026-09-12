@@ -3,29 +3,47 @@ import bindAll from 'lodash.bindall';
 import PropTypes from 'prop-types';
 import {connect} from 'react-redux';
 import {injectIntl, intlShape} from 'react-intl';
+import Popover from 'react-popover';
+import {isRtl} from '@turbowarp/scratch-l10n';
 import VM from 'scratch-vm';
+import ComponentProperty from '../components/component-panel/component-property.jsx';
+import Button from '../components/button/button.jsx';
 import messages from '../lib/component-messages';
 import styles from '../components/component-panel/component-panel.css';
 
 class ComponentPanel extends React.Component {
     constructor (props) {
         super(props);
-        bindAll(this, ['handleAdd', 'handleChangeBoolean', 'handleChangeNumber', 'handleFinishNumber']);
-        this.state = {busy: false, error: null};
+        bindAll(this, ['handleChange', 'handleToggle', 'handleClose', 'handleKeyDown', 'handleButtonKeyDown']);
+        this.state = {open: false, error: null};
     }
-    async handleAdd (event) {
-        const type = event.target.value;
-        if (!type) return;
-        this.setState({busy: true, error: null});
-        try {
-            await this.props.vm.addComponent(type, this.props.intl.formatMessage(messages[type]));
-        } catch (error) {
-            this.setState({error: 'failed'});
-        } finally {
-            this.setState({busy: false});
+    static getDerivedStateFromProps (props, state) {
+        const targetId = props.target && props.target.id;
+        if (targetId !== state.targetId) return {targetId, open: false, error: null};
+        return null;
+    }
+    componentDidMount () {
+        document.addEventListener('keydown', this.handleKeyDown);
+    }
+    componentWillUnmount () {
+        document.removeEventListener('keydown', this.handleKeyDown);
+    }
+    handleKeyDown (event) {
+        if (event.key === 'Escape') this.handleClose();
+    }
+    handleButtonKeyDown (event) {
+        if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            this.handleToggle();
         }
     }
-    update (key, value) {
+    handleToggle () {
+        this.setState(state => ({open: !state.open}));
+    }
+    handleClose () {
+        this.setState({open: false});
+    }
+    handleChange (key, value) {
         try {
             this.props.vm.setComponentProperties(this.props.target.id, {[key]: value});
             this.setState({error: null});
@@ -33,58 +51,61 @@ class ComponentPanel extends React.Component {
             this.setState({error: 'invalid'});
         }
     }
-    handleChangeBoolean (event) {
-        this.update(event.target.name, event.target.checked);
-    }
-    handleChangeNumber (event) {
-        this.update(event.target.name, event.target.valueAsNumber);
-    }
-    handleFinishNumber (event) {
-        if (event.key === 'Enter') event.target.blur();
+    renderProperty ([key, value]) {
+        return (
+            <ComponentProperty
+                key={`${this.props.target.id}-${key}`}
+                label={this.props.intl.formatMessage(messages[key])}
+                property={key}
+                value={value}
+                onChange={this.handleChange}
+            />
+        );
     }
     render () {
-        const {target, intl, vm} = this.props;
-        if (!vm.addComponent) return null;
+        const {target, intl} = this.props;
         const config = target && target.component;
+        if (!config) return null;
+        if (target.componentError) return <div role="alert">{intl.formatMessage(messages.unavailable)}</div>;
+        const entries = Object.entries(config.properties);
+        const common = entries.filter(([key]) => key === 'value' || key === 'checked');
+        const advanced = entries.filter(([key]) => key !== 'value' && key !== 'checked');
+        const settings = intl.formatMessage(messages.settings);
         return (
-            <section className={styles.panel}>
-                <select
-                    aria-label={intl.formatMessage(messages.add)}
-                    disabled={this.state.busy}
-                    value=""
-                    onChange={this.handleAdd}
+            <section
+                aria-label={intl.formatMessage(messages[config.type])}
+                className={styles.panel}
+            >
+                <span className={styles.type}>{intl.formatMessage(messages[config.type])}</span>
+                {common.map(entry => this.renderProperty(entry))}
+                <Popover
+                    body={<div
+                        aria-label={settings}
+                        className={styles.popup}
+                        dir={isRtl(intl.locale) ? 'rtl' : 'ltr'}
+                        role="dialog"
+                    >
+                        <div className={styles.heading}>{settings}</div>
+                        {advanced.map(entry => this.renderProperty(entry))}
+                        {this.state.error && <div role="alert">{intl.formatMessage(messages[this.state.error])}</div>}
+                    </div>}
+                    isOpen={this.state.open}
+                    preferPlace="above"
+                    onOuterAction={this.handleClose}
                 >
-                    <option value="">{intl.formatMessage(messages.add)}</option>
-                    {['slider', 'button', 'toggle', 'progress'].map(type => (
-                        <option
-                            key={type}
-                            value={type}
-                        >{intl.formatMessage(messages[type])}</option>
-                    ))}
-                </select>
-                {config && !target.componentError && <div className={styles.properties}>
-                    {Object.entries(config.properties).map(([key, value]) => (
-                        <label key={`${target.id}-${key}`}>
-                            <span>{intl.formatMessage(messages[key])}</span>
-                            {typeof value === 'boolean' ? <input
-                                type="checkbox"
-                                checked={value}
-                                name={key}
-                                onChange={this.handleChangeBoolean}
-                            /> : <input
-                                key={value}
-                                type="number"
-                                step="any"
-                                defaultValue={value}
-                                name={key}
-                                onBlur={this.handleChangeNumber}
-                                onKeyDown={this.handleFinishNumber}
-                            />}
-                        </label>
-                    ))}
-                </div>}
-                {(this.state.error || (target && target.componentError)) && <div role="alert">
-                    {intl.formatMessage(messages[this.state.error || 'unavailable'])}
+                    <Button
+                        aria-expanded={this.state.open}
+                        aria-haspopup="dialog"
+                        className={styles.settingsButton}
+                        tabIndex="0"
+                        onClick={this.handleToggle}
+                        onKeyDown={this.handleButtonKeyDown}
+                    >
+                        {settings}
+                    </Button>
+                </Popover>
+                {this.state.error && !this.state.open && <div role="alert">
+                    {intl.formatMessage(messages[this.state.error])}
                 </div>}
             </section>
         );

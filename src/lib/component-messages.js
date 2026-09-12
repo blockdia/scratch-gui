@@ -1,7 +1,8 @@
 import {defineMessages} from 'react-intl';
 
 export default defineMessages({
-    add: {id: 'gui.components.add', defaultMessage: 'Add component', description: 'Create a component sprite'},
+    settings: {id: 'gui.components.settings', defaultMessage: 'Settings', description: 'Component settings popover'},
+    add: {id: 'gui.components.add', defaultMessage: 'Choose a Component', description: 'Create a component sprite'},
     slider: {id: 'gui.components.slider', defaultMessage: 'Slider', description: 'Slider component'},
     button: {id: 'gui.components.button', defaultMessage: 'Button', description: 'Button component'},
     toggle: {id: 'gui.components.toggle', defaultMessage: 'Toggle', description: 'Toggle component'},

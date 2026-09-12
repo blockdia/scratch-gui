@@ -73,16 +73,19 @@ The built-in Slider, Button, Toggle, and Progress Bar implementation spans this 
 BLOCKDIA_LOCAL_COMPONENTS=1 PORT=8603 npm start
 ```
 
-Open [the local editor](http://localhost:8603/editor.html), choose **Add component** above the sprite list,
-and edit behavior properties there. **Costumes → Track guides** edits Slider/Progress geometry with draggable
-endpoints, arrow keys, and separate guide undo/redo. Part artwork stays editable in the costume editor.
+Open [the local editor](http://localhost:8603/editor.html), expand **Choose a Sprite**, then select
+**Choose a Component**. The four templates use the standard Scratch library. Common properties (value or checked)
+appear below the sprite properties; **Settings** opens the remaining behavior parameters. **Costumes → Track guides** edits Slider/Progress geometry with draggable
+endpoints, arrow keys, and separate guide undo/redo. Part artwork stays editable in the costume editor. Track and fill costume centers align; progress clips the fill
+without stretching or rotating its artwork. Zero hides the fill; maximum reveals the whole costume, including end caps.
+The clip follows target transforms and applies to picking, touching, color sensing and drag previews.
 Components follow the same stage drag rules as ordinary sprites: the editor can drag any sprite, while
 player/presentation mode only drags sprites marked draggable. Clicks still reach both ordinary Scratch hats
 and component behavior. Once standard target dragging starts, it cancels the current internal gesture;
 merely setting draggable does not disable component clicks.
 
 `BLOCKDIA_LOCAL_COMPONENTS=1` also applies to builds. Without it, the existing installed packages are used;
-the component creation panel requires a VM with `addComponent`. Published package releases are a separate step.
+the component creation menu requires a VM with `addComponent`. Published package releases are a separate step.
 
 Run the browser checks with a current Playwright installation:
 
@@ -91,7 +94,7 @@ node scripts/verify-components.cjs
 ```
 
 Optional environment variables: `COMPONENTS_EDITOR_URL`, `COMPONENTS_PLAYWRIGHT_PATH` (module path), and
-`COMPONENTS_CHROME_PATH` (browser executable). The checks cover pointer interaction, transforms, guides,
+`COMPONENTS_CHROME_PATH` (browser executable). The checks cover the creation menu, property popup, fixed artwork clipping, pointer interaction, transforms, guides,
 clones, sensing, interpreted/compiled blocks, and SB3 assets; screenshots are written to `/tmp/components-*.png`.
 See the [shared architecture notes](../docs/12-预制组件系统.md) for data contracts and current limitations.
 

@@ -57,7 +57,8 @@ class ActionMenu extends React.Component {
         if (this.closeTimeoutId) {
             clearTimeout(this.closeTimeoutId);
             this.closeTimeoutId = null;
-        } else if (!this.state.isOpen) {
+        }
+        if (!this.state.isOpen) {
             this.setState({
                 isOpen: true,
                 forceHide: false

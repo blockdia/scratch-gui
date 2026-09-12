@@ -17,6 +17,10 @@ const assert = require('assert/strict');
         height: 1000
       }
     });
+    if (process.env.COMPONENTS_COMPACT === '1') {
+      await page.addInitScript(() => localStorage.setItem('tw:addons',
+        JSON.stringify({'editor-compact': {enabled: true}})));
+    }
     const errors = [];
     page.on('pageerror', e => errors.push(e.message));
     await page.goto(process.env.COMPONENTS_EDITOR_URL || 'http://localhost:8603/editor.html', {
@@ -51,6 +55,12 @@ const assert = require('assert/strict');
     const panel = page.getByRole('region', {name: /^(Slider|滑块)$/});
     const settings = panel.getByRole('button', {name: /^(Settings|设置)$/});
     assert.equal(await panel.getByRole('spinbutton').count(), 1, 'only value is inline');
+    assert.equal(await settings.innerText(), '', 'settings is icon-only');
+    const inputHeight = await panel.getByRole('spinbutton').evaluate(el => el.getBoundingClientRect().height);
+    const buttonSize = await settings.boundingBox();
+    assert.equal(inputHeight, process.env.COMPONENTS_COMPACT === '1' ? 24 : 32);
+    assert.equal(buttonSize.width, inputHeight);
+    assert.equal(buttonSize.height, inputHeight);
     const infoBounds = await page.locator('[class*="sprite-info_sprite-info"]').boundingBox();
     const panelBounds = await panel.boundingBox();
     assert.ok(panelBounds.y >= infoBounds.y + infoBounds.height - 1, 'component properties follow sprite info');
@@ -59,6 +69,9 @@ const assert = require('assert/strict');
     const popup = page.getByRole('dialog', {name: /^(Settings|设置)$/});
     await popup.waitFor();
     assert.equal(await popup.getByRole('spinbutton').count(), 3);
+    assert.ok((await popup.boundingBox()).width < 250, 'popup sizes to its content');
+    assert.equal(await popup.getByRole('spinbutton').first().evaluate(el => el.getBoundingClientRect().height),
+      inputHeight, 'popup inputs also follow compact mode');
     const step = popup.getByRole('spinbutton', {name: /^(Step|步长)$/});
     await step.fill('2');
     await step.press('Enter');
@@ -78,7 +91,19 @@ const assert = require('assert/strict');
     await settings.click();
     await panel.getByRole('spinbutton').click();
     await popup.waitFor({state: 'hidden'});
-    console.log('PASS Scratch property layout, buffered inputs and settings popup');
+    const previousStageSize = await page.locator('[class*="stage-header_stage-size-toggle-group"] button[aria-pressed="true"]').getAttribute('aria-label');
+    await page.getByRole('button', {name: /Switch to small stage|缩小舞台/, exact: true}).click();
+    await page.waitForFunction(() => !document.querySelector('section [class*="component-panel_type_"]'));
+    await settings.waitFor({state: 'visible'});
+    assert.equal(await panel.getByRole('spinbutton').count(), 1, 'small stage keeps the common property');
+    await settings.click();
+    await popup.waitFor();
+    await page.screenshot({path: '/tmp/components-small-stage.png'});
+    await page.keyboard.press('Escape');
+    await page.locator('[class*="stage-header_stage-size-toggle-group"]').getByRole('button',
+      {name: previousStageSize, exact: true}).click();
+    await page.waitForFunction(() => document.querySelector('section [class*="component-panel_type_"]'));
+    console.log('PASS Scratch property layout, compact addon, small stage and settings popup');
     const clipping = await page.evaluate(async () => {
       const target = sliderTarget;
       const renderer = vm.renderer;

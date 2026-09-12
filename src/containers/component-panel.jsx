@@ -9,6 +9,7 @@ import VM from 'scratch-vm';
 import ComponentProperty from '../components/component-panel/component-property.jsx';
 import Button from '../components/button/button.jsx';
 import messages from '../lib/component-messages';
+import {STAGE_DISPLAY_SIZES} from '../lib/layout-constants';
 import styles from '../components/component-panel/component-panel.css';
 
 class ComponentPanel extends React.Component {
@@ -63,7 +64,7 @@ class ComponentPanel extends React.Component {
         );
     }
     render () {
-        const {target, intl} = this.props;
+        const {target, intl, stageSize} = this.props;
         const config = target && target.component;
         if (!config) return null;
         if (target.componentError) return <div role="alert">{intl.formatMessage(messages.unavailable)}</div>;
@@ -76,7 +77,8 @@ class ComponentPanel extends React.Component {
                 aria-label={intl.formatMessage(messages[config.type])}
                 className={styles.panel}
             >
-                <span className={styles.type}>{intl.formatMessage(messages[config.type])}</span>
+                {stageSize !== STAGE_DISPLAY_SIZES.small &&
+                    <span className={styles.type}>{intl.formatMessage(messages[config.type])}</span>}
                 {common.map(entry => this.renderProperty(entry))}
                 <Popover
                     body={<div
@@ -94,6 +96,8 @@ class ComponentPanel extends React.Component {
                     onOuterAction={this.handleClose}
                 >
                     <Button
+                        aria-label={settings}
+                        title={settings}
                         aria-expanded={this.state.open}
                         aria-haspopup="dialog"
                         className={styles.settingsButton}
@@ -101,7 +105,18 @@ class ComponentPanel extends React.Component {
                         onClick={this.handleToggle}
                         onKeyDown={this.handleButtonKeyDown}
                     >
-                        {settings}
+                        <svg
+                            aria-hidden="true"
+                            className={styles.settingsIcon}
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="1.75"
+                            strokeLinecap="round"
+                        >
+                            <path d="M4 6h16M4 12h16M4 18h16" />
+                            <path d="M8 4v4M16 10v4M10 16v4" />
+                        </svg>
                     </Button>
                 </Popover>
                 {this.state.error && !this.state.open && <div role="alert">
@@ -112,6 +127,7 @@ class ComponentPanel extends React.Component {
     }
 }
 ComponentPanel.propTypes = {
+    stageSize: PropTypes.oneOf(Object.keys(STAGE_DISPLAY_SIZES)),
     vm: PropTypes.instanceOf(VM),
     intl: intlShape,
     target: PropTypes.shape({id: PropTypes.string, component: PropTypes.object, componentError: PropTypes.string})

@@ -106,7 +106,7 @@ const SpriteSelectorComponent = function (props) {
                     onChangeY={onChangeSpriteY}
                 />
 
-                <ComponentPanel />
+                <ComponentPanel stageSize={stageSize} />
             </React.Fragment>
             <SpriteList
                 editingTarget={editingTarget}

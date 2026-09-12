@@ -75,7 +75,9 @@ BLOCKDIA_LOCAL_COMPONENTS=1 PORT=8603 npm start
 
 Open [the local editor](http://localhost:8603/editor.html), expand **Choose a Sprite**, then select
 **Choose a Component**. The four templates use the standard Scratch library. Common properties (value or checked)
-appear below the sprite properties; **Settings** opens the remaining behavior parameters. **Costumes → Track guides** edits Slider/Progress geometry with draggable
+appear below the sprite properties; the **Settings** icon opens a popup sized to the remaining behavior parameters.
+Small-stage mode hides the component type while retaining common properties and settings. The Compact editor addon
+also reduces the component row, controls, and popup spacing. **Costumes → Track guides** edits Slider/Progress geometry with draggable
 endpoints, arrow keys, and separate guide undo/redo. Part artwork stays editable in the costume editor. Track and fill costume centers align; progress clips the fill
 without stretching or rotating its artwork. Zero hides the fill; maximum reveals the whole costume, including end caps.
 The clip follows target transforms and applies to picking, touching, color sensing and drag previews.
@@ -94,7 +96,7 @@ node scripts/verify-components.cjs
 ```
 
 Optional environment variables: `COMPONENTS_EDITOR_URL`, `COMPONENTS_PLAYWRIGHT_PATH` (module path), and
-`COMPONENTS_CHROME_PATH` (browser executable). The checks cover the creation menu, property popup, fixed artwork clipping, pointer interaction, transforms, guides,
+`COMPONENTS_CHROME_PATH` (browser executable), and `COMPONENTS_COMPACT=1` (enable the Compact editor addon). The checks cover the creation menu, property popup, fixed artwork clipping, pointer interaction, transforms, guides,
 clones, sensing, interpreted/compiled blocks, and SB3 assets; screenshots are written to `/tmp/components-*.png`.
 See the [shared architecture notes](../docs/12-预制组件系统.md) for data contracts and current limitations.
 

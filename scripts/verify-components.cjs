@@ -285,9 +285,7 @@ const assert = require('assert/strict');
       });
     }
     const paletteResults = await page.evaluate(() => {
-      const expected = {slider: ['value', 'changeValue', 'setValue', 'whenValueChanged'],
-        progress: ['value', 'changeValue', 'setValue', 'whenValueChanged'],
-        toggle: ['isChecked', 'setChecked', 'whenStateChanged'], button: ['whenClicked']};
+      const expected = {slider: [], progress: [], toggle: ['whenStateChanged'], button: ['whenClicked']};
       return vm.runtime.targets.map(target => {
         const xml = vm.runtime.getBlocksXML(target).find(category => category.id === 'components').xml;
         const doc = new DOMParser().parseFromString(xml, 'text/xml');
@@ -304,14 +302,137 @@ const assert = require('assert/strict');
       assert.deepEqual(result.self, result.expected);
       assert.ok(result.cross && result.shadows === 3 && result.separators >= 1);
     }
-    await page.evaluate(() => vm.setEditingTarget(sliderTarget.id));
+    const declaredMenus = await page.evaluate(() => {
+      const category = vm.runtime._blockInfo.find(info => info.id === 'components');
+      const block = category.blocks.find(item => item.info && item.info.opcode === 'targetProperty');
+      const args = Object.keys(block.json).filter(key => key.startsWith('args')).flatMap(key => block.json[key]);
+      const property = args.find(arg => arg.name === 'PROPERTY');
+      const optionsFor = target => property.options.call({sourceBlock_: {
+        getInputTargetBlock: () => ({getFieldValue: () => target.getName()})
+      }}).map(option => option[1]);
+      const targetMenu = category.menus.find(menu => menu.json.type === 'components_menu_numericTargets');
+      return {
+        slider: optionsFor(sliderTarget),
+        progress: optionsFor(progressTarget),
+        editingName: progressTarget.getName(),
+        numericTargets: targetMenu.json.args0[0].options().map(option => option[1])
+      };
+    });
+    assert.deepEqual(declaredMenus.slider, ['value', 'min', 'max', 'step']);
+    assert.deepEqual(declaredMenus.progress, ['value', 'min', 'max']);
+    assert.ok(declaredMenus.numericTargets.includes('_myself_'));
+    assert.ok(!declaredMenus.numericTargets.includes(declaredMenus.editingName));
+    await page.evaluate(() => {
+      window.ordinaryTarget = vm.runtime.targets.find(target => !target.isStage && !target.component);
+      const create = (id, opcode, parent, inputs, fields, shadow = false) => sliderTarget.blocks.createBlock({
+        id, opcode, parent, next: null, inputs, fields, shadow, topLevel: !parent, x: 40, y: 40
+      });
+      create('component-menu-regression', 'components_targetProperty', null, {
+        TARGET: {name: 'TARGET', block: 'component-menu-regression-target', shadow: 'component-menu-regression-target'}
+      }, {PROPERTY: {name: 'PROPERTY', value: 'step'}});
+      create('component-menu-regression-target', 'components_menu_numericTargets',
+        'component-menu-regression', {}, {numericTargets: {name: 'numericTargets', value: '_myself_'}}, true);
+      vm.setEditingTarget(ordinaryTarget.id);
+      vm.setEditingTarget(sliderTarget.id);
+    });
+    await page.waitForFunction(() => {
+      const blockly = window.Blockly || window.ScratchBlocks;
+      const block = blockly && blockly.getMainWorkspace().getBlockById('component-menu-regression');
+      return block && block.getInputTargetBlock('TARGET');
+    });
+    const restoredSelf = await page.evaluate(() => {
+      const blockly = window.Blockly || window.ScratchBlocks;
+      const block = blockly.getMainWorkspace().getBlockById('component-menu-regression');
+      const targetField = block.getInputTargetBlock('TARGET').getField('numericTargets');
+      const propertyField = block.getField('PROPERTY');
+      return {
+        targetValue: targetField.getValue(),
+        targetText: targetField.getText(),
+        propertyValue: propertyField.getValue(),
+        propertyText: propertyField.getText()
+      };
+    });
+    assert.equal(restoredSelf.targetValue, '_myself_');
+    assert.notEqual(restoredSelf.targetText, '_myself_');
+    assert.equal(restoredSelf.propertyValue, 'step');
+    assert.notEqual(restoredSelf.propertyText, 'step');
     await page.locator('.scratchCategoryId-components').click();
-    await page.waitForFunction(() => Array.from(document.querySelectorAll('.blocklyFlyout')).some(el =>
-      /change value by|将值增加/.test(el.textContent)));
+    const flyoutBlockTypes = () => {
+      const blockly = window.Blockly || window.ScratchBlocks;
+      const main = blockly && blockly.getMainWorkspace();
+      const workspace = main && main.getFlyout().getWorkspace();
+      return workspace ? workspace.getTopBlocks(false).map(block => block.type) : [];
+    };
+    await page.waitForFunction(() => {
+      const blockly = window.Blockly || window.ScratchBlocks;
+      const main = blockly && blockly.getMainWorkspace();
+      const workspace = main && main.getFlyout().getWorkspace();
+      return workspace && workspace.getTopBlocks(false).some(block => block.type === 'components_targetProperty');
+    });
+    const sliderFlyout = await page.evaluate(flyoutBlockTypes);
+    assert.ok(sliderFlyout.includes('components_targetProperty'));
+    assert.ok(sliderFlyout.includes('components_changeTargetProperty'));
+    assert.ok(sliderFlyout.includes('components_setTargetProperty'));
+    assert.ok(!sliderFlyout.some(type => ['components_value', 'components_changeValue',
+      'components_setValue', 'components_whenValueChanged'].includes(type)));
+    await page.evaluate(() => {
+      const blockly = window.Blockly || window.ScratchBlocks;
+      const flyout = blockly.getMainWorkspace().getFlyout();
+      const block = flyout.getWorkspace().getTopBlocks(false)
+        .find(item => item.type === 'components_targetProperty');
+      flyout.scrollTo(Math.max(0, block.getRelativeToSurfaceXY().y - 40));
+    });
+    await page.waitForTimeout(300);
     await page.screenshot({path: '/tmp/components-toolbox-slider.png'});
+    await page.evaluate(() => vm.setEditingTarget(progressTarget.id));
+    await page.waitForFunction(() => {
+      const blockly = window.Blockly || window.ScratchBlocks;
+      const main = blockly && blockly.getMainWorkspace();
+      const workspace = main && main.getFlyout().getWorkspace();
+      const block = workspace && workspace.getTopBlocks(false)
+        .find(item => item.type === 'components_targetProperty');
+      return block && block.getField('PROPERTY').getOptions().every(option => option[1] !== 'step');
+    });
+    await page.evaluate(() => vm.setEditingTarget(sliderTarget.id));
+    await page.waitForFunction(() => {
+      const blockly = window.Blockly || window.ScratchBlocks;
+      const block = blockly && blockly.getMainWorkspace().getBlockById('component-menu-regression');
+      return block && block.getFieldValue('PROPERTY') === 'step' && block.getField('PROPERTY').getText() !== 'step';
+    });
+    await page.evaluate(() => {
+      const blockly = window.Blockly || window.ScratchBlocks;
+      const block = blockly.getMainWorkspace().getBlockById('component-menu-regression');
+      block.getInputTargetBlock('TARGET').getField('numericTargets').setValue(progressTarget.getName());
+    });
+    await page.waitForFunction(() => {
+      const blockly = window.Blockly || window.ScratchBlocks;
+      const block = blockly && blockly.getMainWorkspace().getBlockById('component-menu-regression');
+      return sliderTarget.blocks.getBlock('component-menu-regression').fields.PROPERTY.value === 'value' &&
+        block && block.getFieldValue('PROPERTY') === 'value';
+    });
+    await page.evaluate(() => {
+      const blockly = window.Blockly || window.ScratchBlocks;
+      const block = blockly.getMainWorkspace().getBlockById('component-menu-regression');
+      block.getField('PROPERTY').setValue('min');
+      block.getInputTargetBlock('TARGET').getField('numericTargets').setValue('_myself_');
+    });
+    await page.waitForFunction(() => {
+      const stored = sliderTarget.blocks.getBlock('component-menu-regression');
+      return stored.fields.PROPERTY.value === 'min' &&
+        sliderTarget.blocks.getBlock('component-menu-regression-target').fields.numericTargets.value === '_myself_';
+    });
+    console.log('PASS component target/property menu restoration and dependent selection');
     await page.evaluate(() => vm.setEditingTarget(toggleTarget.id));
-    await page.waitForFunction(() => Array.from(document.querySelectorAll('.blocklyFlyout')).some(el =>
-      /when checked state changes|当选中状态改变/.test(el.textContent)));
+    await page.waitForFunction(() => {
+      const blockly = window.Blockly || window.ScratchBlocks;
+      const main = blockly && blockly.getMainWorkspace();
+      const workspace = main && main.getFlyout().getWorkspace();
+      return workspace && workspace.getTopBlocks(false).some(block => block.type === 'components_whenStateChanged');
+    });
+    const toggleFlyout = await page.evaluate(flyoutBlockTypes);
+    assert.ok(toggleFlyout.includes('components_whenStateChanged'));
+    assert.ok(toggleFlyout.includes('components_targetIsChecked'));
+    assert.ok(!toggleFlyout.some(type => ['components_isChecked', 'components_setChecked'].includes(type)));
     await page.screenshot({path: '/tmp/components-toolbox-toggle.png'});
     console.log('PASS type-filtered toolbox, dropdown shadows, separators and checked event label');
     stage = await readStage();
@@ -449,14 +570,13 @@ const assert = require('assert/strict');
           shadow,
           topLevel: !parent
         });
+        const input = name => ({name, block: id(name), shadow: id(name)});
         block('hat', 'event_whenflagclicked', null, 'set');
-        block('set', 'components_setValue', 'hat', 'record', {
-          VALUE: {
-            name: 'VALUE',
-            block: id('number'),
-            shadow: id('number')
-          }
-        });
+        block('set', 'components_setTargetProperty', 'hat', 'record',
+          {TARGET: input('setTarget'), VALUE: input('number')},
+          {PROPERTY: {name: 'PROPERTY', value: 'value'}});
+        block('setTarget', 'components_menu_numericTargets', 'set', null, {},
+          {numericTargets: {name: 'numericTargets', value: '_myself_'}}, true);
         block('number', 'math_number', 'set', null, {}, {
           NUM: {
             name: 'NUM',
@@ -475,7 +595,10 @@ const assert = require('assert/strict');
             value: 'component test'
           }
         });
-        block('report', 'components_value', 'record', null);
+        block('report', 'components_targetProperty', 'record', null, {TARGET: input('reportTarget')},
+          {PROPERTY: {name: 'PROPERTY', value: 'value'}});
+        block('reportTarget', 'components_menu_numericTargets', 'report', null, {},
+          {numericTargets: {name: 'numericTargets', value: '_myself_'}}, true);
         const threads = vm.runtime.startHats('event_whenflagclicked', null, t);
         for (let i = 0; i < 4; i++) vm.runtime._step();
         return {
@@ -485,7 +608,7 @@ const assert = require('assert/strict');
       }, enabled);
       assert.equal(Number(execution.value), enabled ? 73 : 62);
       assert.equal(Boolean(execution.compiled), enabled);
-      console.log('PASS component setter and reporter', enabled ? 'compiled' : 'interpreted');
+      console.log('PASS unified component setter and reporter', enabled ? 'compiled' : 'interpreted');
     }
     for (const enabled of [false, true]) {
       const execution = await page.evaluate(enabled => {

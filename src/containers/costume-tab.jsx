@@ -323,13 +323,14 @@ class CostumeTab extends React.Component {
                 onItemClick={this.handleSelectCostume}
             >
                 <div className={componentStyles.editor}>
-                    <ComponentGeometry />
-                    {target.costumes ?
-                        <PaintEditorWrapper
-                            selectedCostumeIndex={this.state.selectedCostumeIndex}
-                        /> :
-                        null
-                    }
+                    <ComponentGeometry>
+                        {target.costumes ?
+                            <PaintEditorWrapper
+                                selectedCostumeIndex={this.state.selectedCostumeIndex}
+                            /> :
+                            null
+                        }
+                    </ComponentGeometry>
                 </div>
             </AssetPanel>
         );

@@ -236,11 +236,47 @@ const assert = require('assert/strict');
     await page.screenshot({
       path: '/tmp/components-costume-before.png'
     });
-    await page.locator('summary').filter({
-      hasText: /轨道导轨|Track guides/
+    const paintToolbar = page.locator('[data-control-point-editor]');
+    const paintToolbarBefore = await paintToolbar.boundingBox();
+    const editControlPoints = await paintToolbar.getByRole('button', {
+      name: /编辑控制点|Edit control points/
+    }).boundingBox();
+    const strokeWidth = await paintToolbar.locator('input[type="number"]').boundingBox();
+    const paintCanvas = page.locator('canvas[id^="paper-view"]');
+    const paintCanvasBefore = await paintCanvas.boundingBox();
+    await page.getByRole('button', {
+      name: /编辑控制点|Edit control points/
     }).click();
-    const handle = page.locator('circle[data-endpoint=end]');
-    await handle.focus();
+    assert.equal(await paintToolbar.getAttribute('data-control-point-editor'), 'active');
+    const hiddenNativeRows = await paintToolbar.locator('[inert]').evaluateAll(rows =>
+      rows.map(row => ({opacity: getComputedStyle(row).opacity, hidden: row.getAttribute('aria-hidden')})));
+    assert.equal(hiddenNativeRows.length, 2);
+    assert.ok(hiddenNativeRows.every(row => row.opacity === '0' && row.hidden === 'true'),
+      'native toolbar rows cannot paint over or receive focus in control point mode');
+    const paintToolbarActive = await paintToolbar.boundingBox();
+    assert.ok(Math.abs(paintToolbarActive.height - paintToolbarBefore.height) < 2,
+      'control point tools keep the original paint toolbar height');
+    assert.ok(Math.abs(paintToolbarActive.width - paintToolbarBefore.width) < 2,
+      'control point tools keep the original paint toolbar width');
+    const exitControlPoints = await paintToolbar.getByRole('button', {
+      name: /退出控制点|Exit control points/
+    }).boundingBox();
+    for (const dimension of ['x', 'y', 'width', 'height']) {
+      assert.ok(Math.abs(exitControlPoints[dimension] - editControlPoints[dimension]) < 0.5,
+        `edit and exit control point buttons keep the same absolute ${dimension}`);
+    }
+    for (const coordinate of await paintToolbar.locator('input[data-axis]').all()) {
+      const box = await coordinate.boundingBox();
+      assert.ok(Math.abs(box.y - strokeWidth.y) < 0.5,
+        'coordinate inputs keep the original stroke width input absolute y');
+    }
+    const paintCanvasActive = await paintCanvas.boundingBox();
+    for (const dimension of ['x', 'y', 'width', 'height']) {
+      assert.ok(Math.abs(paintCanvasActive[dimension] - paintCanvasBefore[dimension]) < 2,
+        `control point mode keeps the paint canvas ${dimension}`);
+    }
+    const endPointButton = page.getByRole('button', {name: /^(End|终点)$/});
+    await endPointButton.focus();
     await page.keyboard.press('ArrowRight');
     assert.equal(await page.evaluate(() => sliderTarget.component.metadata.sliderTrack.end[0]), 85);
     await page.getByRole('button', {
@@ -251,16 +287,54 @@ const assert = require('assert/strict');
       name: /重做导轨修改|Redo guide change/
     }).click();
     assert.equal(await page.evaluate(() => sliderTarget.component.metadata.sliderTrack.end[0]), 85);
-    const endpointBox = await handle.boundingBox();
-    await page.mouse.move(endpointBox.x + endpointBox.width / 2, endpointBox.y + endpointBox.height / 2);
+    const guideState = async () => page.evaluate(() => {
+      const layer = paper.project.layers.find(candidate => candidate.data.isControlPointGuideLayer);
+      const endpoints = Object.fromEntries(layer.children
+        .filter(item => item.data.controlPointGuideEndpoint)
+        .map(item => {
+          const viewPoint = paper.view.projectToView(item.position);
+          const bounds = paper.view.element.getBoundingClientRect();
+          return [item.data.controlPointGuideEndpoint, {
+            project: [item.position.x, item.position.y],
+            screen: [bounds.x + viewPoint.x, bounds.y + viewPoint.y]
+          }];
+        }));
+      return {endpoints, zoom: paper.view.zoom};
+    });
+    const beforeZoom = await guideState();
+    assert.deepEqual(beforeZoom.endpoints.end.project, [650, 360]);
+    assert.equal(await page.locator('circle[data-endpoint]').count(), 0,
+      'control points are not a DOM overlay');
+    assert.equal(await page.locator('[data-control-point-editor="active"]').count(), 1,
+      'control point tools occupy the native paint toolbar');
+    assert.ok(await page.locator('fieldset[class*="mode-selector"]').evaluate(element => element.disabled),
+      'paint tools are disabled in control-point mode');
+    await page.getByRole('img', {name: 'Zoom In'}).click();
+    const afterZoom = await guideState();
+    assert.ok(afterZoom.zoom > beforeZoom.zoom, 'paint canvas zoom changes');
+    assert.deepEqual(afterZoom.endpoints.end.project, beforeZoom.endpoints.end.project,
+      'guide remains at the same Paper project coordinate after zoom');
+    assert.notDeepEqual(afterZoom.endpoints.end.screen, beforeZoom.endpoints.end.screen,
+      'guide follows the Paper view transform after zoom');
+    await page.screenshot({path: '/tmp/components-geometry-zoomed.png'});
+    await page.getByRole('img', {name: 'Zoom Reset'}).click();
+    const endpoint = (await guideState()).endpoints.end.screen;
+    await page.mouse.move(endpoint[0], endpoint[1]);
     await page.mouse.down();
-    await page.mouse.move(endpointBox.x + endpointBox.width / 2 + 20, endpointBox.y + endpointBox.height / 2);
+    await page.mouse.move(endpoint[0] + 20, endpoint[1]);
     await page.mouse.up();
     assert.ok(await page.evaluate(() => sliderTarget.component.metadata.sliderTrack.end[0] > 85));
     await page.getByRole('button', {
       name: /撤销导轨修改|Undo guide change/
     }).click();
     assert.equal(await page.evaluate(() => sliderTarget.component.metadata.sliderTrack.end[0]), 85);
+    await page.getByRole('button', {
+      name: /退出控制点|Exit control points/
+    }).click();
+    assert.equal(await paintToolbar.getAttribute('data-control-point-editor'), 'inactive');
+    assert.ok(await page.getByRole('button', {
+      name: /编辑控制点|Edit control points/
+    }).isVisible(), 'exit restores the original paint toolbar');
     await page.screenshot({
       path: '/tmp/components-geometry.png'
     });

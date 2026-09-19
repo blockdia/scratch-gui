@@ -497,6 +497,7 @@ class Blocks extends React.Component {
         }
 
         // Remove and reattach the workspace listener (but allow flyout events)
+        const targetId = this.props.vm.editingTarget && this.props.vm.editingTarget.id;
         this.workspace.removeChangeListener(this.props.vm.blockListener);
         const dom = this.ScratchBlocks.Xml.textToDom(data.xml);
         try {
@@ -515,6 +516,27 @@ class Blocks extends React.Component {
                 error.message = `Workspace Update Error: ${error.message}`;
             }
             log.error(error);
+        }
+        // Boolean checkbox shadows are synthesized by scratch-blocks while the
+        // VM listener above is detached. Hydrate only those missing defaults
+        // into the current target without making a user-visible project edit.
+        if (targetId && typeof this.props.vm.hydrateBooleanShadows === 'function') {
+            const booleanShadowRecords = this.workspace.getAllBlocks(false)
+                .filter(block => block.type === 'operator_boolean' && block.isShadow() &&
+                    block.getFieldValue('VALUE') === 'FALSE' && block.getParent())
+                .map(block => {
+                    const parent = block.getParent();
+                    const input = parent.inputList.find(candidate =>
+                        candidate.connection && candidate.connection.targetBlock() === block
+                    );
+                    return input ? {
+                        parentId: parent.id,
+                        inputName: input.name,
+                        shadowId: block.id
+                    } : null;
+                })
+                .filter(record => record);
+            this.props.vm.hydrateBooleanShadows(targetId, booleanShadowRecords);
         }
         this.workspace.addChangeListener(this.props.vm.blockListener);
 

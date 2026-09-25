@@ -82,6 +82,10 @@
     min-width: 0;
 }
 
+.empty-name {
+    font-style: italic;
+}
+
 .sprite-details {
     margin-top: 0.125rem;
     font-size: 0.5rem;

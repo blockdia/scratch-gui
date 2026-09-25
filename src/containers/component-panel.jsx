@@ -131,6 +131,7 @@ class ComponentPanel extends React.Component {
                         </div>
                         {this.state.error && <div role="alert">{intl.formatMessage(messages[this.state.error])}</div>}
                     </div>}
+                    className={styles.popover}
                     isOpen={this.state.open}
                     preferPlace="above"
                     onOuterAction={this.handleClose}

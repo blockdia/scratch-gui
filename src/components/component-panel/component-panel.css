@@ -1,4 +1,5 @@
 @import "../../css/colors.css";
+@import "../../css/z-index.css";
 
 .panel {
     flex: 0 0 auto;
@@ -32,6 +33,10 @@
     outline: none;
     border-color: $motion-primary;
     background: $ui-tertiary;
+}
+/* Match paint popovers and override addons which lower the generic .Popover layer. */
+body .popover {
+    z-index: $z-index-popover;
 }
 .popup {
     display: flex;

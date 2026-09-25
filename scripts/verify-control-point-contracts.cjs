@@ -38,11 +38,31 @@ geometry.setState = (update, callback) => pending.push(() => {
   Object.assign(geometry.state, typeof update === 'function' ? update(geometry.state) : update);
   if (callback) callback();
 });
-geometry.state.draft = {sliderTrack: {start: [-10, 0], end: [84, 0]}};
+geometry.state.coordinateInput = {endpoint: 'start', axis: 'x', value: '-10'};
 geometry.handleCoordinateKeyDown({key: 'Escape', currentTarget: {blur: geometry.handleCoordinateCommit}});
 while (pending.length) pending.shift()();
 assert.equal(commits, 0, 'Escape must discard the draft before blur can commit');
 assert.equal(geometry.state.draft, null);
+
+let lastMetadata;
+geometry.props.vm.setComponentMetadata = (targetId, metadata) => { commits++; lastMetadata = metadata; };
+for (const value of ['', '-1', '-12']) {
+  geometry.handleCoordinateChange({target: {value, dataset: {endpoint: 'start', axis: 'x'}}});
+  while (pending.length) pending.shift()();
+  assert.equal(geometry.state.coordinateInput.value, value);
+  assert.equal(commits, 0, 'typing does not commit partial coordinates');
+}
+geometry.handleCoordinateCommit();
+while (pending.length) pending.shift()();
+assert.equal(lastMetadata.sliderTrack.start[0], -12);
+assert.equal(commits, 1);
+for (const value of ['', 'NaN']) {
+  geometry.handleCoordinateChange({target: {value, dataset: {endpoint: 'end', axis: 'y'}}});
+  while (pending.length) pending.shift()();
+  geometry.handleCoordinateCommit();
+  while (pending.length) pending.shift()();
+}
+assert.equal(commits, 1, 'incomplete coordinates are discarded, not converted to zero');
 
 const KeyboardHOC = load(path.resolve(__dirname, '../../scratch-paint/src/hocs/keyboard-shortcuts-hoc.jsx'), {
   'react-redux': reactRedux,

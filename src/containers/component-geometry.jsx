@@ -22,21 +22,21 @@ class ComponentGeometry extends React.Component {
             undo: [],
             redo: [],
             draft: null,
+            coordinateInput: null,
             selected: 'start',
             snap: false,
             expanded: false
         };
         this.drag = null;
-        this.coordinatePrevious = null;
     }
     componentDidUpdate (previous) {
         if (previous.targetId !== this.props.targetId) {
             this.drag = null;
-            this.coordinatePrevious = null;
             this.setState({ // eslint-disable-line react/no-did-update-set-state
                 undo: [],
                 redo: [],
                 draft: null,
+                coordinateInput: null,
                 selected: 'start',
                 expanded: false
             });
@@ -45,9 +45,11 @@ class ComponentGeometry extends React.Component {
     apply (metadata, previous) {
         try {
             this.props.vm.setComponentMetadata(this.props.targetId, metadata);
-            this.setState(state => ({undo: [...state.undo, copy(previous)], redo: [], draft: null}));
+            this.setState(state => ({
+                undo: [...state.undo, copy(previous)], redo: [], draft: null, coordinateInput: null
+            }));
         } catch (error) {
-            this.setState({draft: null});
+            this.setState({draft: null, coordinateInput: null});
         }
     }
     handleGuideStart (name) {
@@ -68,7 +70,7 @@ class ComponentGeometry extends React.Component {
     }
     handleGuideCancel () {
         this.drag = null;
-        this.setState({draft: null});
+        this.setState({draft: null, coordinateInput: null});
     }
     handleGuideSelect (name) {
         this.setState({selected: name});
@@ -101,34 +103,35 @@ class ComponentGeometry extends React.Component {
     handleToggleGuides (event) {
         if (event) event.preventDefault();
         this.drag = null;
-        this.coordinatePrevious = null;
         this.setState(state => ({
             expanded: !state.expanded,
+            coordinateInput: null,
             draft: state.expanded ? null : state.draft
         }));
     }
     handleCoordinateChange (event) {
-        const value = Number(event.target.value);
-        if (!Number.isFinite(value)) return;
-        if (!this.coordinatePrevious) this.coordinatePrevious = copy(this.props.config.metadata);
-        const draft = copy(this.state.draft || this.props.config.metadata);
-        const index = event.target.dataset.axis === 'x' ? 0 : 1;
-        const endpoint = event.target.dataset.endpoint;
-        draft.sliderTrack[endpoint][index] = value;
-        this.setState({draft, selected: endpoint});
+        const {axis, endpoint} = event.target.dataset;
+        const value = event.target.value;
+        this.setState({coordinateInput: {axis, endpoint, value}, selected: endpoint});
     }
     handleCoordinateCommit () {
-        if (!this.state.draft) return;
-        const previous = this.coordinatePrevious || this.props.config.metadata;
-        this.coordinatePrevious = null;
-        this.apply(this.state.draft, previous);
+        const input = this.state.coordinateInput;
+        if (!input) return;
+        const value = Number(input.value);
+        if (!input.value.trim() || !Number.isFinite(value)) {
+            this.setState({coordinateInput: null});
+            return;
+        }
+        const previous = this.props.config.metadata;
+        const metadata = copy(previous);
+        metadata.sliderTrack[input.endpoint][input.axis === 'x' ? 0 : 1] = value;
+        this.apply(metadata, previous);
     }
     handleCoordinateKeyDown (event) {
         if (event.key === 'Enter') event.currentTarget.blur();
         if (event.key === 'Escape') {
-            this.coordinatePrevious = null;
             const input = event.currentTarget;
-            this.setState({draft: null}, () => input.blur());
+            this.setState({draft: null, coordinateInput: null}, () => input.blur());
         }
     }
     handleUndo () {
@@ -144,6 +147,9 @@ class ComponentGeometry extends React.Component {
         if (!target || !target.componentController) return children;
         const metadata = this.state.draft || config.metadata;
         const selectedPoint = metadata.sliderTrack[this.state.selected];
+        const coordinateValues = copy(metadata.sliderTrack);
+        const input = this.state.coordinateInput;
+        if (input) coordinateValues[input.endpoint][input.axis === 'x' ? 0 : 1] = input.value;
         const guidesLabel = intl.formatMessage(messages.guides);
         const hint = intl.formatMessage(messages.guideHint);
         const snap = intl.formatMessage(messages.snap);
@@ -163,6 +169,7 @@ class ComponentGeometry extends React.Component {
                 undo: intl.formatMessage(messages.undo)
             },
             points: metadata.sliderTrack,
+            coordinateValues,
             selected: this.state.selected,
             snap: this.state.snap,
             onCoordinateChange: this.handleCoordinateChange,

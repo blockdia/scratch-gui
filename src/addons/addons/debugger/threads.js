@@ -272,5 +272,6 @@ export default async function createThreadsTab({ debug, addon, console, msg }) {
     buttons: [stepButton],
     show,
     hide,
+    resetView: () => logView.resetView(),
   };
 }

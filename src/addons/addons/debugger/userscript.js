@@ -3,7 +3,7 @@ import createLogsTab from "./logs.js";
 import createThreadsTab from "./threads.js";
 import createPerformanceTab from "./performance.js";
 import Utils from "../find-bar/blockly/Utils.js";
-import addSmallStageClass from "../../libraries/common/cs/small-stage.js";
+
 
 const removeAllChildren = (element) => {
   while (element.firstChild) {
@@ -15,6 +15,8 @@ export default async function ({ addon, console, msg }) {
   setup(addon);
 
   let logsTab;
+  let windowHandle;
+  let unread = false;
   const messagesLoggedBeforeLogsTabLoaded = [];
   const logMessage = (...args) => {
     if (logsTab) {
@@ -34,7 +36,7 @@ export default async function ({ addon, console, msg }) {
       return;
     }
     setPaused(true);
-    setInterfaceVisible(true);
+    if (windowHandle) windowHandle.open({ pinned: true });
   };
   addon.tab.addBlock("\u200B\u200Bbreakpoint\u200B\u200B", {
     args: [],
@@ -70,27 +72,13 @@ export default async function ({ addon, console, msg }) {
   });
   const ScratchBlocks = await addon.tab.traps.getBlockly();
 
-  const debuggerButtonOuter = document.createElement("div");
-  debuggerButtonOuter.className = "sa-debugger-container";
-  const debuggerButton = document.createElement("div");
-  debuggerButton.className = addon.tab.scratchClass("button_outlined-button", "stage-header_stage-button");
-  const debuggerButtonContent = document.createElement("div");
-  debuggerButtonContent.className = addon.tab.scratchClass("button_content");
-  const debuggerButtonImage = document.createElement("img");
-  debuggerButtonImage.className = addon.tab.scratchClass("stage-header_stage-button-icon");
-  debuggerButtonImage.draggable = false;
-  debuggerButtonImage.src = addon.self.getResource("/icons/debug.svg") /* rewritten by pull.js */;
-  debuggerButtonContent.appendChild(debuggerButtonImage);
-  debuggerButton.appendChild(debuggerButtonContent);
-  debuggerButtonOuter.appendChild(debuggerButton);
-  debuggerButton.addEventListener("click", () => setInterfaceVisible(true));
-
-  const setHasUnreadMessage = (unreadMessage) => {
-    debuggerButtonContent.classList.toggle("sa-debugger-unread", unreadMessage);
+  const setHasUnreadMessage = (value) => {
+    unread = value;
+    if (windowHandle) windowHandle.setUnread(value);
   };
 
   const interfaceContainer = Object.assign(document.createElement("div"), {
-    className: addon.tab.scratchClass("card_card", { others: "sa-debugger-interface" }),
+    className: "sa-debugger-managed-content",
   });
   const interfaceHeader = Object.assign(document.createElement("div"), {
     className: addon.tab.scratchClass("card_header-buttons"),
@@ -98,6 +86,7 @@ export default async function ({ addon, console, msg }) {
   const tabListElement = Object.assign(document.createElement("ul"), {
     className: "sa-debugger-tabs",
   });
+  tabListElement.setAttribute("role", "tablist");
   const buttonContainerElement = Object.assign(document.createElement("div"), {
     className: addon.tab.scratchClass("card_header-buttons-right", { others: "sa-debugger-header-buttons" }),
   });
@@ -123,7 +112,7 @@ export default async function ({ addon, console, msg }) {
   let isInterfaceVisible = false;
   const setInterfaceVisible = (_isVisible) => {
     isInterfaceVisible = _isVisible;
-    interfaceContainer.style.display = isInterfaceVisible ? "flex" : "";
+
     if (isInterfaceVisible) {
       activeTab.show();
     } else {
@@ -131,58 +120,22 @@ export default async function ({ addon, console, msg }) {
     }
   };
 
-  let mouseOffsetX = 0;
-  let mouseOffsetY = 0;
-  let lastX = 0;
-  let lastY = 0;
-  const handleStartDrag = (e) => {
-    e.preventDefault();
-    mouseOffsetX = e.clientX - interfaceContainer.offsetLeft;
-    mouseOffsetY = e.clientY - interfaceContainer.offsetTop;
-    lastX = e.clientX;
-    lastY = e.clientY;
-    document.addEventListener("mouseup", handleStopDrag);
-    document.addEventListener("mousemove", handleDragInterface);
-  };
-  const handleStopDrag = () => {
-    document.removeEventListener("mouseup", handleStopDrag);
-    document.removeEventListener("mousemove", handleDragInterface);
-  };
-  const moveInterface = (x, y) => {
-    lastX = x;
-    lastY = y;
-    const width = (document.documentElement.clientWidth || document.body.clientWidth) - 1;
-    const height = (document.documentElement.clientHeight || document.body.clientHeight) - 1;
-    const clampedX = Math.max(0, Math.min(x - mouseOffsetX, width - interfaceContainer.offsetWidth));
-    const clampedY = Math.max(0, Math.min(y - mouseOffsetY, height - interfaceContainer.offsetHeight));
-    interfaceContainer.style.left = clampedX + "px";
-    interfaceContainer.style.top = clampedY + "px";
-  };
-  const handleDragInterface = (e) => {
-    e.preventDefault();
-    moveInterface(e.clientX, e.clientY);
-  };
-  window.addEventListener("resize", () => {
-    moveInterface(lastX, lastY);
-  });
-  interfaceHeader.addEventListener("mousedown", handleStartDrag);
-
   interfaceHeader.append(tabListElement, buttonContainerElement);
   interfaceContainer.append(interfaceHeader, compilerWarning, tabContentContainer);
-  document.body.append(interfaceContainer);
 
   const createHeaderButton = ({ text, icon, description }) => {
-    const button = Object.assign(document.createElement("div"), {
+    const button = Object.assign(document.createElement("button"), {
+      type: "button",
       className: addon.tab.scratchClass("card_shrink-expand-button"),
       draggable: false,
     });
     if (description) {
       button.title = description;
     }
-    const imageElement = Object.assign(document.createElement("img"), {
-      src: icon,
-      draggable: false,
-    });
+    const imageElement = document.createElement("span");
+    imageElement.className = "sa-debugger-action-icon";
+    imageElement.style.setProperty("--debugger-icon", `url("${icon}")`);
+    imageElement.setAttribute("aria-hidden", "true");
     const textElement = Object.assign(document.createElement("span"), {
       textContent: text,
     });
@@ -197,10 +150,18 @@ export default async function ({ addon, console, msg }) {
 
   const createHeaderTab = ({ text, icon }) => {
     const tab = document.createElement("li");
-    const imageElement = Object.assign(addon.tab.recolorable(), {
-      src: icon,
-      draggable: false,
+    tab.tabIndex = 0;
+    tab.setAttribute("role", "tab");
+    tab.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        tab.click();
+      }
     });
+    const imageElement = document.createElement("span");
+    imageElement.className = "sa-debugger-action-icon";
+    imageElement.style.setProperty("--debugger-icon", `url("${icon}")`);
+    imageElement.setAttribute("aria-hidden", "true");
     const textElement = Object.assign(document.createElement("span"), {
       textContent: text,
     });
@@ -224,12 +185,6 @@ export default async function ({ addon, console, msg }) {
   };
   updateUnpauseVisibility(isPaused());
   onPauseChanged(updateUnpauseVisibility);
-
-  const closeButton = createHeaderButton({
-    text: msg("close"),
-    icon: addon.self.getResource("/icons/close.svg") /* rewritten by pull.js */,
-  });
-  closeButton.element.addEventListener("click", () => setInterfaceVisible(false));
 
   const originalStep = vm.runtime._step;
   const afterStepCallbacks = [];
@@ -534,8 +489,10 @@ export default async function ({ addon, console, msg }) {
     if (activeTab) {
       activeTab.hide();
       activeTab.tab.element.classList.remove(selectedClass);
+      activeTab.tab.element.setAttribute("aria-selected", "false");
     }
     tab.tab.element.classList.add(selectedClass);
+    tab.tab.element.setAttribute("aria-selected", "true");
     activeTab = tab;
 
     removeAllChildren(tabContentContainer);
@@ -546,7 +503,7 @@ export default async function ({ addon, console, msg }) {
     for (const button of tab.buttons) {
       buttonContainerElement.appendChild(button.element);
     }
-    buttonContainerElement.appendChild(closeButton.element);
+
 
     if (isInterfaceVisible) {
       activeTab.show();
@@ -560,7 +517,21 @@ export default async function ({ addon, console, msg }) {
   }
   setActiveTab(allTabs[0]);
 
-  addSmallStageClass();
+  windowHandle = addon.tab.createWindow({
+    id: "debugger",
+    title: { id: "gui.windows.debugger", defaultMessage: "Debugger" },
+    icon: addon.self.getResource("/icons/debug.svg"),
+    content: interfaceContainer,
+    onShow: () => setInterfaceVisible(true),
+    onHide: () => setInterfaceVisible(false),
+    onReset: () => {
+      setActiveTab(allTabs[0]);
+      for (const tab of allTabs) {
+        if (tab.resetView) tab.resetView();
+      }
+    },
+  });
+  windowHandle.setUnread(unread);
 
   const ogGreenFlag = vm.runtime.greenFlag;
   vm.runtime.greenFlag = function (...args) {
@@ -605,24 +576,5 @@ export default async function ({ addon, console, msg }) {
     return ogStartHats.call(this, hat, optMatchFields, ...args);
   };
 
-  while (true) {
-    await addon.tab.waitForElement(
-      '[class^="stage-header_stage-size-row"], [class^="stage-header_fullscreen-buttons-row_"]',
-      {
-        markAsSeen: true,
-        reduxEvents: [
-          "scratch-gui/mode/SET_PLAYER",
-          "scratch-gui/mode/SET_FULL_SCREEN",
-          "fontsLoaded/SET_FONTS_LOADED",
-          "scratch-gui/locales/SELECT_LOCALE",
-        ],
-      }
-    );
-    if (addon.tab.editorMode === "editor") {
-      addon.tab.appendToSharedSpace({ space: "stageHeader", element: debuggerButtonOuter, order: 0 });
-    } else {
-      debuggerButtonOuter.remove();
-      setInterfaceVisible(false);
-    }
-  }
+
 }

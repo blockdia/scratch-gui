@@ -77,6 +77,13 @@ class LogView {
     }
   }
 
+  resetView() {
+    this.scrollTop = 0;
+    this.isScrolledToEnd = true;
+    this.scrollTopWhenHidden = "end";
+    this.queueUpdateContent();
+  }
+
   clear() {
     this.rows.length = 0;
     this.scrollTop = 0;

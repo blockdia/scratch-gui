@@ -14,6 +14,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+import windowManager from '../lib/editor-windows/manager';
 import IntlMessageFormat from 'intl-messageformat';
 import SettingsStore from './settings-store-singleton';
 import dataURLToBlob from '../lib/data-uri-to-blob';
@@ -661,6 +662,40 @@ class Tab extends EventTargetShim {
         return this.redux.state.locales.isRtl ? 'rtl' : 'ltr';
     }
 
+    createWindow (definition) {
+        const options = {...definition, id: `${this._id}/${definition.id}`};
+        const record = {handle: windowManager.registerWindow(options), options, unread: false};
+        if (!this._windows) this._windows = new Set();
+        this._windows.add(record);
+        const api = {};
+        for (const name of ['open', 'focus', 'hide', 'close', 'setPinned', 'own']) {
+            api[name] = (...args) => (record.handle ? record.handle[name](...args) : null);
+        }
+        api.setUnread = unread => {
+            record.unread = unread;
+            if (record.handle) record.handle.setUnread(unread);
+        };
+        api.unregister = () => {
+            if (record.handle) record.handle.unregister();
+            record.handle = null;
+            this._windows.delete(record);
+        };
+        return api;
+    }
+
+    _setWindowsEnabled (enabled) {
+        if (!this._windows) return;
+        for (const record of this._windows) {
+            if (enabled && !record.handle) {
+                record.handle = windowManager.registerWindow(record.options);
+                record.handle.setUnread(record.unread);
+            } else if (!enabled && record.handle) {
+                record.handle.unregister();
+                record.handle = null;
+            }
+        }
+    }
+
     createModal (title, {isOpen = false} = {}) {
         return modal.createEditorModal(this, title, {isOpen});
     }
@@ -877,6 +912,7 @@ class AddonRunner {
     }
 
     settingsChanged () {
+        this.publicAPI.addon.tab._setWindowsEnabled(SettingsStore.getAddonEnabled(this.id));
         this.updateAllStyles();
         this.publicAPI.addon.settings.dispatchEvent(new CustomEvent('change'));
     }
@@ -890,6 +926,7 @@ class AddonRunner {
         // toggle event. We also need to update `disabled` before we can update styles because
         // the ConditionalStyle callbacks are implemented using the API.
         this.publicAPI.addon.self.disabled = false;
+        this.publicAPI.addon.tab._setWindowsEnabled(true);
         this.updateAllStyles();
         this.publicAPI.addon.self.dispatchEvent(new CustomEvent('reenabled'));
     }
@@ -901,6 +938,7 @@ class AddonRunner {
 
         // See comment in dynamicEnable().
         this.publicAPI.addon.self.disabled = true;
+        this.publicAPI.addon.tab._setWindowsEnabled(false);
         this.updateAllStyles();
         this.publicAPI.addon.self.dispatchEvent(new CustomEvent('disabled'));
     }
@@ -955,6 +993,7 @@ class AddonRunner {
         }
 
         this.loading = false;
+        this.publicAPI.addon.tab._setWindowsEnabled(SettingsStore.getAddonEnabled(this.id));
     }
 }
 AddonRunner.instances = [];

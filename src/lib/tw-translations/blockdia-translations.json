@@ -50,7 +50,14 @@
         "gui.components.part_body": "主体",
         "gui.components.part_off": "关闭造型",
         "gui.components.part_on": "开启造型",
-        "gui.components.invalidCostume": "请选择可用的造型。"
+        "gui.components.invalidCostume": "请选择可用的造型。",
+        "gui.windows.pin": "固定窗口",
+        "gui.windows.unpin": "取消固定",
+        "gui.windows.hide": "隐藏",
+        "gui.windows.close": "关闭",
+        "gui.windows.more": "更多工具",
+        "gui.windows.tools": "编辑器工具",
+        "gui.windows.debugger": "调试器"
     },
     "zh-tw": {
         "blockdia.backpack.pin": "固定到積木欄",
@@ -103,6 +110,13 @@
         "gui.components.part_body": "主體",
         "gui.components.part_off": "關閉造型",
         "gui.components.part_on": "開啟造型",
-        "gui.components.invalidCostume": "請選擇可用的造型。"
+        "gui.components.invalidCostume": "請選擇可用的造型。",
+        "gui.windows.pin": "固定視窗",
+        "gui.windows.unpin": "取消固定",
+        "gui.windows.hide": "隱藏",
+        "gui.windows.close": "關閉",
+        "gui.windows.more": "更多工具",
+        "gui.windows.tools": "編輯器工具",
+        "gui.windows.debugger": "偵錯工具"
     }
 }

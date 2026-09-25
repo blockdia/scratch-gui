@@ -185,6 +185,7 @@ export default async function createLogsTab({ debug, addon, console, msg }) {
     buttons: [exportButton, trashButton],
     show,
     hide,
+    resetView: () => logView.resetView(),
     addLog,
     clearLogs,
   };

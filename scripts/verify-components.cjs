@@ -1,4 +1,4 @@
-// Run against a local editor using BLOCKDIA_LOCAL_COMPONENTS=1.
+// Run against the editor with its installed npm dependencies.
 // Requires Playwright; optional runtime and Chrome paths are configured via environment variables.
 const {
   chromium

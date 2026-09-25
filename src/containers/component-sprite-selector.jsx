@@ -45,7 +45,7 @@ class ComponentSpriteSelector extends React.Component {
                 {this.state.error && <div role="alert">{intl.formatMessage(messages.failed)}</div>}
                 <SpriteSelector
                     {...props}
-                    onNewComponentClick={vm.addComponent ? this.handleOpen : null}
+                    onNewComponentClick={this.handleOpen}
                 />
                 {this.state.open && <Library
                     data={Object.keys(icons).map(type => ({

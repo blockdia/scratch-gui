@@ -66,11 +66,11 @@ Then go to [http://localhost:8601/](http://localhost:8601/) - the playground out
 
 ## Components development
 
-The built-in Slider, Button, Toggle, and Progress Bar implementation spans this repository and the sibling
-`scratch-vm` and `scratch-render` repositories. To run their current sources together:
+The built-in Slider, Button, Toggle, and Progress Bar use the published Blockdia VM, renderer, and paint packages.
+Install dependencies with `npm ci`, then start the editor:
 
 ```bash
-BLOCKDIA_LOCAL_COMPONENTS=1 PORT=8603 npm start
+PORT=8603 npm start
 ```
 
 Open [the local editor](http://localhost:8603/editor.html), expand **Choose a Sprite**, then select
@@ -95,8 +95,8 @@ fire change events on the destination target. Selected menu targets follow sprit
 Palette filtering preserves all opcode definitions and existing scripts. Numeric and checked-state operations
 are separated, and change-value blocks precede set-value blocks.
 
-`BLOCKDIA_LOCAL_COMPONENTS=1` also applies to builds. Without it, the existing installed packages are used;
-the component creation menu requires a VM with `addComponent`. Published package releases are a separate step.
+The editor uses the published Blockdia VM, renderer, and paint packages from `package-lock.json`.
+No sibling repositories or local-source flags are required.
 
 Run the browser checks with a current Playwright installation:
 

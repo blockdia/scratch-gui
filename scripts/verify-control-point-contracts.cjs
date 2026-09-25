@@ -64,7 +64,7 @@ for (const value of ['', 'NaN']) {
 }
 assert.equal(commits, 1, 'incomplete coordinates are discarded, not converted to zero');
 
-const KeyboardHOC = load(path.resolve(__dirname, '../../scratch-paint/src/hocs/keyboard-shortcuts-hoc.jsx'), {
+const KeyboardHOC = load(require.resolve('scratch-paint/src/hocs/keyboard-shortcuts-hoc.jsx'), {
   'react-redux': reactRedux,
   './copy-paste-hoc.jsx': identity,
   '../helper/bitmap': {}, '../helper/selection': {}, '../helper/group': {},

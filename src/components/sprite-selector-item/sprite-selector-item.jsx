@@ -43,7 +43,17 @@ const SpriteSelectorItem = props => (
             </div>
         ) : null}
         <div className={styles.spriteInfo}>
-            <div className={styles.spriteName}>{props.name}</div>
+            <div className={styles.spriteName}>
+                {props.name === '' ? (
+                    <span className={styles.emptyName}>
+                        <FormattedMessage
+                            defaultMessage="empty name"
+                            description="Placeholder shown when an item has an empty name"
+                            id="blockdia.spriteSelectorItem.emptyName"
+                        />
+                    </span>
+                ) : props.name}
+            </div>
             {props.details ? (
                 <div className={styles.spriteDetails}>{props.details}</div>
             ) : null}

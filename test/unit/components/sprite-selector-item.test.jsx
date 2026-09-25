@@ -1,7 +1,9 @@
 import React from 'react';
+import {FormattedMessage} from 'react-intl';
 import {mountWithIntl, shallowWithIntl, componentWithIntl} from '../../helpers/intl-helpers.jsx';
 import SpriteSelectorItemComponent from '../../../src/components/sprite-selector-item/sprite-selector-item';
 import DeleteButton from '../../../src/components/delete-button/delete-button';
+import blockdiaTranslations from '../../../src/lib/tw-translations/blockdia-translations.json';
 
 describe('SpriteSelectorItemComponent', () => {
     let className;
@@ -51,6 +53,28 @@ describe('SpriteSelectorItemComponent', () => {
         details = '480 x 360';
         const component = componentWithIntl(getComponent());
         expect(component.toJSON()).toMatchSnapshot();
+    });
+
+    test('shows an italic localized placeholder for an empty name', () => {
+        name = '';
+        const wrapper = shallowWithIntl(getComponent());
+        const placeholderMessage = wrapper.find(FormattedMessage).filterWhere(element =>
+            element.prop('id') === 'blockdia.spriteSelectorItem.emptyName'
+        );
+
+        expect(placeholderMessage).toHaveLength(1);
+        expect(placeholderMessage.parent().is('span')).toBe(true);
+        expect(blockdiaTranslations['zh-cn']['blockdia.spriteSelectorItem.emptyName']).toBe('空名称');
+    });
+
+    test('shows a non-empty name without the empty-name placeholder', () => {
+        const wrapper = shallowWithIntl(getComponent());
+        const placeholderMessage = wrapper.find(FormattedMessage).filterWhere(element =>
+            element.prop('id') === 'blockdia.spriteSelectorItem.emptyName'
+        );
+
+        expect(placeholderMessage).toHaveLength(0);
+        expect(wrapper.contains('Pony sprite')).toBe(true);
     });
 
     test('does not have a close box when not selected', () => {

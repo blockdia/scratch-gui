@@ -160,15 +160,60 @@ class SpriteInfo extends React.Component {
 
         if (stageSize === STAGE_DISPLAY_SIZES.small) {
             return (
-                <Box className={styles.spriteInfo}>
+                <Box className={classNames(styles.spriteInfo, styles.small)}>
                     <div className={classNames(styles.row, styles.rowPrimary)}>
                         <div className={styles.group}>
                             {spriteNameInput}
                         </div>
-                    </div>
-                    <div className={classNames(styles.row, styles.rowSecondary)}>
                         {xPosition}
                         {yPosition}
+                    </div>
+                    <div className={classNames(styles.row, styles.rowSecondary)}>
+                        <div className={styles.group}>
+                            <ToggleButtons
+                                buttons={[
+                                    {
+                                        handleClick: this.props.onClickVisible,
+                                        icon: showIcon,
+                                        isSelected: this.props.visible && !this.props.disabled,
+                                        title: this.props.intl.formatMessage(messages.showSpriteAction)
+                                    },
+                                    {
+                                        handleClick: this.props.onClickNotVisible,
+                                        icon: hideIcon,
+                                        isSelected: !this.props.visible && !this.props.disabled,
+                                        title: this.props.intl.formatMessage(messages.hideSpriteAction)
+                                    }
+                                ]}
+                                disabled={this.props.disabled}
+                            />
+                        </div>
+                        <div className={classNames(styles.group, styles.largerInput)}>
+                            <Label
+                                secondary
+                                text={sizeLabel}
+                            >
+                                <BufferedInput
+                                    small
+                                    disabled={this.props.disabled}
+                                    label={sizeLabel}
+                                    tabIndex="0"
+                                    type="number"
+                                    value={this.props.disabled ? '' : Math.round(this.props.size)}
+                                    onSubmit={this.props.onChangeSize}
+                                />
+                            </Label>
+                        </div>
+                        <div className={classNames(styles.group, styles.largerInput)}>
+                            <DirectionPicker
+                                direction={Math.round(this.props.direction)}
+                                disabled={this.props.disabled}
+                                labelAbove={false}
+                                rotationStyle={this.props.rotationStyle}
+                                onChangeDirection={this.props.onChangeDirection}
+                                onChangeRotationStyle={this.props.onChangeRotationStyle}
+                            />
+                        </div>
                     </div>
                 </Box>
             );

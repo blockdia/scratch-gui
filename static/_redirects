@@ -1,5 +1,3 @@
-/editor /editor.html 200
-/:projectId/editor /editor.html 200
-/:projectId/fullscreen /fullscreen.html 200
-/:projectId/embed /embed.html 200
-/:projectId /index.html 200
+/:projectId/editor /editor 200
+/:projectId/fullscreen /fullscreen 200
+/:projectId/embed /embed 200

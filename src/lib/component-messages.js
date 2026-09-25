@@ -1,6 +1,17 @@
 import {defineMessages} from 'react-intl';
 
 export default defineMessages({
+    costumes: {id: 'gui.components.costumes',
+        defaultMessage: 'Part costumes',
+        description: 'Component costume bindings'},
+    part_track: {id: 'gui.components.part_track', defaultMessage: 'Track', description: 'Track part costume'},
+    part_fill: {id: 'gui.components.part_fill', defaultMessage: 'Fill', description: 'Fill part costume'},
+    part_thumb: {id: 'gui.components.part_thumb', defaultMessage: 'Thumb', description: 'Thumb part costume'},
+    part_body: {id: 'gui.components.part_body', defaultMessage: 'Body', description: 'Body part costume'},
+    part_mark: {id: 'gui.components.part_mark', defaultMessage: 'Checked state', description: 'Checked part costume'},
+    invalidCostume: {id: 'gui.components.invalidCostume',
+        defaultMessage: 'Choose an available costume.',
+        description: 'Invalid component costume binding'},
     settings: {id: 'gui.components.settings', defaultMessage: 'Settings', description: 'Component settings popover'},
     add: {id: 'gui.components.add', defaultMessage: 'Choose a Component', description: 'Create a component sprite'},
     slider: {id: 'gui.components.slider', defaultMessage: 'Slider', description: 'Slider component'},

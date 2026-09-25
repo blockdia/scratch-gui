@@ -42,7 +42,14 @@
         "components.changeTargetProperty": "将 [TARGET] 的 [PROPERTY] 增加 [VALUE]",
         "components.setTargetProperty": "将 [TARGET] 的 [PROPERTY] 设为 [VALUE]",
         "components.targetIsChecked": "[TARGET] 已选中？",
-        "components.setTargetChecked": "将 [TARGET] 的选中状态设为 [CHECKED]"
+        "components.setTargetChecked": "将 [TARGET] 的选中状态设为 [CHECKED]",
+        "gui.components.costumes": "部件造型",
+        "gui.components.part_track": "轨道",
+        "gui.components.part_fill": "填充",
+        "gui.components.part_thumb": "滑块",
+        "gui.components.part_body": "主体",
+        "gui.components.part_mark": "选中状态",
+        "gui.components.invalidCostume": "请选择可用的造型。"
     },
     "zh-tw": {
         "blockdia.backpack.pin": "固定到積木欄",
@@ -87,6 +94,13 @@
         "components.changeTargetProperty": "將 [TARGET] 的 [PROPERTY] 增加 [VALUE]",
         "components.setTargetProperty": "將 [TARGET] 的 [PROPERTY] 設為 [VALUE]",
         "components.targetIsChecked": "[TARGET] 已選取？",
-        "components.setTargetChecked": "將 [TARGET] 的選取狀態設為 [CHECKED]"
+        "components.setTargetChecked": "將 [TARGET] 的選取狀態設為 [CHECKED]",
+        "gui.components.costumes": "部件造型",
+        "gui.components.part_track": "軌道",
+        "gui.components.part_fill": "填充",
+        "gui.components.part_thumb": "滑塊",
+        "gui.components.part_body": "主體",
+        "gui.components.part_mark": "選中狀態",
+        "gui.components.invalidCostume": "請選擇可用的造型。"
     }
 }

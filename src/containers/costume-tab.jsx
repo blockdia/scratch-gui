@@ -270,10 +270,10 @@ class CostumeTab extends React.Component {
         const addLibraryFunc = isStage ? onNewLibraryBackdropClick : onNewLibraryCostumeClick;
         const addLibraryIcon = isStage ? addLibraryBackdropIcon : addLibraryCostumeIcon;
 
-        const costumeData = target.costumes ? target.costumes.map((costume, index) => ({
+        const costumeData = target.costumes ? target.costumes.map(costume => ({
             name: costume.name,
             deletable: !target.clones.some(clone => clone.componentController &&
-                clone.component.parts.some(part => part.costumeIndex === index)),
+                clone.component.parts.some(part => part.costume === costume.name)),
             asset: costume.asset,
             details: costume.size ? this.formatCostumeDetails(costume.size, costume.bitmapResolution) : null,
             dragPayload: costume

@@ -7,6 +7,7 @@ import Popover from 'react-popover';
 import {isRtl} from '@turbowarp/scratch-l10n';
 import VM from 'scratch-vm';
 import ComponentProperty from '../components/component-panel/component-property.jsx';
+import Label from '../components/forms/label.jsx';
 import Button from '../components/button/button.jsx';
 import messages from '../lib/component-messages';
 import {STAGE_DISPLAY_SIZES} from '../lib/layout-constants';
@@ -15,7 +16,8 @@ import styles from '../components/component-panel/component-panel.css';
 class ComponentPanel extends React.Component {
     constructor (props) {
         super(props);
-        bindAll(this, ['handleChange', 'handleToggle', 'handleClose', 'handleKeyDown', 'handleButtonKeyDown']);
+        bindAll(this, ['handleChange', 'handleCostumeChange', 'handleToggle', 'handleClose',
+            'handleKeyDown', 'handleButtonKeyDown']);
         this.state = {open: false, error: null};
     }
     static getDerivedStateFromProps (props, state) {
@@ -52,6 +54,14 @@ class ComponentPanel extends React.Component {
             this.setState({error: 'invalid'});
         }
     }
+    handleCostumeChange (event) {
+        try {
+            this.props.vm.setComponentCostume(this.props.target.id, event.target.name, event.target.value);
+            this.setState({error: null});
+        } catch (error) {
+            this.setState({error: 'invalidCostume'});
+        }
+    }
     renderProperty ([key, value]) {
         return (
             <ComponentProperty
@@ -71,6 +81,8 @@ class ComponentPanel extends React.Component {
         const entries = Object.entries(config.properties);
         const common = entries.filter(([key]) => key === 'value' || key === 'checked');
         const advanced = entries.filter(([key]) => key !== 'value' && key !== 'checked');
+        const vmTarget = this.props.vm.runtime.getTargetById(target.id);
+        const costumes = vmTarget ? vmTarget.getCostumes() : [];
         const settings = intl.formatMessage(messages.settings);
         return (
             <section
@@ -89,6 +101,34 @@ class ComponentPanel extends React.Component {
                     >
                         <div className={styles.heading}>{settings}</div>
                         {advanced.map(entry => this.renderProperty(entry))}
+                        <div className={styles.costumeBindings}>
+                            <div className={styles.heading}>{intl.formatMessage(messages.costumes)}</div>
+                            {config.parts.map(part => (
+                                <Label
+                                    key={part.name}
+                                    text={intl.formatMessage(messages[`part_${part.name}`])}
+                                >
+                                    <span className={styles.costumeSelectWrapper}>
+                                        <select
+                                            aria-label={intl.formatMessage(messages[`part_${part.name}`])}
+                                            className={styles.costumeSelect}
+                                            name={part.name}
+                                            value={part.costume}
+                                            onChange={this.handleCostumeChange}
+                                        >
+                                            {costumes.map(costume => (
+                                                <option
+                                                    key={costume.name}
+                                                    value={costume.name}
+                                                >
+                                                    {costume.name}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </span>
+                                </Label>
+                            ))}
+                        </div>
                         {this.state.error && <div role="alert">{intl.formatMessage(messages[this.state.error])}</div>}
                     </div>}
                     isOpen={this.state.open}

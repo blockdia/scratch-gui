@@ -1,0 +1,131 @@
+[
+  {
+    "file": "debugger/userscript.js",
+    "replacements": [
+      {
+        "before": "import addSmallStageClass from \"../../libraries/common/cs/small-stage.js\";",
+        "after": ""
+      },
+      {
+        "before": "  let logsTab;",
+        "after": "  let logsTab;\n  let windowHandle;\n  let unread = false;"
+      },
+      {
+        "before": "    setInterfaceVisible(true);",
+        "after": "    if (windowHandle) windowHandle.open({ pinned: true });"
+      },
+      {
+        "before": "  const debuggerButtonOuter = document.createElement(\"div\");\n  debuggerButtonOuter.className = \"sa-debugger-container\";\n  const debuggerButton = document.createElement(\"div\");\n  debuggerButton.className = addon.tab.scratchClass(\"button_outlined-button\", \"stage-header_stage-button\");\n  const debuggerButtonContent = document.createElement(\"div\");\n  debuggerButtonContent.className = addon.tab.scratchClass(\"button_content\");\n  const debuggerButtonImage = document.createElement(\"img\");\n  debuggerButtonImage.className = addon.tab.scratchClass(\"stage-header_stage-button-icon\");\n  debuggerButtonImage.draggable = false;\n  debuggerButtonImage.src = addon.self.getResource(\"/icons/debug.svg\") /* rewritten by pull.js */;\n  debuggerButtonContent.appendChild(debuggerButtonImage);\n  debuggerButton.appendChild(debuggerButtonContent);\n  debuggerButtonOuter.appendChild(debuggerButton);\n  debuggerButton.addEventListener(\"click\", () => setInterfaceVisible(true));\n\n  const setHasUnreadMessage = (unreadMessage) => {\n    debuggerButtonContent.classList.toggle(\"sa-debugger-unread\", unreadMessage);\n  };\n\n",
+        "after": "  const setHasUnreadMessage = (value) => {\n    unread = value;\n    if (windowHandle) windowHandle.setUnread(value);\n  };\n\n"
+      },
+      {
+        "before": "    className: addon.tab.scratchClass(\"card_card\", { others: \"sa-debugger-interface\" }),",
+        "after": "    className: \"sa-debugger-managed-content\","
+      },
+      {
+        "before": "    interfaceContainer.style.display = isInterfaceVisible ? \"flex\" : \"\";",
+        "after": ""
+      },
+      {
+        "before": "  let mouseOffsetX = 0;\n  let mouseOffsetY = 0;\n  let lastX = 0;\n  let lastY = 0;\n  const handleStartDrag = (e) => {\n    e.preventDefault();\n    mouseOffsetX = e.clientX - interfaceContainer.offsetLeft;\n    mouseOffsetY = e.clientY - interfaceContainer.offsetTop;\n    lastX = e.clientX;\n    lastY = e.clientY;\n    document.addEventListener(\"mouseup\", handleStopDrag);\n    document.addEventListener(\"mousemove\", handleDragInterface);\n  };\n  const handleStopDrag = () => {\n    document.removeEventListener(\"mouseup\", handleStopDrag);\n    document.removeEventListener(\"mousemove\", handleDragInterface);\n  };\n  const moveInterface = (x, y) => {\n    lastX = x;\n    lastY = y;\n    const width = (document.documentElement.clientWidth || document.body.clientWidth) - 1;\n    const height = (document.documentElement.clientHeight || document.body.clientHeight) - 1;\n    const clampedX = Math.max(0, Math.min(x - mouseOffsetX, width - interfaceContainer.offsetWidth));\n    const clampedY = Math.max(0, Math.min(y - mouseOffsetY, height - interfaceContainer.offsetHeight));\n    interfaceContainer.style.left = clampedX + \"px\";\n    interfaceContainer.style.top = clampedY + \"px\";\n  };\n  const handleDragInterface = (e) => {\n    e.preventDefault();\n    moveInterface(e.clientX, e.clientY);\n  };\n  window.addEventListener(\"resize\", () => {\n    moveInterface(lastX, lastY);\n  });\n  interfaceHeader.addEventListener(\"mousedown\", handleStartDrag);\n\n  interfaceHeader.append(tabListElement, buttonContainerElement);\n  interfaceContainer.append(interfaceHeader, compilerWarning, tabContentContainer);\n  document.body.append(interfaceContainer);\n\n",
+        "after": "  interfaceHeader.append(tabListElement, buttonContainerElement);\n  interfaceContainer.append(interfaceHeader, compilerWarning, tabContentContainer);\n\n"
+      },
+      {
+        "before": "  const closeButton = createHeaderButton({\n    text: msg(\"close\"),\n    icon: addon.self.getResource(\"/icons/close.svg\") /* rewritten by pull.js */,\n  });\n  closeButton.element.addEventListener(\"click\", () => setInterfaceVisible(false));\n\n",
+        "after": ""
+      },
+      {
+        "before": "    buttonContainerElement.appendChild(closeButton.element);",
+        "after": ""
+      },
+      {
+        "before": "  addSmallStageClass();",
+        "after": "  windowHandle = addon.tab.createWindow({\n    id: \"debugger\",\n    title: { id: \"gui.windows.debugger\", defaultMessage: \"Debugger\" },\n    icon: addon.self.getResource(\"/icons/debug.svg\"),\n    content: interfaceContainer,\n    onShow: () => setInterfaceVisible(true),\n    onHide: () => setInterfaceVisible(false),\n    onReset: () => {\n      setActiveTab(allTabs[0]);\n      for (const tab of allTabs) {\n        if (tab.resetView) tab.resetView();\n      }\n    },\n  });\n  windowHandle.setUnread(unread);"
+      },
+      {
+        "before": "  while (true) {\n    await addon.tab.waitForElement(\n      '[class^=\"stage-header_stage-size-row\"], [class^=\"stage-header_fullscreen-buttons-row_\"]',\n      {\n        markAsSeen: true,\n        reduxEvents: [\n          \"scratch-gui/mode/SET_PLAYER\",\n          \"scratch-gui/mode/SET_FULL_SCREEN\",\n          \"fontsLoaded/SET_FONTS_LOADED\",\n          \"scratch-gui/locales/SELECT_LOCALE\",\n        ],\n      }\n    );\n    if (addon.tab.editorMode === \"editor\") {\n      addon.tab.appendToSharedSpace({ space: \"stageHeader\", element: debuggerButtonOuter, order: 0 });\n    } else {\n      debuggerButtonOuter.remove();\n      setInterfaceVisible(false);\n    }\n  }\n}\n",
+        "after": "\n}\n"
+      },
+      {
+        "before": "    const imageElement = Object.assign(document.createElement(\"img\"), {\n      src: icon,\n      draggable: false,\n    });",
+        "after": "    const imageElement = document.createElement(\"span\");\n    imageElement.className = \"sa-debugger-action-icon\";\n    imageElement.style.setProperty(\"--debugger-icon\", `url(\"${icon}\")`);\n    imageElement.setAttribute(\"aria-hidden\", \"true\");"
+      },
+      {
+        "before": "    const imageElement = Object.assign(addon.tab.recolorable(), {\n      src: icon,\n      draggable: false,\n    });",
+        "after": "    const imageElement = document.createElement(\"span\");\n    imageElement.className = \"sa-debugger-action-icon\";\n    imageElement.style.setProperty(\"--debugger-icon\", `url(\"${icon}\")`);\n    imageElement.setAttribute(\"aria-hidden\", \"true\");"
+      },
+      {
+        "before": "    const button = Object.assign(document.createElement(\"div\"), {\n      className: addon.tab.scratchClass(\"card_shrink-expand-button\"),",
+        "after": "    const button = Object.assign(document.createElement(\"button\"), {\n      type: \"button\",\n      className: addon.tab.scratchClass(\"card_shrink-expand-button\"),"
+      },
+      {
+        "before": "    const tab = document.createElement(\"li\");",
+        "after": "    const tab = document.createElement(\"li\");\n    tab.tabIndex = 0;\n    tab.setAttribute(\"role\", \"tab\");\n    tab.addEventListener(\"keydown\", (event) => {\n      if (event.key === \"Enter\" || event.key === \" \") {\n        event.preventDefault();\n        tab.click();\n      }\n    });"
+      },
+      {
+        "before": "      activeTab.tab.element.classList.remove(selectedClass);",
+        "after": "      activeTab.tab.element.classList.remove(selectedClass);\n      activeTab.tab.element.setAttribute(\"aria-selected\", \"false\");"
+      },
+      {
+        "before": "    tab.tab.element.classList.add(selectedClass);",
+        "after": "    tab.tab.element.classList.add(selectedClass);\n    tab.tab.element.setAttribute(\"aria-selected\", \"true\");"
+      },
+      {
+        "before": "    className: \"sa-debugger-tabs\",\n  });",
+        "after": "    className: \"sa-debugger-tabs\",\n  });\n  tabListElement.setAttribute(\"role\", \"tablist\");"
+      }
+    ]
+  },
+  {
+    "file": "debugger/logs.js",
+    "replacements": [
+      {
+        "before": "    hide,",
+        "after": "    hide,\n    resetView: () => logView.resetView(),"
+      }
+    ]
+  },
+  {
+    "file": "debugger/threads.js",
+    "replacements": [
+      {
+        "before": "    hide,",
+        "after": "    hide,\n    resetView: () => logView.resetView(),"
+      }
+    ]
+  },
+  {
+    "file": "debugger/log-view.js",
+    "replacements": [
+      {
+        "before": "  clear() {",
+        "after": "  resetView() {\n    this.scrollTop = 0;\n    this.isScrolledToEnd = true;\n    this.scrollTopWhenHidden = \"end\";\n    this.queueUpdateContent();\n  }\n\n  clear() {"
+      }
+    ]
+  },
+  {
+    "file": "debugger/style.css",
+    "replacements": [
+      {
+        "before": "[dir=\"ltr\"] .sa-debugger-container {\n  margin-right: 0.2rem;\n}\n\n[dir=\"rtl\"] .sa-debugger-container {\n  margin-left: 0.2rem;\n}\n\n.sa-small-stage [class*=\"gui_body-wrapper_\"]:not(.sa-stage-hidden) .sa-debugger-container {\n  display: none !important;\n}\n\n.sa-debugger-container [class*=\"button_content_\"] {\n  position: relative;\n}\n\n.sa-debugger-unread::after {\n  content: \"\";\n  position: absolute;\n  top: 1px;\n  right: 0;\n  display: block;\n  width: 6px;\n  height: 6px;\n  background-color: var(--editorDarkMode-highlightText, #855cd6);\n  border-radius: 50%;\n}\n\n.sa-debugger-interface {\n  display: none;\n  position: absolute;\n  z-index: 492;\n  background-color: var(--ui-modal-background);\n  color: var(--ui-modal-foreground);\n  width: 565px;\n  height: 25rem;\n}\n\n.sa-debugger-interface [class*=\"card_header-buttons_\"] {\n  background-color: #29beb8;\n  border-color: #3aa8a4;\n}\n\n",
+        "after": "/* The GUI window manager owns positioning, visibility and resizing. */\n.sa-debugger-managed-content {\n  display: flex;\n  flex-direction: column;\n  flex: 1;\n  min-height: 0;\n  color: var(--text-primary);\n}\n.sa-debugger-managed-content [class*=\"card_header-buttons_\"] {\n  flex-shrink: 0;\n  flex-wrap: wrap;\n  background: var(--ui-tertiary);\n  border-color: var(--ui-black-transparent);\n}\n.sa-debugger-managed-content .sa-debugger-tabs li {\n  border-radius: 4px;\n  color: var(--text-primary);\n  background: transparent;\n}\n.sa-debugger-managed-content .sa-debugger-tabs li.sa-debugger-tab-selected {\n  background: var(--ui-primary);\n  color: var(--looks-secondary);\n}\n\n"
+      },
+      {
+        "before": ".sa-debugger-interface h1 {\n  padding: 10px;\n  z-index: 10;\n  width: calc(100% - 20px);\n  font-size: 20px;\n}\n",
+        "after": ".sa-debugger-action-icon {\n  display: inline-block;\n  flex: 0 0 auto;\n  width: 16px;\n  height: 16px;\n  margin-inline-end: 4px;\n  background: currentColor;\n  mask: var(--debugger-icon) center / contain no-repeat;\n  -webkit-mask: var(--debugger-icon) center / contain no-repeat;\n}\n.sa-debugger-managed-content .sa-debugger-header-buttons button {\n  font: inherit;\n  color: var(--text-primary);\n  border: 0;\n  background: transparent;\n}\n.sa-debugger-managed-content button:focus-visible,\n.sa-debugger-tabs li:focus-visible {\n  outline: 2px solid var(--looks-secondary);\n}\n"
+      },
+      {
+        "before": "  border-radius: 4px;",
+        "after": "  border-radius: 1rem;"
+      },
+      {
+        "before": "  flex-shrink: 0;\n  flex-wrap: wrap;\n  background: var(--ui-tertiary);",
+        "after": "  flex-shrink: 0;\n  flex-wrap: nowrap;\n  /* Keep tab and content positions stable when tab-specific actions disappear. */\n  min-height: 3.5rem;\n  overflow-x: auto;\n  background: var(--ui-tertiary);"
+      },
+      {
+        "before": ".sa-debugger-tabs {\n  margin: 0;",
+        "after": ".sa-debugger-tabs {\n  flex-shrink: 0;\n  margin: 0;"
+      }
+    ]
+  }
+]

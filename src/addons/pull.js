@@ -24,6 +24,7 @@ const childProcess = require('child_process');
 const rimraf = require('rimraf');
 const pathUtil = require('path');
 const {addons, newAddons} = require('./addons.js');
+const applyLocalPatches = require('./patches/apply.cjs');
 
 const walk = dir => {
     const children = fs.readdirSync(dir);
@@ -316,6 +317,7 @@ const processAddon = (id, oldDirectory, newDirectory) => {
                 contents = rewriteAssetImports(contents);
             }
 
+            contents = applyLocalPatches(`${id}/${file}`, contents);
             detectUnimplementedAPIs(id, contents);
         }
 

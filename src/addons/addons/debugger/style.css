@@ -1,56 +1,55 @@
 @import url("../editor-theme3/compatibility.css");
 
-[dir="ltr"] .sa-debugger-container {
-  margin-right: 0.2rem;
+/* The GUI window manager owns positioning, visibility and resizing. */
+.sa-debugger-managed-content {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  color: var(--text-primary);
+}
+.sa-debugger-managed-content [class*="card_header-buttons_"] {
+  flex-shrink: 0;
+  flex-wrap: nowrap;
+  /* Keep tab and content positions stable when tab-specific actions disappear. */
+  min-height: 3.5rem;
+  overflow-x: auto;
+  background: var(--ui-tertiary);
+  border-color: var(--ui-black-transparent);
+}
+.sa-debugger-managed-content .sa-debugger-tabs li {
+  border-radius: 1rem;
+  color: var(--text-primary);
+  background: transparent;
+}
+.sa-debugger-managed-content .sa-debugger-tabs li.sa-debugger-tab-selected {
+  background: var(--ui-primary);
+  color: var(--looks-secondary);
 }
 
-[dir="rtl"] .sa-debugger-container {
-  margin-left: 0.2rem;
+.sa-debugger-action-icon {
+  display: inline-block;
+  flex: 0 0 auto;
+  width: 16px;
+  height: 16px;
+  margin-inline-end: 4px;
+  background: currentColor;
+  mask: var(--debugger-icon) center / contain no-repeat;
+  -webkit-mask: var(--debugger-icon) center / contain no-repeat;
 }
-
-.sa-small-stage [class*="gui_body-wrapper_"]:not(.sa-stage-hidden) .sa-debugger-container {
-  display: none !important;
+.sa-debugger-managed-content .sa-debugger-header-buttons button {
+  font: inherit;
+  color: var(--text-primary);
+  border: 0;
+  background: transparent;
 }
-
-.sa-debugger-container [class*="button_content_"] {
-  position: relative;
-}
-
-.sa-debugger-unread::after {
-  content: "";
-  position: absolute;
-  top: 1px;
-  right: 0;
-  display: block;
-  width: 6px;
-  height: 6px;
-  background-color: var(--editorDarkMode-highlightText, #855cd6);
-  border-radius: 50%;
-}
-
-.sa-debugger-interface {
-  display: none;
-  position: absolute;
-  z-index: 492;
-  background-color: var(--ui-modal-background);
-  color: var(--ui-modal-foreground);
-  width: 565px;
-  height: 25rem;
-}
-
-.sa-debugger-interface [class*="card_header-buttons_"] {
-  background-color: #29beb8;
-  border-color: #3aa8a4;
-}
-
-.sa-debugger-interface h1 {
-  padding: 10px;
-  z-index: 10;
-  width: calc(100% - 20px);
-  font-size: 20px;
+.sa-debugger-managed-content button:focus-visible,
+.sa-debugger-tabs li:focus-visible {
+  outline: 2px solid var(--looks-secondary);
 }
 
 .sa-debugger-tabs {
+  flex-shrink: 0;
   margin: 0;
   display: flex;
   align-items: center;

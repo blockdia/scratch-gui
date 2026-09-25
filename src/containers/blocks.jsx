@@ -178,6 +178,15 @@ class Blocks extends React.Component {
         this.workspace = this.ScratchBlocks.inject(this.blocks, workspaceConfig);
         AddonHooks.blocklyWorkspace = this.workspace;
 
+        // Blockly listens for window resize, but changing the stage size can resize
+        // this flex child after that event has already been handled.
+        this.blocksResizeObserver = new ResizeObserver(() => {
+            if (this.props.isVisible) {
+                this.ScratchBlocks.svgResize(this.workspace);
+            }
+        });
+        this.blocksResizeObserver.observe(this.blocks);
+
         // Register buttons under new callback keys for creating variables,
         // lists, and procedures from extensions.
 
@@ -302,6 +311,7 @@ class Blocks extends React.Component {
         }
     }
     componentWillUnmount () {
+        this.blocksResizeObserver.disconnect();
         if (this.unsubscribePins) this.unsubscribePins();
         this.detachVM();
         this.unmounted = true;

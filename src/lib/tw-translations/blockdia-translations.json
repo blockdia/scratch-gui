@@ -46,9 +46,10 @@
         "gui.components.costumes": "部件造型",
         "gui.components.part_track": "轨道",
         "gui.components.part_fill": "填充",
-        "gui.components.part_thumb": "滑块",
+        "gui.components.part_thumb": "滑钮",
         "gui.components.part_body": "主体",
-        "gui.components.part_mark": "选中状态",
+        "gui.components.part_off": "关闭造型",
+        "gui.components.part_on": "开启造型",
         "gui.components.invalidCostume": "请选择可用的造型。"
     },
     "zh-tw": {
@@ -98,9 +99,10 @@
         "gui.components.costumes": "部件造型",
         "gui.components.part_track": "軌道",
         "gui.components.part_fill": "填充",
-        "gui.components.part_thumb": "滑塊",
+        "gui.components.part_thumb": "滑鈕",
         "gui.components.part_body": "主體",
-        "gui.components.part_mark": "選中狀態",
+        "gui.components.part_off": "關閉造型",
+        "gui.components.part_on": "開啟造型",
         "gui.components.invalidCostume": "請選擇可用的造型。"
     }
 }

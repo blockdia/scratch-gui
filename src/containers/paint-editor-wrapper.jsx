@@ -31,6 +31,8 @@ class PaintEditorWrapper extends React.Component {
             this.props.rtl !== nextProps.rtl ||
             this.props.name !== nextProps.name ||
             this.props.theme !== nextProps.theme ||
+            this.props.controlPointEditor !== nextProps.controlPointEditor ||
+            this.props.controlPointGuide !== nextProps.controlPointGuide ||
             this.props.customStageSize !== nextProps.customStageSize ||
             this.state.fonts !== nextState.fonts;
     }
@@ -89,6 +91,8 @@ class PaintEditorWrapper extends React.Component {
 }
 
 PaintEditorWrapper.propTypes = {
+    controlPointEditor: PropTypes.object, // eslint-disable-line react/forbid-prop-types
+    controlPointGuide: PropTypes.object, // eslint-disable-line react/forbid-prop-types
     customStageSize: PropTypes.shape({
         width: PropTypes.number,
         height: PropTypes.number

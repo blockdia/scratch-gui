@@ -64,6 +64,51 @@ npm start
 ```
 Then go to [http://localhost:8601/](http://localhost:8601/) - the playground outputs the default GUI component
 
+## Components development
+
+The built-in Slider, Button, Toggle, and Progress Bar use the published Blockdia VM, renderer, and paint packages.
+Install dependencies with `npm ci`, then start the editor:
+
+```bash
+PORT=8603 npm start
+```
+
+Open [the local editor](http://localhost:8603/editor.html), expand **Choose a Sprite**, then select
+**Choose a Component**. The four templates use the standard Scratch library. Common properties (value or checked)
+appear below the sprite properties; the **Settings** icon opens a popup sized to the remaining behavior parameters.
+Small-stage mode hides the component type while retaining common properties and settings. The Compact editor addon
+also reduces the component row, controls, and popup spacing. **Costumes → Track guides** edits Slider/Progress geometry with draggable
+endpoints, arrow keys, and separate guide undo/redo. Part artwork stays editable in the costume editor. Track and fill costume centers align; progress clips the fill
+without stretching or rotating its artwork. Zero hides the fill; maximum reveals the whole costume, including end caps.
+The clip follows target transforms and applies to picking, touching, color sensing and drag previews.
+Components follow the same stage drag rules as ordinary sprites: the editor can drag any sprite, while
+player/presentation mode only drags sprites marked draggable. Clicks still reach both ordinary Scratch hats
+and component behavior. Once standard target dragging starts, it cancels the current internal gesture;
+merely setting draggable does not disable component clicks.
+
+The Components toolbox shows only self blocks supported by the selected component. Stage and ordinary sprites
+still have cross-component blocks: read/change/set value, minimum, maximum, or step, and read/set checked state.
+Target inputs use standard reporter-compatible extension menu shadows; menus list matching original sprites,
+while “myself” addresses the executing target (including a clone). Missing targets or unsupported properties
+return 0/false or do nothing. Invalid ranges/steps are ignored; valid writes reuse component normalization and
+fire change events on the destination target. Selected menu targets follow sprite renames; text/reporter inputs use Scratch name-based lookup.
+Palette filtering preserves all opcode definitions and existing scripts. Numeric and checked-state operations
+are separated, and change-value blocks precede set-value blocks.
+
+The editor uses the published Blockdia VM, renderer, and paint packages from `package-lock.json`.
+No sibling repositories or local-source flags are required.
+
+Run the browser checks with a current Playwright installation:
+
+```bash
+node scripts/verify-components.cjs
+```
+
+Optional environment variables: `COMPONENTS_EDITOR_URL`, `COMPONENTS_PLAYWRIGHT_PATH` (module path), and
+`COMPONENTS_CHROME_PATH` (browser executable), and `COMPONENTS_COMPACT=1` (enable the Compact editor addon). The checks cover the creation menu, property popup, fixed artwork clipping, pointer interaction, transforms, guides,
+clones, sensing, interpreted/compiled blocks, and SB3 assets; screenshots are written to `/tmp/components-*.png`.
+See the [shared architecture notes](../docs/12-预制组件系统.md) for data contracts and current limitations.
+
 ## Developing alongside other Scratch repositories
 
 ### Getting another repo to point to this code

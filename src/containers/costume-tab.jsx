@@ -5,6 +5,8 @@ import {defineMessages, intlShape, injectIntl} from 'react-intl';
 import VM from 'scratch-vm';
 
 import AssetPanel from '../components/asset-panel/asset-panel.jsx';
+import componentStyles from '../components/component-panel/component-panel.css';
+import ComponentGeometry from './component-geometry.jsx';
 import PaintEditorWrapper from './paint-editor-wrapper.jsx';
 import {connect} from 'react-redux';
 import {handleFileUpload, costumeUpload} from '../lib/file-uploader.js';
@@ -134,6 +136,7 @@ class CostumeTab extends React.Component {
     }
     handleDeleteCostume (costumeIndex) {
         const restoreCostumeFun = this.props.vm.deleteCostume(costumeIndex);
+        if (!restoreCostumeFun) return;
         this.props.dispatchUpdateRestore({
             restoreFun: restoreCostumeFun,
             deletedItem: 'Costume'
@@ -269,6 +272,8 @@ class CostumeTab extends React.Component {
 
         const costumeData = target.costumes ? target.costumes.map(costume => ({
             name: costume.name,
+            deletable: !target.clones.some(clone => clone.componentController &&
+                clone.component.parts.some(part => part.costume === costume.name)),
             asset: costume.asset,
             details: costume.size ? this.formatCostumeDetails(costume.size, costume.bitmapResolution) : null,
             dragPayload: costume
@@ -317,12 +322,16 @@ class CostumeTab extends React.Component {
                 onExportClick={this.handleExportCostume}
                 onItemClick={this.handleSelectCostume}
             >
-                {target.costumes ?
-                    <PaintEditorWrapper
-                        selectedCostumeIndex={this.state.selectedCostumeIndex}
-                    /> :
-                    null
-                }
+                <div className={componentStyles.editor}>
+                    <ComponentGeometry>
+                        {target.costumes ?
+                            <PaintEditorWrapper
+                                selectedCostumeIndex={this.state.selectedCostumeIndex}
+                            /> :
+                            null
+                        }
+                    </ComponentGeometry>
+                </div>
             </AssetPanel>
         );
     }

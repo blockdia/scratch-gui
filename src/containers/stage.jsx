@@ -32,6 +32,7 @@ class Stage extends React.Component {
             'handleDoubleClick',
             'handleQuestionAnswered',
             'onMouseUp',
+            'onPointerCancel',
             'onMouseMove',
             'onMouseDown',
             'onStartDrag',
@@ -140,7 +141,15 @@ class Stage extends React.Component {
     stopColorPickingLoop () {
         cancelAnimationFrame(this.animationFrameId);
     }
+    onPointerCancel () {
+        if (this.state.isDragging) this.onStopDrag(-1, -1);
+        this.props.vm.postIOData('mouse', {cancelled: true});
+        this.cancelMouseDownTimeout();
+        this.setState({mouseDown: false, mouseDownPosition: null});
+    }
     attachMouseEvents (canvas) {
+        window.addEventListener('blur', this.onPointerCancel);
+        document.addEventListener('touchcancel', this.onPointerCancel);
         document.addEventListener('mousemove', this.onMouseMove);
         document.addEventListener('mouseup', this.onMouseUp);
         document.addEventListener('touchmove', this.onMouseMove);
@@ -151,6 +160,9 @@ class Stage extends React.Component {
         canvas.addEventListener('contextmenu', this.onContextMenu);
     }
     detachMouseEvents (canvas) {
+        this.props.vm.postIOData('mouse', {cancelled: true});
+        window.removeEventListener('blur', this.onPointerCancel);
+        document.removeEventListener('touchcancel', this.onPointerCancel);
         document.removeEventListener('mousemove', this.onMouseMove);
         document.removeEventListener('mouseup', this.onMouseUp);
         document.removeEventListener('touchmove', this.onMouseMove);

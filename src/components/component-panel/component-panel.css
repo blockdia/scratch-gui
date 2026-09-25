@@ -1,0 +1,134 @@
+@import "../../css/colors.css";
+@import "../../css/z-index.css";
+
+.panel {
+    flex: 0 0 auto;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    background: $ui-white;
+    color: $text-primary;
+    border-bottom: 1px solid $ui-black-transparent;
+    font-size: 0.75rem;
+}
+.type { font-weight: bold; }
+.settings-button {
+    width: 2rem;
+    height: 2rem;
+    padding: 0;
+    justify-content: center;
+    flex-shrink: 0;
+    border: 1px solid $ui-black-transparent;
+    background: $ui-primary;
+    color: $text-primary;
+}
+.settings-icon {
+    display: block;
+    width: 1rem;
+    height: 1rem;
+}
+.settings-button:hover, .settings-button:focus {
+    outline: none;
+    border-color: $motion-primary;
+    background: $ui-tertiary;
+}
+/* Match paint popovers and override addons which lower the generic .Popover layer. */
+body .popover {
+    z-index: $z-index-popover;
+}
+.popup {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    width: max-content;
+    max-width: calc(100vw - 2rem);
+    padding: 0.75rem;
+    color: $text-primary;
+    font-size: 0.75rem;
+}
+.popup input { box-sizing: border-box; }
+.popup label { justify-content: space-between; gap: 0.5rem; }
+.popup [role="alert"] { max-width: 16rem; }
+.heading { font-weight: bold; }
+.geometry-editor {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    min-width: 0;
+    min-height: 0;
+}
+.paint-area {
+    position: relative;
+    display: flex;
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
+}
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+@media (max-width: 680px) {
+    .panel input, .popup input { font-size: 16px; }
+}
+
+.editor {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
+}
+
+.costume-bindings {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    border-top: 1px solid $ui-black-transparent;
+    margin-top: 0.25rem;
+    padding-top: 0.75rem;
+}
+.costume-select-wrapper {
+    position: relative;
+    display: inline-flex;
+    width: 10rem;
+    max-width: 50vw;
+    color: $text-primary;
+}
+.costume-select-wrapper::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    inset-inline-end: 0.625rem;
+    width: 0.4rem;
+    height: 0.4rem;
+    border-right: 1.5px solid currentColor;
+    border-bottom: 1.5px solid currentColor;
+    transform: translateY(-75%) rotate(45deg);
+    pointer-events: none;
+}
+.costume-select {
+    -webkit-appearance: none;
+    appearance: none;
+    box-sizing: border-box;
+    width: 100%;
+    min-width: 0;
+    height: 2rem;
+    padding-block: 0;
+    padding-inline: 0.75rem 2rem;
+    border: 1px solid $ui-black-transparent;
+    border-radius: 0.5rem;
+    background: $ui-white;
+    color: $text-primary;
+    font: inherit;
+}
+.costume-select:focus { outline: 2px solid $motion-primary; }

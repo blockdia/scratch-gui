@@ -40,6 +40,8 @@ const messages = defineMessages({
 const StageSelector = props => {
     const {
         backdropCount,
+        backdropName,
+        compact,
         containerRef,
         dragOver,
         fileInputRef,
@@ -58,9 +60,43 @@ const StageSelector = props => {
         onEmptyBackdropClick,
         ...componentProps
     } = props;
+    const actionMenu = (
+        <ActionMenu
+            className={styles.addButton}
+            img={backdropIcon}
+            moreButtons={[
+                {
+                    title: intl.formatMessage(messages.addBackdropFromFile),
+                    img: fileUploadIcon,
+                    onClick: onBackdropFileUploadClick,
+                    fileAccept: '.svg, .png, .bmp, .jpg, .jpeg, .jfif, .webp, .gif',
+                    fileChange: onBackdropFileUpload,
+                    fileInput: fileInputRef,
+                    fileMultiple: true
+                }, {
+                    title: intl.formatMessage(messages.addBackdropFromSurprise),
+                    img: surpriseIcon,
+                    onClick: onSurpriseBackdropClick
+
+                }, {
+                    title: intl.formatMessage(messages.addBackdropFromPaint),
+                    img: paintIcon,
+                    onClick: onEmptyBackdropClick
+                }, {
+                    title: intl.formatMessage(messages.addBackdropFromLibrary),
+                    img: searchIcon,
+                    onClick: onNewBackdropClick
+                }
+            ]}
+            title={intl.formatMessage(messages.addBackdropFromLibrary)}
+            tooltipPlace={isRtl(intl.locale) ? 'right' : 'left'}
+            onClick={onNewBackdropClick}
+        />
+    );
     return (
         <Box
             className={classNames(styles.stageSelector, {
+                [styles.compact]: compact,
                 [styles.isSelected]: selected,
                 [styles.raised]: raised || dragOver,
                 [styles.receivedBlocks]: receivedBlocks
@@ -71,67 +107,73 @@ const StageSelector = props => {
             onMouseLeave={onMouseLeave}
             {...componentProps}
         >
-            <div className={styles.header}>
-                <div className={styles.headerTitle}>
-                    <FormattedMessage
-                        defaultMessage="Stage"
-                        description="Label for the stage in the stage selector"
-                        id="gui.stageSelector.stage"
-                    />
-                </div>
-            </div>
-            {url ? (
-                <img
-                    className={styles.costumeCanvas}
-                    src={url}
-                    draggable={false}
-                />
-            ) : null}
-            <div className={styles.label}>
-                <FormattedMessage
-                    defaultMessage="Backdrops"
-                    description="Label for the backdrops in the stage selector"
-                    id="gui.stageSelector.backdrops"
-                />
-            </div>
-            <div className={styles.count}>{backdropCount}</div>
-            <ActionMenu
-                className={styles.addButton}
-                img={backdropIcon}
-                moreButtons={[
-                    {
-                        title: intl.formatMessage(messages.addBackdropFromFile),
-                        img: fileUploadIcon,
-                        onClick: onBackdropFileUploadClick,
-                        fileAccept: '.svg, .png, .bmp, .jpg, .jpeg, .jfif, .webp, .gif',
-                        fileChange: onBackdropFileUpload,
-                        fileInput: fileInputRef,
-                        fileMultiple: true
-                    }, {
-                        title: intl.formatMessage(messages.addBackdropFromSurprise),
-                        img: surpriseIcon,
-                        onClick: onSurpriseBackdropClick
-
-                    }, {
-                        title: intl.formatMessage(messages.addBackdropFromPaint),
-                        img: paintIcon,
-                        onClick: onEmptyBackdropClick
-                    }, {
-                        title: intl.formatMessage(messages.addBackdropFromLibrary),
-                        img: searchIcon,
-                        onClick: onNewBackdropClick
-                    }
-                ]}
-                title={intl.formatMessage(messages.addBackdropFromLibrary)}
-                tooltipPlace={isRtl(intl.locale) ? 'right' : 'left'}
-                onClick={onNewBackdropClick}
-            />
+            {compact ? (
+                <React.Fragment>
+                    {url ? (
+                        <img
+                            className={styles.compactCostumeCanvas}
+                            src={url}
+                            draggable={false}
+                        />
+                    ) : null}
+                    <div className={styles.compactDetails}>
+                        <div className={styles.compactTitle}>
+                            <FormattedMessage
+                                defaultMessage="Stage"
+                                description="Label for the stage in the stage selector"
+                                id="gui.stageSelector.stage"
+                            />
+                        </div>
+                        <div className={styles.compactBackdropName}>
+                            {backdropName || (
+                                <FormattedMessage
+                                    defaultMessage="Backdrops"
+                                    description="Label for the backdrops in the stage selector"
+                                    id="gui.stageSelector.backdrops"
+                                />
+                            )}
+                        </div>
+                    </div>
+                    <div className={styles.compactCount}>{backdropCount}</div>
+                    {selected ? actionMenu : null}
+                </React.Fragment>
+            ) : (
+                <React.Fragment>
+                    <div className={styles.header}>
+                        <div className={styles.headerTitle}>
+                            <FormattedMessage
+                                defaultMessage="Stage"
+                                description="Label for the stage in the stage selector"
+                                id="gui.stageSelector.stage"
+                            />
+                        </div>
+                    </div>
+                    {url ? (
+                        <img
+                            className={styles.costumeCanvas}
+                            src={url}
+                            draggable={false}
+                        />
+                    ) : null}
+                    <div className={styles.label}>
+                        <FormattedMessage
+                            defaultMessage="Backdrops"
+                            description="Label for the backdrops in the stage selector"
+                            id="gui.stageSelector.backdrops"
+                        />
+                    </div>
+                    <div className={styles.count}>{backdropCount}</div>
+                    {actionMenu}
+                </React.Fragment>
+            )}
         </Box>
     );
 };
 
 StageSelector.propTypes = {
     backdropCount: PropTypes.number.isRequired,
+    backdropName: PropTypes.string,
+    compact: PropTypes.bool,
     containerRef: PropTypes.func,
     dragOver: PropTypes.bool,
     fileInputRef: PropTypes.func,
@@ -148,6 +190,10 @@ StageSelector.propTypes = {
     receivedBlocks: PropTypes.bool.isRequired,
     selected: PropTypes.bool.isRequired,
     url: PropTypes.string
+};
+
+StageSelector.defaultProps = {
+    compact: false
 };
 
 export default injectIntl(StageSelector);

@@ -1,5 +1,6 @@
 import PropTypes from 'prop-types';
 import React from 'react';
+import classNames from 'classnames';
 import {defineMessages, injectIntl, intlShape} from 'react-intl';
 
 import Box from '../box/box.jsx';
@@ -46,6 +47,7 @@ const messages = defineMessages({
 const SpriteSelectorComponent = function (props) {
     const {
         editingTarget,
+        fullWidth,
         hoveredTarget,
         intl,
         onChangeSpriteDirection,
@@ -68,8 +70,10 @@ const SpriteSelectorComponent = function (props) {
         onSurpriseSpriteClick,
         raised,
         selectedId,
+        showSpriteActionMenu,
         spriteFileInput,
         sprites,
+        stageSelector,
         stageSize,
         ...componentProps
     } = props;
@@ -81,7 +85,9 @@ const SpriteSelectorComponent = function (props) {
     }
     return (
         <Box
-            className={styles.spriteSelector}
+            className={classNames(styles.spriteSelector, {
+                [styles.fullWidth]: fullWidth
+            })}
             {...componentProps}
         >
 
@@ -108,6 +114,7 @@ const SpriteSelectorComponent = function (props) {
 
                 <ComponentPanel stageSize={stageSize} />
             </React.Fragment>
+            {stageSelector}
             <SpriteList
                 editingTarget={editingTarget}
                 hoveredTarget={hoveredTarget}
@@ -120,41 +127,43 @@ const SpriteSelectorComponent = function (props) {
                 onExportSprite={onExportSprite}
                 onSelectSprite={onSelectSprite}
             />
-            <ActionMenu
-                className={styles.addButton}
-                img={spriteIcon}
-                moreButtons={[
-                    ...(onNewComponentClick ? [{
-                        title: intl.formatMessage(componentMessages.add),
-                        img: componentIcon,
-                        onClick: onNewComponentClick
-                    }] : []),
-                    {
-                        title: intl.formatMessage(messages.addSpriteFromFile),
-                        img: fileUploadIcon,
-                        onClick: onFileUploadClick,
-                        fileAccept: '.svg, .png, .bmp, .jpg, .jpeg, .jfif, .webp, .sprite2, .sprite3, .gif',
-                        fileChange: onSpriteUpload,
-                        fileInput: spriteFileInput,
-                        fileMultiple: true
-                    }, {
-                        title: intl.formatMessage(messages.addSpriteFromSurprise),
-                        img: surpriseIcon,
-                        onClick: onSurpriseSpriteClick // TODO need real function for this
-                    }, {
-                        title: intl.formatMessage(messages.addSpriteFromPaint),
-                        img: paintIcon,
-                        onClick: onPaintSpriteClick // TODO need real function for this
-                    }, {
-                        title: intl.formatMessage(messages.addSpriteFromLibrary),
-                        img: searchIcon,
-                        onClick: onNewSpriteClick
-                    }
-                ]}
-                title={intl.formatMessage(messages.addSpriteFromLibrary)}
-                tooltipPlace={isRtl(intl.locale) ? 'right' : 'left'}
-                onClick={onNewSpriteClick}
-            />
+            {showSpriteActionMenu && (
+                <ActionMenu
+                    className={styles.addButton}
+                    img={spriteIcon}
+                    moreButtons={[
+                        ...(onNewComponentClick ? [{
+                            title: intl.formatMessage(componentMessages.add),
+                            img: componentIcon,
+                            onClick: onNewComponentClick
+                        }] : []),
+                        {
+                            title: intl.formatMessage(messages.addSpriteFromFile),
+                            img: fileUploadIcon,
+                            onClick: onFileUploadClick,
+                            fileAccept: '.svg, .png, .bmp, .jpg, .jpeg, .jfif, .webp, .sprite2, .sprite3, .gif',
+                            fileChange: onSpriteUpload,
+                            fileInput: spriteFileInput,
+                            fileMultiple: true
+                        }, {
+                            title: intl.formatMessage(messages.addSpriteFromSurprise),
+                            img: surpriseIcon,
+                            onClick: onSurpriseSpriteClick // TODO need real function for this
+                        }, {
+                            title: intl.formatMessage(messages.addSpriteFromPaint),
+                            img: paintIcon,
+                            onClick: onPaintSpriteClick // TODO need real function for this
+                        }, {
+                            title: intl.formatMessage(messages.addSpriteFromLibrary),
+                            img: searchIcon,
+                            onClick: onNewSpriteClick
+                        }
+                    ]}
+                    title={intl.formatMessage(messages.addSpriteFromLibrary)}
+                    tooltipPlace={isRtl(intl.locale) ? 'right' : 'left'}
+                    onClick={onNewSpriteClick}
+                />
+            )}
         </Box>
     );
 };
@@ -162,6 +171,7 @@ const SpriteSelectorComponent = function (props) {
 SpriteSelectorComponent.propTypes = {
     onNewComponentClick: PropTypes.func,
     editingTarget: PropTypes.string,
+    fullWidth: PropTypes.bool,
     hoveredTarget: PropTypes.shape({
         hoveredSprite: PropTypes.string,
         receivedBlocks: PropTypes.bool
@@ -186,6 +196,7 @@ SpriteSelectorComponent.propTypes = {
     onSurpriseSpriteClick: PropTypes.func,
     raised: PropTypes.bool,
     selectedId: PropTypes.string,
+    showSpriteActionMenu: PropTypes.bool,
     spriteFileInput: PropTypes.func,
     sprites: PropTypes.shape({
         id: PropTypes.shape({
@@ -200,7 +211,13 @@ SpriteSelectorComponent.propTypes = {
             order: PropTypes.number.isRequired
         })
     }),
+    stageSelector: PropTypes.node,
     stageSize: PropTypes.oneOf(Object.keys(STAGE_DISPLAY_SIZES)).isRequired
+};
+
+SpriteSelectorComponent.defaultProps = {
+    fullWidth: false,
+    showSpriteActionMenu: true
 };
 
 export default injectIntl(SpriteSelectorComponent);

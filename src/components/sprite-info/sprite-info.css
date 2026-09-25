@@ -21,6 +21,33 @@
     margin-bottom: 0.5rem;
 }
 
+.small .row-secondary {
+    flex-wrap: nowrap;
+    gap: 0.25rem;
+    justify-content: space-between;
+}
+
+.small .row-secondary .group {
+    margin-inline-end: 0;
+}
+
+.small .row-secondary button {
+    width: 2rem;
+    height: 2rem;
+}
+
+.small .larger-input input {
+    width: 2.5rem;
+}
+
+.small .sprite-input {
+    width: 6rem;
+}
+
+.small .row-primary .group:not(:first-child) input {
+    width: 2.5rem;
+}
+
 .label { opacity: 0.8; }
 
 .group {

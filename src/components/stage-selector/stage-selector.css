@@ -23,6 +23,72 @@ $header-height: calc($stage-menu-height - 2px);
     transition: all 0.25s ease;
 }
 
+.stage-selector.compact {
+    box-sizing: border-box;
+    flex: 0 0 4rem;
+    flex-direction: row;
+    align-items: center;
+    position: static;
+    margin: calc($space / 2) $space 0;
+    padding: calc($space / 2);
+    border: 2px solid $ui-black-transparent;
+    border-radius: $space;
+    min-width: 0;
+}
+
+.stage-selector.compact.is-selected {
+    border: 2px solid $looks-secondary;
+    border-radius: $space;
+}
+
+.compact-costume-canvas {
+    display: block;
+    flex: 0 0 4rem;
+    width: 4rem;
+    height: 3rem;
+    object-fit: contain;
+    user-select: none;
+    border: 1px solid $ui-black-transparent;
+    border-radius: .25rem;
+    box-shadow: inset 0 0 4px $shadow;
+}
+
+.compact-details {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    justify-content: center;
+    min-width: 0;
+    margin: 0 $space;
+}
+
+.compact-title {
+    overflow: hidden;
+    color: $text-primary;
+    font-size: .75rem;
+    font-weight: bold;
+    line-height: 1rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.compact-backdrop-name {
+    overflow: hidden;
+    color: $text-primary;
+    font-size: .625rem;
+    line-height: 1rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.compact-count {
+    flex: 0 0 auto;
+    margin-right: calc($space / 2);
+    color: $text-primary;
+    font-size: .625rem;
+    user-select: none;
+}
+
 .stage-selector.is-selected {
     border-top-left-radius: .625rem;
     border-top-right-radius: .625rem;
@@ -97,6 +163,14 @@ $header-height: calc($stage-menu-height - 2px);
 .add-button {
     position: absolute;
     bottom: 0.75rem;
+}
+
+[dir="ltr"] .compact .add-button {
+    right: 1rem;
+}
+
+[dir="rtl"] .compact .add-button {
+    left: 1rem;
 }
 
 .raised, .raised .header {

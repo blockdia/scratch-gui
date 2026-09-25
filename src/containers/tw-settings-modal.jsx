@@ -27,6 +27,8 @@ class UsernameModal extends React.Component {
             'handleRemoveFencingChange',
             'handleRemoveLimitsChange',
             'handleWarpTimerChange',
+            'handleStageSizeFourThree',
+            'handleStageSizeSixteenNine',
             'handleStageWidthChange',
             'handleStageHeightChange',
             'handleDisableCompilerChange',
@@ -76,6 +78,12 @@ class UsernameModal extends React.Component {
             enabled: !e.target.checked
         });
     }
+    handleStageSizeFourThree () {
+        this.props.vm.setStageSize(480, 360);
+    }
+    handleStageSizeSixteenNine () {
+        this.props.vm.setStageSize(640, 360);
+    }
     handleStageWidthChange (value) {
         this.props.vm.setStageSize(value, this.props.customStageSize.height);
     }
@@ -104,6 +112,8 @@ class UsernameModal extends React.Component {
                 onRemoveFencingChange={this.handleRemoveFencingChange}
                 onRemoveLimitsChange={this.handleRemoveLimitsChange}
                 onWarpTimerChange={this.handleWarpTimerChange}
+                onStageSizeFourThree={this.handleStageSizeFourThree}
+                onStageSizeSixteenNine={this.handleStageSizeSixteenNine}
                 onStageWidthChange={this.handleStageWidthChange}
                 onStageHeightChange={this.handleStageHeightChange}
                 onDisableCompilerChange={this.handleDisableCompilerChange}

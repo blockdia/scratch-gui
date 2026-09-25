@@ -72,7 +72,7 @@ class UnwrappedSetting extends React.Component {
                     [styles.active]: this.props.active
                 })}
             >
-                <div className={styles.label}>
+                <div className={classNames(styles.label, this.props.primaryClassName)}>
                     {this.props.primary}
                     <button
                         className={styles.helpIcon}
@@ -101,6 +101,7 @@ UnwrappedSetting.propTypes = {
     active: PropTypes.bool,
     help: PropTypes.node,
     primary: PropTypes.node,
+    primaryClassName: PropTypes.string,
     secondary: PropTypes.node,
     slug: PropTypes.string
 };
@@ -328,38 +329,69 @@ const DisableCompiler = props => (
 const CustomStageSize = ({
     customStageSizeEnabled,
     stageWidth,
+    onStageSizeFourThree,
+    onStageSizeSixteenNine,
     onStageWidthChange,
     stageHeight,
     onStageHeightChange
 }) => (
     <Setting
         active={customStageSizeEnabled}
+        primaryClassName={styles.customStageSizeSettingLabel}
         primary={(
-            <div className={classNames(styles.label, styles.customStageSize)}>
-                <FormattedMessage
-                    defaultMessage="Custom Stage Size:"
-                    description="Custom Stage Size option"
-                    id="tw.settingsModal.customStageSize"
-                />
-                <BufferedInput
-                    value={stageWidth}
-                    onSubmit={onStageWidthChange}
-                    className={styles.customStageSizeInput}
-                    type="number"
-                    min="0"
-                    max="1024"
-                    step="1"
-                />
-                <span>{'×'}</span>
-                <BufferedInput
-                    value={stageHeight}
-                    onSubmit={onStageHeightChange}
-                    className={styles.customStageSizeInput}
-                    type="number"
-                    min="0"
-                    max="1024"
-                    step="1"
-                />
+            <div>
+                <div
+                    className={styles.stageSizePresets}
+                >
+                    <button
+                        type="button"
+                        className={styles.stageSizePreset}
+                        aria-pressed={stageWidth === 480 && stageHeight === 360}
+                        onClick={onStageSizeFourThree}
+                    >
+                        <span className={classNames(styles.stageSizePreview, styles.stageSizePreviewFourThree)}>
+                            {'4:3'}
+                        </span>
+                        <span className={styles.stageSizeDimensions}>{'480 × 360'}</span>
+                    </button>
+                    <button
+                        type="button"
+                        className={styles.stageSizePreset}
+                        aria-pressed={stageWidth === 640 && stageHeight === 360}
+                        onClick={onStageSizeSixteenNine}
+                    >
+                        <span className={classNames(styles.stageSizePreview, styles.stageSizePreviewSixteenNine)}>
+                            {'16:9'}
+                        </span>
+                        <span className={styles.stageSizeDimensions}>{'640 × 360'}</span>
+                    </button>
+                </div>
+                <div className={classNames(styles.label, styles.customStageSize)}>
+                    <FormattedMessage
+                        defaultMessage="Custom Stage Size:"
+                        description="Custom Stage Size option"
+                        id="tw.settingsModal.customStageSize"
+                    />
+                    <BufferedInput
+                        value={stageWidth}
+                        onSubmit={onStageWidthChange}
+                        className={styles.customStageSizeInput}
+                        type="number"
+                        min="0"
+                        max="1024"
+                        step="1"
+                    />
+                    <span>{'×'}</span>
+                    <BufferedInput
+                        value={stageHeight}
+                        onSubmit={onStageHeightChange}
+                        className={styles.customStageSizeInput}
+                        type="number"
+                        min="0"
+                        max="1024"
+                        step="1"
+                    />
+                </div>
             </div>
         )}
         secondary={
@@ -389,6 +421,8 @@ const CustomStageSize = ({
 CustomStageSize.propTypes = {
     customStageSizeEnabled: PropTypes.bool,
     stageWidth: PropTypes.number,
+    onStageSizeFourThree: PropTypes.func,
+    onStageSizeSixteenNine: PropTypes.func,
     onStageWidthChange: PropTypes.func,
     stageHeight: PropTypes.number,
     onStageHeightChange: PropTypes.func

@@ -403,5 +403,10 @@
     "editor-stepping/@name": "给运行中的积木显示边框",
     "editor-stepping/@settings-name-highlight-color": "高亮色",
     "layer-manager/@name": "图层管理器",
-    "layer-manager/@description": "查看舞台上的角色和克隆体图层，并通过拖拽调整顺序。"
+    "layer-manager/@description": "查看舞台上的角色和克隆体图层，并通过拖拽调整顺序。",
+    "linter/@name": "代码检查",
+    "linter/@description": "检查不存在的角色引用、不刷新屏幕的自制积木中的等待操作及未使用的数据。",
+    "linter/@settings-name-missing-target": "不存在的角色引用",
+    "linter/@settings-name-warp-wait": "不刷新屏幕的自制积木中可能等待的操作",
+    "linter/@settings-name-unused-data": "未使用的变量与列表"
 }

@@ -13,6 +13,8 @@ Directory structure:
  - addons - the addons (maintained locally; initially imported by pull.js)
  - addons-l10n - addon translations used at runtime (maintained locally; initially imported by pull.js)
  - addons-l10n-settings - addon translations used by the settings page (maintained locally; initially imported by pull.js)
+ - blockdia-l10n - Blockdia runtime additions and overrides, loaded after upstream translations
+ - blockdia-l10n-settings - Blockdia settings additions and overrides (English defaults stay in addon manifests)
  - libraries - libraries used by addons (maintained locally; initially imported by pull.js)
  - generated - additional generated files (maintained locally; initially imported by pull.js)
  - settings - the settings page and its translations
@@ -23,8 +25,14 @@ The editor window IntlProvider automatically merges runtime addon translations w
 GUI messages under the
 `addons.` namespace. For example, `debugger/tab-logs` becomes
 `addons.debugger.tab-logs`, usable with `FormattedMessage` or `intl.formatMessage`.
-Keep text in `addons-l10n/*.json`; do not duplicate addon messages in GUI locale
-files or repeat English defaults in components. Missing translations fall back
+Keep upstream text in `addons-l10n/*.json` and Blockdia additions or overrides in
+`blockdia-l10n/*.json`; do not duplicate addon messages in GUI locale files or repeat
+English defaults in components. Runtime merge order is upstream English, Blockdia
+English, upstream locale, then Blockdia locale. Settings translations similarly
+apply `blockdia-l10n-settings` after `addons-l10n-settings`, falling back to the
+English addon manifest. Register new overlay locales in the corresponding
+`blockdia-l10n*/index.js`; these indexes are maintained manually and are not
+replaced by `pull.js`. Preserve existing message IDs when moving text into an overlay. Missing translations fall back
 to the English addon resource. Locale chunks are loaded lazily and cached; locale
 changes update the provider without changing the tool's component identity.
 

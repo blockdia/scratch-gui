@@ -281,6 +281,12 @@ export default class KeyboardEditor {
   }
 
   onPointer(event) {
+    // Comments are editable HTML inside the workspace SVG, not Blockly widgets.
+    // Let their native pointer interaction retain focus when the pointer is released.
+    if (event.target.closest('input, textarea, select') || event.target.isContentEditable) {
+      this.pendingPointerFocus = false;
+      return;
+    }
     if (this.workspace && !this.workspace.getParentSvg()?.contains(event.target) &&
         !event.target.closest('.blocklyWidgetDiv, .blocklyDropDownDiv, .sa-mcp-root')) {
       this.editingField = false;

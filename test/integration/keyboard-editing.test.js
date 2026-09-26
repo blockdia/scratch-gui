@@ -131,6 +131,25 @@ test('Edit menu enables typing, hat placement, connected insertion, literals, na
     expect((await state()).blocks).toHaveLength(2);
 });
 
+test('clicking a comment preserves text focus and typing does not open block search', async () => {
+    await insert('when this sprite clicked');
+    await driver.executeScript(`
+        const block = window.ScratchBlocks.getMainWorkspace().getTopBlocks(false)[0];
+        block.setCommentText('existing');
+        block.comment.setVisible(true);
+    `);
+    const comment = await driver.findElement(By.css('.scratchCommentTextarea'));
+    await comment.click();
+    // Wait past the deferred pointerup focus handler before typing into the active element.
+    await driver.executeAsyncScript('setTimeout(arguments[arguments.length - 1], 50);');
+    expect(await driver.executeScript('return document.activeElement === arguments[0];', comment)).toBe(true);
+    await driver.switchTo().activeElement().sendKeys(Key.END, 'abc');
+    expect(await comment.getAttribute('value')).toBe('existingabc');
+    expect(await (await search()).isDisplayed()).toBe(false);
+    await driver.findElement(By.css('.blocklyMainBackground')).click();
+    await waitFocus();
+});
+
 test('replaces a reporter without deleting it and restores the whole replacement with one undo', async () => {
     await insert('when this sprite clicked');
     await insert('move 10 steps');

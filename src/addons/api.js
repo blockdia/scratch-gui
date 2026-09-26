@@ -915,6 +915,10 @@ class AddonRunner {
             await addonMessagesPromise;
         }
 
+        // A menu/settings toggle may arrive while the runtime chunk is loading.
+        // Apply the latest state before installing styles or starting the script.
+        this.publicAPI.addon.self.disabled = !SettingsStore.getAddonEnabled(this.id);
+
         // Multiply by big number because the first userstyle is + 0, second is + 1, third is + 2, etc.
         // This number just has to be larger than the maximum number of userstyles in a single addon.
         const baseStylePrecedence = getPrecedence(this.id) * 100;
@@ -963,7 +967,7 @@ const runAddon = addonId => {
     runner.run();
 };
 
-SettingsStore.addEventListener('addon-changed', e => {
+const handleAddonChanged = e => {
     const addonId = e.detail.addonId;
     const runner = AddonRunner.instances.find(i => i.id === addonId);
     if (runner) {
@@ -980,6 +984,18 @@ SettingsStore.addEventListener('addon-changed', e => {
             runner.dynamicDisable();
         }
     }
+};
+
+SettingsStore.addEventListener('addon-changed', handleAddonChanged);
+// Settings changed from the editor itself (for example the Edit menu) do not
+// round-trip through the settings window's BroadcastChannel.
+SettingsStore.addEventListener('setting-changed', e => {
+    const {addonId, settingId, value, reloadRequired} = e.detail;
+    handleAddonChanged({detail: {
+        addonId,
+        dynamicEnable: settingId === 'enabled' && value,
+        dynamicDisable: settingId === 'enabled' && !value && !reloadRequired
+    }});
 });
 
 for (const id of Object.keys(addons)) {

@@ -58,7 +58,9 @@
         "gui.windows.close": "关闭",
         "gui.windows.more": "更多工具",
         "gui.windows.tools": "编辑器工具",
-        "gui.windows.addonError": "此工具无法显示。请关闭并重新打开窗口以重试。"
+        "gui.windows.addonError": "此工具无法显示。请关闭并重新打开窗口以重试。",
+        "blockdia.menuBar.keyboardEditingOn": "启用键盘编辑模式",
+        "blockdia.menuBar.keyboardEditingOff": "关闭键盘编辑模式"
     },
     "zh-tw": {
         "blockdia.backpack.pin": "固定到積木欄",

@@ -1,5 +1,5 @@
 import { updateAllBlocks } from "../custom-block-shape/update-all-blocks.js";
-import { clearTextWidthCache } from "../middle-click-popup/module.js";
+import { clearTextWidthCache } from "../../libraries/block-search/module.js";
 
 export default async function ({ addon, console }) {
   let currentTextSize = 100;

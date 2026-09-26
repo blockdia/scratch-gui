@@ -424,5 +424,10 @@
     "linter/@settings-name-unreachable-code": "运行不到的后续积木",
     "linter/@settings-name-nonterminating-control": "恒定条件导致无法结束的等待或循环",
     "linter/@settings-name-numeric-result": "无穷大或无效数字的运算结果",
-    "linter/@settings-name-unused-resource": "没有可见使用位置的资源"
+    "linter/@settings-name-unused-resource": "没有可见使用位置的资源",
+    "keyboard-editing/@name": "键盘编辑模式",
+    "keyboard-editing/@description": "使用键盘导航积木、编辑参数和搜索插入积木。",
+    "keyboard-editing/@settings-name-popup_scale": "弹出积木大小",
+    "keyboard-editing/@settings-name-popup_width": "弹出窗口宽度",
+    "keyboard-editing/@settings-name-popup_max_height": "弹出窗口最大高度"
 }

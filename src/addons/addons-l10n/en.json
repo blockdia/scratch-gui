@@ -414,5 +414,7 @@
     "linter/broadcast-flow-receiver": "No block was found receiving \"{name}\"",
     "linter/constant-control-condition": "This condition is {value, select, true {always true} other {always false}}",
     "linter/constant-control-repeat": "This loop will never run",
-    "linter/constant-control-empty": "This control block has no blocks inside"
+    "linter/constant-control-empty": "This control block has no blocks inside",
+    "keyboard-editing/keyboard-label": "Block workspace keyboard editor",
+    "keyboard-editing/keyboard-help": "Type: search · Enter: edit · ← →: inline inputs · ↑ ↓: blocks/connections · Shift+↑ ↓: stack ends · Tab / Shift+Tab: nested inputs · Alt+← →: reporter · Alt+↑ ↓: scripts · Ctrl/Cmd+Enter: drag"
 }

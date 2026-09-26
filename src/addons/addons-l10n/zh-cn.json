@@ -406,5 +406,7 @@
     "linter/broadcast-flow-receiver": "未找到接收广播“{name}”的积木",
     "linter/constant-control-condition": "此条件{value, select, true {始终成立} other {始终不成立}}",
     "linter/constant-control-repeat": "此循环一次也不会执行",
-    "linter/constant-control-empty": "这个控制积木内部没有积木"
+    "linter/constant-control-empty": "这个控制积木内部没有积木",
+    "keyboard-editing/keyboard-label": "积木工作区键盘编辑器",
+    "keyboard-editing/keyboard-help": "键入搜索 · Enter 编辑 · ← → 行内输入 · ↑ ↓ 积木/连接点 · Shift+↑ ↓ 栈首尾 · Tab / Shift+Tab 跨层输入 · Alt+← → 进出 reporter · Alt+↑ ↓ 脚本 · Ctrl/Cmd+Enter 拖拽"
 }

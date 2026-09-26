@@ -32,3 +32,15 @@ The legacy `msg('tab-logs')` API keeps using `debugger/tab-logs` and shares the 
 translation loader. Existing DOM content created with `msg()` retains its startup
 text unless the addon explicitly refreshes it. React window components belong in
 their own addon directory (for example `addons/debugger/window.jsx`).
+
+## Block search and keyboard editing
+
+[`keyboard-editing`](addons/keyboard-editing/README.md) is an independently enabled addon controlled by the Edit menu
+and addon settings. `middle-click-popup` owns the legacy mouse and Ctrl/Command+Space
+entry points. Neither addon enables the other.
+
+Both use the singleton in `libraries/block-search/popup.js` for indexing, preview,
+search and block creation. The keyboard addon supplies structural insertion planning;
+the search library does not import keyboard navigation. Shared CSS uses the existing
+conditional stylesheet system so disabling one consumer leaves the other styled.
+Each addon stores its own popup size settings.

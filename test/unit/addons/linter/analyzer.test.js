@@ -1,14 +1,19 @@
 import {analyzeProject, WAIT_OPERATIONS} from '../../../../src/addons/addons/linter/analyzer';
 
 const block = (id, opcode, extra = {}) => ({id, opcode, inputs: {}, fields: {}, next: null, ...extra});
-const target = (id, blocks = [], variables = [], extra = {}) => ({id, isOriginal: true,
-    getName: () => id, blocks: {_blocks: Object.fromEntries(blocks.map(b => [b.id, b]))},
-    variables: Object.fromEntries(variables.map(v => [v.id, v])), ...extra});
+const target = (id, blocks = [], variables = [], extra = {}) => ({id,
+    isOriginal: true,
+    getName: () => id,
+    blocks: {_blocks: Object.fromEntries(blocks.map(b => [b.id, b]))},
+    variables: Object.fromEntries(variables.map(v => [v.id, v])),
+    ...extra});
 const variable = (id, name = id, type = '') => ({id, name, type});
 const analyze = (targets, monitors = [], rules) => {
     const iterator = analyzeProject(targets, monitors, rules);
     let next;
-    do { next = iterator.next(); } while (!next.done);
+    do {
+        next = iterator.next();
+    } while (!next.done);
     return next.value;
 };
 const reference = (name, opcode = 'motion_goto', input = 'TO') => [
@@ -17,7 +22,8 @@ const reference = (name, opcode = 'motion_goto', input = 'TO') => [
 ];
 const procedure = (code, warp, start) => [
     block(`def-${code}`, 'procedures_definition', {inputs: {custom_block: {block: `proto-${code}`}}, next: start}),
-    block(`proto-${code}`, 'procedures_prototype', {mutation: {proccode: code, warp}})
+    block(`proto-${code}`, 'procedures_prototype', {mutation: {proccode: code, warp,
+        argumentids: '[]', argumentnames: '[]', argumentdefaults: '[]'}})
 ];
 const call = (id, code, next = null) => block(id, 'procedures_call', {mutation: {proccode: code}, next});
 
@@ -26,7 +32,9 @@ test('missing references use the owner location and update after deleting or ren
     const other = target('other');
     expect(analyze([owner, other])).toEqual([]);
     const first = analyze([owner])[0];
-    expect(first).toMatchObject({severity: 'warning', type: 'reference', values: {name: 'other'},
+    expect(first).toMatchObject({severity: 'warning',
+        type: 'reference',
+        values: {name: 'other'},
         location: {targetId: 'owner', blockId: 'ref'}});
     other.getName = () => 'renamed';
     expect(analyze([owner, other])[0].id).toBe(first.id);

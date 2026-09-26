@@ -10,7 +10,12 @@ const fixture = (count = 1) => {
     let monitors = [];
     vm.runtime.getMonitorState = () => ({valueSeq: () => monitors});
     const model = createLinterModel(vm);
-    return {vm, target, model, monitors: value => { monitors = value; vm.runtime.emit('MONITORS_UPDATE'); }};
+    return {vm,
+        target,
+        model,
+        monitors: value => {
+            monitors = value; vm.runtime.emit('MONITORS_UPDATE');
+        }};
 };
 beforeEach(() => jest.useFakeTimers());
 afterEach(() => jest.useRealTimers());
@@ -79,5 +84,55 @@ test('edits during a scan discard the old partial result', () => {
     vm.emit('PROJECT_CHANGED');
     jest.runAllTimers();
     expect(model.snapshot().results).toEqual([]);
+    model.setVisible(false);
+});
+
+test('resource names, component capabilities and runtime options invalidate but live values do not', () => {
+    const {vm, target, model} = fixture();
+    target.sprite = {costumes: [{name: 'one', assetId: 'a'}], sounds: []};
+    target.component = {type: 'slider', properties: {value: 0}, parts: []};
+    model.setVisible(true);
+    jest.runAllTimers();
+    let revision = model.snapshot().revision;
+    target.component.properties.value = 10;
+    target.currentCostume = 1;
+    target.x = 30;
+    vm.emit('targetsUpdate');
+    expect(model.snapshot().revision).toBe(revision);
+    target.sprite.costumes[0].name = 'renamed';
+    vm.emit('targetsUpdate');
+    expect(model.snapshot().status).toBe('stale');
+    jest.runAllTimers();
+    revision = model.snapshot().revision;
+    target.component.type = 'button';
+    vm.emit('targetsUpdate');
+    expect(model.snapshot().revision).toBeGreaterThan(revision);
+    jest.runAllTimers();
+    vm.emit('RUNTIME_OPTIONS_CHANGED');
+    expect(model.snapshot().status).toBe('stale');
+    model.setVisible(false);
+    expect(vm.listenerCount('RUNTIME_OPTIONS_CHANGED')).toBe(0);
+    expect(vm.listenerCount('COMPILER_OPTIONS_CHANGED')).toBe(0);
+});
+
+test('work limit produces incomplete status, never a successful empty result', () => {
+    const {vm} = fixture(100);
+    const model = createLinterModel(vm, undefined, {maxWork: 5});
+    model.setVisible(true);
+    jest.runAllTimers();
+    expect(model.snapshot()).toMatchObject({status: 'incomplete',
+        results: [],
+        coverage: {limitations: ['work-limit']}});
+    model.setVisible(false);
+});
+
+test('unknown blocks finish with ready results and separate coverage notes', () => {
+    const {target, model} = fixture();
+    target.blocks._blocks.unknown = {id: 'unknown', opcode: 'thirdparty_unknown', fields: {}, inputs: {}};
+    model.setVisible(true);
+    jest.runAllTimers();
+    expect(model.snapshot()).toMatchObject({status: 'ready',
+        coverage: {limitations: ['unknown-opcode'], unknownOpcodes: ['thirdparty_unknown']},
+        results: [{rule: 'unused-data', message: 'unused-data-partial'}]});
     model.setVisible(false);
 });

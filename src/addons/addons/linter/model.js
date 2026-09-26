@@ -1,16 +1,24 @@
-import {analyzeProject, originalTargets, visibleMonitors, RULES} from './analyzer';
+import {analyzeProject, originalTargets, visibleMonitors, DEFAULT_RULES} from './analyzer';
+import {resources} from './semantics';
 
 // Structural fingerprints deliberately exclude live variable values and positions.
 const targetSignature = targets => JSON.stringify(targets.map(target => [target.id, target.getName(),
     Object.values(target.variables || {}).map(variable =>
-        [variable.id, variable.name, variable.type, variable.isCloud])]));
-export const createLinterModel = (vm, getRules = () => RULES) => {
+        [variable.id, variable.name, variable.type, variable.isCloud]),
+    ['costume', 'sound'].map(kind => resources(target, kind).map(item => [item.name, item.assetId])),
+    target.component && [target.component.type, target.component.parts], Boolean(target.componentError)]));
+export const createLinterModel = (vm, getRules = () => DEFAULT_RULES, options = {}) => {
     let active = false;
     let revision = 0;
     let timer;
     let signature;
     let monitorSignature;
-    let snapshot = {status: 'idle', results: [], targets: [], revision};
+    let snapshot = {status: 'idle',
+        results: [],
+        targets: [],
+        revision,
+        coverage: {limitations: [],
+            unknownOpcodes: []}};
     const listeners = new Set();
     const publish = update => {
         snapshot = {...snapshot, ...update};
@@ -31,7 +39,17 @@ export const createLinterModel = (vm, getRules = () => RULES) => {
         publish({status: 'scanning',
             revision: current,
             targets: targets.map(target => ({id: target.id, name: target.getName(), isStage: target.isStage}))});
-        const iterator = analyzeProject(targets, monitors, getRules());
+        let coverage = {limitations: [], unknownOpcodes: []};
+        const iterator = analyzeProject(targets, monitors, getRules(), {
+            runtimeOptions: {...vm.runtime.runtimeOptions},
+            compilerOptions: {...vm.runtime.compilerOptions},
+            addonBlocks: vm.runtime.addonBlocks || {},
+            ...options.context,
+            onCoverage: value => {
+                coverage = value;
+            }
+        });
+        let work = 0;
         const step = () => {
             if (!active || revision !== current) return;
             try {
@@ -39,9 +57,16 @@ export const createLinterModel = (vm, getRules = () => RULES) => {
                 // prevents very large projects from monopolizing the editor.
                 const deadline = Date.now() + 8;
                 for (let count = 0; count < 250; count++) {
+                    if (++work > (options.maxWork || 250000)) {
+                        iterator.return();
+                        publish({status: 'incomplete',
+                            results: [],
+                            coverage: {limitations: ['work-limit'], unknownOpcodes: []}});
+                        return;
+                    }
                     const next = iterator.next();
                     if (next.done) {
-                        publish({status: 'ready', results: next.value});
+                        publish({status: 'ready', results: next.value, coverage});
                         return;
                     }
                     if (Date.now() >= deadline) break;
@@ -91,6 +116,9 @@ export const createLinterModel = (vm, getRules = () => RULES) => {
             const method = active ? 'on' : 'removeListener';
             vm[method]('PROJECT_CHANGED', invalidate);
             vm[method]('targetsUpdate', targetsChanged);
+            vm[method]('RUNTIME_OPTIONS_CHANGED', invalidate);
+            vm[method]('COMPILER_OPTIONS_CHANGED', invalidate);
+            vm[method]('EXTENSION_ADDED', invalidate);
             vm.runtime[method]('PROJECT_LOADED', loaded);
             vm.runtime[method]('MONITORS_UPDATE', monitorsChanged);
             if (active) scan();

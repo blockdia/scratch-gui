@@ -77,6 +77,7 @@ class CostumeTab extends React.Component {
     constructor (props) {
         super(props);
         bindAll(this, [
+            'handleResourceSelection',
             'handleSelectCostume',
             'handleDeleteCostume',
             'handleDuplicateCostume',
@@ -101,6 +102,9 @@ class CostumeTab extends React.Component {
         } else {
             this.state = {selectedCostumeIndex: 0};
         }
+    }
+    componentDidMount () {
+        this.props.vm.on('EDITOR_SELECT_RESOURCE', this.handleResourceSelection);
     }
     componentWillReceiveProps (nextProps) {
         const {
@@ -129,6 +133,20 @@ class CostumeTab extends React.Component {
             // If switching editing targets, update the costume index
             this.setState({selectedCostumeIndex: target.currentCostume});
         }
+    }
+    componentWillUnmount () {
+        this.props.vm.removeListener('EDITOR_SELECT_RESOURCE', this.handleResourceSelection);
+    }
+    handleResourceSelection (request) {
+        if (request.resourceKind !== 'costume' || this.props.editingTarget !== request.targetId) return;
+        const target = this.props.vm.editingTarget;
+        if (!target || target.id !== request.targetId) return;
+        const items = target.sprite.costumes;
+        const index = items.findIndex(item => item.name === request.name && item.assetId === request.assetId);
+        if (index < 0) return;
+        // Select the editor item without changing the running project's current costume.
+        this.setState({selectedCostumeIndex: index});
+        request.selected = true;
     }
     handleSelectCostume (costumeIndex) {
         this.props.vm.editingTarget.setCostume(costumeIndex);

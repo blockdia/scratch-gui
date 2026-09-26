@@ -1,13 +1,13 @@
 # Code checks
 
 An opt-in React editor window. This addon reads project data; it never executes
-primitives, compiles scripts, applies fixes or adds SB3 metadata. Its three rule
+primitives, compiles scripts, applies fixes or adds SB3 metadata. Its rule
 switches use the existing addon settings store. URL-configured addons retain the
 host's temporary-settings behavior.
 
 Warnings describe potential behavior problems, not invalid programs. Suggestions
 identify data with no statically visible use. Unknown extensions and dynamic
-sprite names are not inferred. Variable use is deliberately conservative: writes,
+sprite names are not inferred; affected coverage is reported. Variable use is deliberately conservative: writes,
 loose blocks, visible monitors and possible dynamic `sensing_of` reads all count.
 Cloud variables are excluded. All original targets are checked; clones are not.
 
@@ -27,7 +27,7 @@ use numbered navigation links. This avoids a duplicate block translation table.
 
 ## Warp checks
 
-`analyzer.js` contains the explicit builtin operation table. It is grounded in
+`semantics.js` contains the explicit builtin and bundled extension operation table. It is grounded in
 `scratch-vm/src/blocks/scratch3_{control,motion,looks,sound,sensing,event}.js`,
 `src/engine/sequencer.js` and `src/compiler/irgen.js` in the sibling VM repository.
 
@@ -59,3 +59,24 @@ window cancels pending navigation.
 Tests: `npx jest --runInBand test/unit/addons/linter test/unit/editor-windows/linter-window.test.js`.
 The addon directory is excluded by the repository's general lint command; check
 it explicitly with `npx eslint --no-ignore src/addons/addons/linter/*.{js,jsx}`.
+
+## Expanded rule registry
+
+`rules.js` is the source of truth for the 19 rule switches, categories, severities
+and defaults. Existing IDs are unchanged. Reference/structure checks are warnings
+and default on. New control-flow and cleanup suggestions default off; the existing
+unused-data suggestion stays on. The addon itself remains opt-in.
+
+See [COVERAGE.md](./COVERAGE.md) for the opcode audit, verification command and
+precise limits. The optional fourth analyzer argument provides `runtimeOptions`,
+`compilerOptions`, an `addonBlocks` map, `externalBroadcasts`, `extensions` and an
+`onCoverage` callback. Trusted extension descriptors are keyed by exact opcode and
+may declare `mayWait`, `targetInput: [inputName, allowedSentinels]`, or
+`dataAccess: 'dynamic'`; the analyzer never calls extension code to obtain them.
+The return value remains a diagnostic array. Diagnostics additionally carry a
+localized reason key and stable per-detail IDs.
+
+Resource findings open the owning target's costume/sound editor and select the
+asset using a transient `EDITOR_SELECT_RESOURCE` UI request. This does not change
+the sprite's running costume. Resource identity includes its kind, name and asset
+ID; deletion or renaming makes old locations unavailable.

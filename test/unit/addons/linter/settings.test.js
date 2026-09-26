@@ -1,5 +1,5 @@
 import SettingsStore from '../../../../src/addons/settings-store';
-import {RULES} from '../../../../src/addons/addons/linter/analyzer';
+import {RULE_DEFINITIONS} from '../../../../src/addons/addons/linter/rules';
 
 test('linter is opt-in and rule switches survive storage reload', () => {
     const previous = global.localStorage;
@@ -8,7 +8,7 @@ test('linter is opt-in and rule switches survive storage reload', () => {
     try {
         const store = new SettingsStore();
         expect(store.getAddonEnabled('linter')).toBe(false);
-        RULES.forEach(rule => expect(store.getAddonSetting('linter', rule)).toBe(true));
+        RULE_DEFINITIONS.forEach(rule => expect(store.getAddonSetting('linter', rule.id)).toBe(rule.enabled));
         store.setAddonEnabled('linter', true);
         store.setAddonSetting('linter', 'warp-wait', false);
         const reloaded = new SettingsStore();

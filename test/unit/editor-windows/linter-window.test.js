@@ -4,7 +4,7 @@ import {IntlProvider} from 'react-intl';
 import {EventEmitter} from 'events';
 import createWindow from '../../../src/addons/addons/linter/window.jsx';
 import {createLinterModel} from '../../../src/addons/addons/linter/model';
-import {RULES} from '../../../src/addons/addons/linter/analyzer';
+import {DEFAULT_RULES} from '../../../src/addons/addons/linter/analyzer';
 import {englishAddonMessages} from '../../../src/addons/translations';
 
 beforeEach(() => jest.useFakeTimers());
@@ -12,27 +12,47 @@ afterEach(() => jest.useRealTimers());
 const fixture = (multiple = false) => {
     const vm = new EventEmitter();
     vm.runtime = new EventEmitter();
-    vm.runtime.targets = [{id: 'stage', isStage: true, isOriginal: true, getName: () => 'Stage',
-        variables: {v: {id: 'v', name: 'spare', type: ''}}, blocks: {_blocks: {}}}];
-    if (multiple) vm.runtime.targets.push({id: 'cat', isOriginal: true, getName: () => 'Cat', variables: {},
-        blocks: {_blocks: {
-            move: {id: 'move', opcode: 'motion_goto', inputs: {TO: {block: 'menu'}}},
-            menu: {id: 'menu', opcode: 'text', fields: {TEXT: {value: 'Ghost'}}}
-        }}});
+    vm.runtime.targets = [{id: 'stage',
+        isStage: true,
+        isOriginal: true,
+        getName: () => 'Stage',
+        variables: {v: {id: 'v', name: 'spare', type: ''}},
+        blocks: {_blocks: {}}}];
+    if (multiple) {
+        vm.runtime.targets.push({id: 'cat',
+            isOriginal: true,
+            getName: () => 'Cat',
+            variables: {},
+            blocks: {_blocks: {
+                move: {id: 'move', opcode: 'motion_goto', inputs: {TO: {block: 'menu'}}},
+                menu: {id: 'menu', opcode: 'text', fields: {TEXT: {value: 'Ghost'}}}
+            }}});
+    }
     const settings = new EventEmitter();
     settings.addEventListener = settings.on;
     settings.removeEventListener = settings.removeListener;
-    let rules = [...RULES];
+    let rules = [...DEFAULT_RULES];
     const getRules = () => rules;
     const model = createLinterModel(vm, getRules);
     const navigator = {navigate: jest.fn(async () => true), cancel: jest.fn()};
-    const View = createWindow({addon: {settings}, model, navigator, getRules,
+    const View = createWindow({addon: {settings},
+        model,
+        navigator,
+        getRules,
         setRule: (rule, enabled) => {
             rules = enabled ? [...rules, rule] : rules.filter(item => item !== rule);
         }});
-    const render = visible => <IntlProvider locale="en" messages={englishAddonMessages}>
-        <View visible={visible} locale="en" direction="ltr" theme="dark" />
-    </IntlProvider>;
+    const render = visible => (<IntlProvider
+        locale="en"
+        messages={englishAddonMessages}
+    >
+        <View
+            visible={visible}
+            locale="en"
+            direction="ltr"
+            theme="dark"
+        />
+    </IntlProvider>);
     let root;
     const mockNodes = [];
     renderer.act(() => {
@@ -56,13 +76,15 @@ const key = (item, value) => {
 
 test('unused data identifies variables and lists and builtins need no operation translations', () => {
     const {root, vm} = fixture(true);
-    expect(issues(root)[1].props['aria-label']).toContain('Variable "spare" has no references');
+    expect(issues(root)[1].props['aria-label']).toContain('Variable "spare" is not used by any blocks');
     expect(issues(root)[0].props['aria-label']).not.toContain('motion_goto');
     expect(issues(root)[0].props['aria-label']).not.toContain('operation-');
     vm.runtime.targets[0].variables.v.type = 'list';
-    renderer.act(() => { vm.emit('PROJECT_CHANGED'); });
+    renderer.act(() => {
+        vm.emit('PROJECT_CHANGED');
+    });
     renderer.act(() => jest.runAllTimers());
-    expect(issues(root)[1].props['aria-label']).toContain('List "spare" has no references');
+    expect(issues(root)[1].props['aria-label']).toContain('List "spare" is not used by any blocks');
     renderer.act(() => root.unmount());
 });
 
@@ -74,7 +96,7 @@ test('filters, toggles rules and cleans up hidden or disabled windows', () => {
     renderer.act(() => severity.props.onChange({target: {value: 'warning'}}));
     expect(JSON.stringify(root.toJSON())).toContain('No results match these filters.');
     renderer.act(() => severity.props.onChange({target: {value: 'all'}}));
-    const unused = root.root.findAllByProps({type: 'checkbox'})[2];
+    const unused = root.root.findByProps({name: 'unused-data'});
     renderer.act(() => unused.props.onChange({target: {checked: false}}));
     renderer.act(() => jest.runAllTimers());
     expect(model.snapshot().results).toEqual([]);
@@ -96,7 +118,9 @@ test('one click selects and navigates; stale rows never navigate', async () => {
     await renderer.act(async () => issues(root)[0].props.onClick());
     expect(navigator.navigate).toHaveBeenCalledWith(expect.objectContaining({kind: 'block', blockId: 'move'}));
     expect(issues(root)[0].props['aria-selected']).toBe(true);
-    renderer.act(() => { vm.emit('PROJECT_CHANGED'); });
+    renderer.act(() => {
+        vm.emit('PROJECT_CHANGED');
+    });
     renderer.act(() => issues(root)[1].props.onClick());
     expect(navigator.navigate).toHaveBeenCalledTimes(1);
     renderer.act(() => root.unmount());
@@ -135,7 +159,7 @@ test('unavailable locations refresh results and display a notice', async () => {
     const {root, navigator} = fixture();
     navigator.navigate.mockResolvedValue(false);
     await renderer.act(async () => issues(root)[0].props.onClick());
-    expect(JSON.stringify(root.toJSON())).toContain('This location is no longer available');
+    expect(JSON.stringify(root.toJSON())).toContain('Could not jump to this location');
     renderer.act(() => root.unmount());
 });
 
@@ -143,20 +167,35 @@ test('indirect waits expose related navigation only in the selected details', as
     const {root, vm, navigator} = fixture();
     const definition = (name, warp, next) => [
         {id: name, opcode: 'procedures_definition', next, inputs: {custom_block: {block: `${name}-proto`}}},
-        {id: `${name}-proto`, opcode: 'procedures_prototype', mutation: {proccode: name, warp}}
+        {id: `${name}-proto`, opcode: 'procedures_prototype', mutation: {proccode: name, warp,
+            argumentids: '[]', argumentnames: '[]', argumentdefaults: '[]'}}
     ];
     const blocks = [...definition('outer', true, 'call'), ...definition('inner', false, 'wait'),
         {id: 'call', opcode: 'procedures_call', mutation: {proccode: 'inner'}},
         {id: 'wait', opcode: 'control_wait'}];
     vm.runtime.targets[0].blocks._blocks = Object.fromEntries(blocks.map(block => [block.id, block]));
-    renderer.act(() => { vm.emit('PROJECT_CHANGED'); });
+    renderer.act(() => {
+        vm.emit('PROJECT_CHANGED');
+    });
     renderer.act(() => jest.runAllTimers());
     await renderer.act(async () => issues(root)[0].props.onClick());
     const details = root.root.findByProps({className: 'sa-linter-details-toggle'});
     renderer.act(() => details.props.onClick());
-    expect(JSON.stringify(root.toJSON())).toContain('Waiting operations (1)');
-    const related = root.root.findAllByType('button').find(item => item.children.includes('Waiting operation 1'));
+    expect(JSON.stringify(root.toJSON())).toContain('Related locations (1)');
+    const related = root.root.findAllByType('button').find(item => item.children.includes('Related location 1'));
     await renderer.act(async () => related.props.onClick());
     expect(navigator.navigate).toHaveBeenLastCalledWith({kind: 'block', targetId: 'stage', blockId: 'wait'});
+    renderer.act(() => root.unmount());
+});
+
+test('unknown blocks show coverage notes alongside usable known-reference results', () => {
+    const {root, vm} = fixture();
+    vm.runtime.targets[0].blocks._blocks.unknown = {id: 'unknown', opcode: 'thirdparty_run', inputs: {}, fields: {}};
+    renderer.act(() => { vm.emit('PROJECT_CHANGED'); });
+    renderer.act(() => jest.runAllTimers());
+    expect(JSON.stringify(root.toJSON())).toContain('Unknown blocks are not analyzed.');
+    expect(JSON.stringify(root.toJSON())).toContain('No known references');
+    expect(issues(root)).toHaveLength(1);
+    expect(issues(root)[0].props['aria-disabled']).toBe(false);
     renderer.act(() => root.unmount());
 });

@@ -2,7 +2,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import {injectIntl} from 'react-intl';
-import {RULES} from './analyzer';
+import {RULE_DEFINITIONS, DEFAULT_RULES} from './rules';
 
 const Icon = ({name}) => (<span
     className={`sa-linter-icon sa-linter-icon-${name}`}
@@ -200,7 +200,8 @@ export default function createWindow ({addon, model, navigator, getRules, setRul
                     aria-label={message('filters')}
                     title={message('filters')}
                     aria-expanded={filtersOpen}
-                    aria-pressed={filtered || rules.length !== RULES.length}
+                    aria-pressed={filtered || rules.length !== DEFAULT_RULES.length ||
+                        DEFAULT_RULES.some(rule => !rules.includes(rule))}
                     onClick={() => setFiltersOpen(value => !value)}
                 ><Icon name="filter" /></button>
                 <button
@@ -256,17 +257,30 @@ export default function createWindow ({addon, model, navigator, getRules, setRul
                             {target.isStage ? message('stage') : target.name}</option>))}
                     </select></label>
                 </div>
-                <fieldset><legend>{message('rules')}</legend>
-                    {RULES.map(rule => (<label key={rule}><input
-                        type="checkbox"
-                        checked={rules.includes(rule)}
-                        onChange={event => {
-                            setRule(rule, event.target.checked); updateRules(getRules()); model.invalidate();
-                        }}
-                    />{message(`rule-${rule}`)}</label>))}
-                </fieldset>
+                {['reference', 'execution', 'cleanup'].map(category => (<fieldset key={category}>
+                    <legend>{message(category)}</legend>
+                    {RULE_DEFINITIONS.filter(rule => rule.type === category).map(({id: rule}) => (
+                        <label key={rule}><input
+                            type="checkbox"
+                            name={rule}
+                            checked={rules.includes(rule)}
+                            onChange={event => {
+                                setRule(rule, event.target.checked); updateRules(getRules()); model.invalidate();
+                            }}
+                        />{message(`rule-${rule}`)}</label>
+                    ))}
+                </fieldset>))}
                 <p className="sa-linter-scope">{message('coverage')}</p>
             </div> : null}
+            {ready && snapshot.coverage && snapshot.coverage.limitations.length ?
+                <p
+                    className="sa-linter-scope"
+                    role="status"
+                >
+                    {snapshot.coverage.limitations.map(item => (<span key={item}>
+                        {' '}{message(`limit-${item}`)}
+                    </span>))}
+                </p> : null}
             <div
                 className="sa-linter-results"
                 aria-busy={snapshot.status === 'scanning'}
@@ -313,7 +327,7 @@ export default function createWindow ({addon, model, navigator, getRules, setRul
                                         .filter(Boolean).join(' · ')}
                                     className={`sa-linter-row${selectedId === row.id ? ' is-selected' : ''}`}
                                     title={[issueText(row), label(row.location),
-                                        message(`reason-${row.rule}`)].join('\n')}
+                                        message(row.reason || `reason-${row.rule}`, row.values)].join('\n')}
                                     {...treeProps({key: row.id, row, group})}
                                     onClick={() => activate(row)}
                                 >
@@ -335,7 +349,7 @@ export default function createWindow ({addon, model, navigator, getRules, setRul
                     {message(selected.severity)}{' · '}{message(selected.type)}
                 </div>
                 <strong>{message(selected.message, selected.values)}</strong>
-                <p>{message(`reason-${selected.rule}`)}</p>
+                <p>{message(selected.reason || `reason-${selected.rule}`, selected.values)}</p>
                 {selected.related.length ? <div className="sa-linter-related">
                     <span>{message('related', {count: selected.related.length})}</span>
                     {selected.related.map((location, index) => (<button

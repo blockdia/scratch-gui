@@ -49,6 +49,10 @@ The generator yields small work units; the model advances at most 250 units or
 8 ms per batch. A generation invalidates pending work on edits, replacement,
 hiding and closing. Edits debounce for 400 ms. Target and monitor fingerprints
 exclude runtime values so animation does not rescan the project each frame.
+Current costume/backdrop changes filter cached resource candidates immediately,
+including changes during a scan, without restarting static analysis. The model
+requests these candidates with the analyzer's `includeCurrentCostumes` context
+option; standalone analysis excludes current costumes by default.
 
 Results use IDs, not names, for navigation. The adapter activates the code tab,
 selects the owning original target and waits at most two seconds for Blockly.

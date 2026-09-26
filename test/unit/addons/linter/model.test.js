@@ -117,7 +117,7 @@ test('resource names, component capabilities and runtime options invalidate but 
 
 test('work limit produces incomplete status, never a successful empty result', () => {
     const {vm} = fixture(100);
-    const model = createLinterModel(vm, undefined, {maxWork: 5});
+    const model = createLinterModel(vm, () => ['unused-data'], {maxWork: 5});
     model.setVisible(true);
     jest.runAllTimers();
     expect(model.snapshot()).toMatchObject({status: 'incomplete',
@@ -134,5 +134,57 @@ test('unknown blocks finish with ready results and separate coverage notes', () 
     expect(model.snapshot()).toMatchObject({status: 'ready',
         coverage: {limitations: ['unknown-opcode'], unknownOpcodes: ['thirdparty_unknown']},
         results: [{rule: 'unused-data', message: 'unused-data-partial'}]});
+    model.setVisible(false);
+});
+
+test.each([false, true])('current costume changes update cleanup results without rescanning (stage: %s)', isStage => {
+    const {vm, target} = fixture(0);
+    target.isStage = isStage;
+    target.currentCostume = 0;
+    // Distinct named costumes may share an asset; sounds must not be filtered.
+    target.sprite = {costumes: [{name: 'one', assetId: 'shared'}, {name: 'two', assetId: 'shared'}],
+        sounds: [{name: 'one', assetId: 'shared'}]};
+    const model = createLinterModel(vm, () => ['unused-resource']);
+    const costumes = () => model.snapshot().results.filter(row => row.location.resourceKind === 'costume')
+        .map(row => row.values.name);
+    model.setVisible(true);
+    jest.runAllTimers();
+    expect(costumes()).toEqual(['two']);
+    const revision = model.snapshot().revision;
+    for (let i = 0; i < 20; i++) {
+        target.currentCostume = (i + 1) % 2;
+        vm.emit('targetsUpdate');
+        expect(costumes()).toEqual([target.currentCostume === 0 ? 'two' : 'one']);
+        expect(model.snapshot().status).toBe('ready');
+        expect(model.snapshot().revision).toBe(revision);
+        expect(model.snapshot().results.filter(row => row.location.resourceKind === 'sound')).toHaveLength(1);
+        expect(jest.getTimerCount()).toBe(0);
+    }
+    const listener = jest.fn();
+    model.subscribe(listener);
+    vm.emit('targetsUpdate');
+    expect(listener).not.toHaveBeenCalled();
+    model.setVisible(false);
+});
+
+test('a batched scan publishes the latest costume and keeps statically referenced costumes excluded', () => {
+    const {vm, target} = fixture(1000);
+    target.currentCostume = 0;
+    target.sprite = {costumes: [{name: 'one'}, {name: 'two'}, {name: 'referenced'}], sounds: []};
+    target.blocks._blocks = {
+        switch: {id: 'switch', opcode: 'looks_switchcostumeto', inputs: {COSTUME: {block: 'name'}}},
+        name: {id: 'name', opcode: 'looks_costume', fields: {COSTUME: {value: 'referenced'}}}
+    };
+    const model = createLinterModel(vm, () => ['unused-resource']);
+    model.setVisible(true);
+    jest.runOnlyPendingTimers();
+    expect(model.snapshot().status).toBe('scanning');
+    target.currentCostume = 1;
+    vm.emit('targetsUpdate');
+    jest.runAllTimers();
+    expect(model.snapshot().results.map(row => row.values.name)).toEqual(['one']);
+    target.currentCostume = 2;
+    vm.emit('targetsUpdate');
+    expect(model.snapshot().results.map(row => row.values.name).sort()).toEqual(['one', 'two']);
     model.setVisible(false);
 });

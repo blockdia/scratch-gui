@@ -111,7 +111,9 @@ export const analyzeProject = function* (targets, monitors = [], enabled = DEFAU
     for (const target of targets) {
         const index = yield* indexTarget(target, context, () => limitations.add('expression-limit'));
         indexes.push(index);
-        useResource(target, 'costume', target.currentCostume || 0);
+        // The live model filters current costumes when publishing, so costume
+        // animation can update cleanup results without repeating static analysis.
+        if (!context.includeCurrentCostumes) useResource(target, 'costume', target.currentCostume || 0);
         for (const part of (target.component && target.component.parts) || []) {
             useResource(target, 'costume', resources(target, 'costume').findIndex(item => item.name === part.costume));
         }

@@ -13,6 +13,7 @@ export const createLinterModel = (vm, getRules = () => DEFAULT_RULES, options = 
     let timer;
     let signature;
     let monitorSignature;
+    let analyzedResults = [];
     let snapshot = {status: 'idle',
         results: [],
         targets: [],
@@ -27,6 +28,15 @@ export const createLinterModel = (vm, getRules = () => DEFAULT_RULES, options = 
     const cancel = () => {
         revision++;
         clearTimeout(timer);
+    };
+    const filterCurrentCostumes = targets => {
+        const currentCostumes = new Map(targets.map(target =>
+            [target.id, resources(target, 'costume')[target.currentCostume || 0]]));
+        return analyzedResults.filter(row => {
+            if (row.rule !== 'unused-resource' || row.location.resourceKind !== 'costume') return true;
+            const costume = currentCostumes.get(row.location.targetId);
+            return !costume || costume.name !== row.location.name || costume.assetId !== row.location.assetId;
+        });
     };
     const scan = () => {
         if (!active) return;
@@ -45,6 +55,7 @@ export const createLinterModel = (vm, getRules = () => DEFAULT_RULES, options = 
             compilerOptions: {...vm.runtime.compilerOptions},
             addonBlocks: vm.runtime.addonBlocks || {},
             ...options.context,
+            includeCurrentCostumes: true,
             onCoverage: value => {
                 coverage = value;
             }
@@ -66,7 +77,8 @@ export const createLinterModel = (vm, getRules = () => DEFAULT_RULES, options = 
                     }
                     const next = iterator.next();
                     if (next.done) {
-                        publish({status: 'ready', results: next.value, coverage});
+                        analyzedResults = next.value;
+                        publish({status: 'ready', results: filterCurrentCostumes(targets), coverage});
                         return;
                     }
                     if (Date.now() >= deadline) break;
@@ -85,10 +97,15 @@ export const createLinterModel = (vm, getRules = () => DEFAULT_RULES, options = 
         timer = setTimeout(scan, 400);
     };
     const targetsChanged = () => {
-        const next = targetSignature(originalTargets(vm.runtime));
+        const targets = originalTargets(vm.runtime);
+        const next = targetSignature(targets);
         if (next !== signature) {
             signature = next;
             invalidate();
+        } else if (snapshot.status === 'ready') {
+            const results = filterCurrentCostumes(targets);
+            if (results.length !== snapshot.results.length ||
+                results.some((row, index) => row !== snapshot.results[index])) publish({results});
         }
     };
     const monitorsChanged = () => {

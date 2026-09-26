@@ -10,6 +10,8 @@
  * @author Tacodiva
  */
 
+import { createSearchAliases } from "./search-aliases.js";
+
 import {
   BlockInputType,
   BlockInstance,
@@ -442,7 +444,7 @@ class TokenTypeStringEnum extends TokenType {
   /**
    * @param {(import("./BlockTypeInfo").BlockInputEnumOption[]} values
    */
-  constructor(values) {
+  constructor(values, getAliases) {
     super();
     this.isConstant = values.length === 1;
 
@@ -462,33 +464,28 @@ class TokenTypeStringEnum extends TokenType {
           }
         }
       }
-      this.values.push({ lower, parts, value });
+      this.values.push({ lower, parts, value, aliases: getAliases(value.string) });
     }
   }
 
   *parseTokens(query, idx, depth) {
     for (let valueIdx = 0; valueIdx < this.values.length; valueIdx++) {
       const valueInfo = this.values[valueIdx];
-      let yieldedToken = false;
-
-      const remainingChar = query.length - idx;
       const substr = query.lowercase.substring(idx);
-
-      // If all we have is a string which could be a number, it doesn't count as a defining feature.
-      // This is to get rid of "10" constantly suggesting "10 ^ of ()"
-      let isDefiningFeature = !TokenTypeNumberLiteral.isValidNumber(substr);
-
-      if (remainingChar < valueInfo.lower.length) {
-        if (valueInfo.lower.startsWith(substr)) {
-          const end = remainingChar < 0 ? 0 : query.length;
-          yield new Token(idx, end, this, valueInfo, { isTruncated: true, isDefiningFeature });
-          yieldedToken = true;
-        }
-      } else {
-        if (query.lowercase.startsWith(valueInfo.lower, idx)) {
-          yield new Token(idx, idx + valueInfo.lower.length, this, valueInfo, { isDefiningFeature });
-          yieldedToken = true;
-        }
+      const isDefiningFeature = !TokenTypeNumberLiteral.isValidNumber(substr);
+      const ends = new Set();
+      for (const alias of valueInfo.aliases) {
+        const truncated = substr.length < alias.text.length;
+        if (!(truncated ? alias.text.startsWith(substr) : substr.startsWith(alias.text))) continue;
+        const end = truncated ? query.length : idx + alias.text.length;
+        if (ends.has(end)) continue;
+        ends.add(end);
+        const token = new Token(idx, end, this, valueInfo, {
+          isTruncated: truncated, isDefiningFeature,
+        });
+        token.matchRank = alias.rank;
+        token.matchText = alias.text;
+        yield token;
       }
     }
   }
@@ -499,7 +496,7 @@ class TokenTypeStringEnum extends TokenType {
 
   createText(token, query, endOnly) {
     if (!token) return this.values[0].lower;
-    return token.value.lower;
+    return endOnly && token.matchRank ? token.matchText : token.value.lower;
   }
 }
 
@@ -689,11 +686,11 @@ class TokenTypeBlock extends TokenType {
     for (const blockPart of block.parts) {
       let fullTokenProvider;
       if (typeof blockPart === "string") {
-        fullTokenProvider = new TokenTypeStringEnum([{ value: null, string: blockPart }]);
+        fullTokenProvider = new TokenTypeStringEnum([{ value: null, string: blockPart }], querier.getSearchAliases);
       } else {
         switch (blockPart.type) {
           case BlockInputType.ENUM:
-            fullTokenProvider = new TokenTypeStringEnum(blockPart.values);
+            fullTokenProvider = new TokenTypeStringEnum(blockPart.values, querier.getSearchAliases);
             if (blockPart.isRound) {
               const enumGroup = new TokenProviderGroup();
               enumGroup.pushProviders([fullTokenProvider, querier.tokenGroupRoundBlocks]);
@@ -747,7 +744,7 @@ class TokenTypeBlock extends TokenType {
           inputs.push(null);
         }
       }
-      this.stringForms.push({ strings, inputs, length });
+      this.stringForms.push({ strings, inputs, length, aliases: strings.map(querier.getSearchAliases) });
     };
 
     enumerateStringForms();
@@ -785,6 +782,11 @@ class TokenTypeBlock extends TokenType {
       let lastPartIdx = -1;
       let i = idx;
       let hasDefiningFeature = false;
+      let matchRank = 0;
+      const rankedToken = (token) => {
+        token.matchRank = matchRank;
+        return token;
+      };
 
       while (true) {
         i = query.skipIgnorable(i);
@@ -793,16 +795,17 @@ class TokenTypeBlock extends TokenType {
 
         if (wordEnd === i) {
           if (hasDefiningFeature)
-            yield new Token(idx, wordEnd, this, { stringForm, lastPartIdx: -1 }, { isProper: false });
+            yield rankedToken(new Token(idx, wordEnd, this, { stringForm, lastPartIdx: -1 }, { isProper: false }));
           break;
         } else {
           const word = query.lowercase.substring(i, wordEnd);
           let match = -1;
 
           for (let formPartIdx = lastPartIdx + 1; formPartIdx < stringForm.strings.length; formPartIdx++) {
-            const stringFormPart = stringForm.strings[formPartIdx];
+            const alias = stringForm.aliases[formPartIdx].find((candidate) => candidate.text.startsWith(word));
 
-            if (stringFormPart.startsWith(word)) {
+            if (alias) {
+              matchRank = Math.max(matchRank, alias.rank);
               match = formPartIdx;
               break;
             }
@@ -815,7 +818,7 @@ class TokenTypeBlock extends TokenType {
 
           if (query.skipIgnorable(wordEnd) < query.length) {
             if (hasDefiningFeature)
-              yield new Token(idx, wordEnd, this, { stringForm, lastPartIdx, i }, { isProper: false });
+              yield rankedToken(new Token(idx, wordEnd, this, { stringForm, lastPartIdx, i }, { isProper: false }));
           }
           i = wordEnd;
         }
@@ -1185,6 +1188,7 @@ export default class WorkspaceQuerier {
    * @param {BlockTypeInfo[]} blocks The list of blocks in the workspace.
    */
   indexWorkspace(blocks) {
+    this.getSearchAliases = createSearchAliases();
     this._queryCounter = 0;
     this._createTokenGroups();
     this._populateTokenGroups(blocks);
@@ -1240,11 +1244,12 @@ export default class WorkspaceQuerier {
     function searchToken(token) {
       const subtokens = token.type.getSubtokens(token, query);
       if (subtokens) for (const subtoken of subtokens) searchToken(subtoken);
-      else if (!(token.type instanceof TokenTypeStringLiteral) && token.isProper && !token.isTruncated)
+      else if (!(token.type instanceof TokenTypeStringLiteral) && token.isProper && !token.isTruncated && !token.matchRank)
         for (let i = token.start; i < token.end; i++) {
           canBeString[i] = false;
         }
     }
+    // Phonetic aliases must not reserve text that the user intended as a literal string.
     for (const result of results) searchToken(result.token);
 
     function checkValidity(token) {
@@ -1259,11 +1264,30 @@ export default class WorkspaceQuerier {
     let validResults = [];
     for (const result of results) if (checkValidity(result.token)) validResults.push(result);
 
+    const rank = (token) => Math.max(token.matchRank || 0,
+      ...(token.type.getSubtokens(token, query) || []).map(rank));
+    for (const result of validResults) result.matchRank = rank(result.token);
     validResults = validResults.sort((a, b) => {
+      if (a.matchRank !== b.matchRank) return a.matchRank - b.matchRank;
       const aLengths = a.getLengths();
       const bLengths = b.getLengths();
       if (aLengths.stringLength != bLengths.stringLength) return aLengths.stringLength - bLengths.stringLength;
       return aLengths.tokenLength - bLengths.tokenLength;
+    });
+
+    // Use type identity, not opcode: custom blocks can share an opcode.
+    const typeIds = new Map();
+    const blockKey = (block) => {
+      if (!typeIds.has(block.typeInfo)) typeIds.set(block.typeInfo, typeIds.size);
+      return [typeIds.get(block.typeInfo), block.inputs.map((input) =>
+        input instanceof BlockInstance ? blockKey(input) : input)];
+    };
+    const seen = new Set();
+    validResults = validResults.filter((result) => {
+      const key = JSON.stringify(blockKey(result.getBlock()));
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
     });
 
     return {
@@ -1416,6 +1440,7 @@ export default class WorkspaceQuerier {
    * @private
    */
   _destroyTokenGroups() {
+    this.getSearchAliases = null;
     this.tokenTypeStringLiteral = null;
     this.tokenTypeNumberLiteral = null;
 

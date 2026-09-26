@@ -1,5 +1,7 @@
 //@ts-check
 
+import { appendableSuggestion } from "./search-aliases.js";
+
 import WorkspaceQuerier, { QueryResult } from "./WorkspaceQuerier.js";
 import renderBlock, { BlockComponent, getBlockHeight } from "./BlockRenderer.js";
 import { BlockInstance, BlockShape, BlockTypeInfo } from "./BlockTypeInfo.js";
@@ -271,7 +273,7 @@ export default async function ({ addon, msg, console }) {
 
     if (queryPreviews.length === 0 && queryIllegalResult) {
       popupInputSuggestion.value =
-        popupInput.value + queryIllegalResult.toText(true).substring(popupInput.value.length);
+        appendableSuggestion(popupInput.value, queryIllegalResult.toText(true));
       return;
     }
 
@@ -286,7 +288,7 @@ export default async function ({ addon, msg, console }) {
       });
 
       popupInputSuggestion.value =
-        popupInput.value + newSelection.autocompleteFactory(true).substring(popupInput.value.length);
+        appendableSuggestion(popupInput.value, newSelection.autocompleteFactory(true));
     } else {
       popupInputSuggestion.value = "";
     }
@@ -384,8 +386,9 @@ export default async function ({ addon, msg, console }) {
   function acceptAutocomplete() {
     let factory;
     if (queryPreviews[selectedPreviewIdx]) factory = queryPreviews[selectedPreviewIdx].autocompleteFactory;
-    else factory = () => popupInputSuggestion.value;
-    if (popupInputSuggestion.value.length === 0 || !factory) return;
+    else if (queryIllegalResult) factory = (endOnly) => queryIllegalResult.toText(endOnly);
+    else return;
+    if (!factory) return;
     popupInput.value = factory(false);
     // Move cursor to the end of the newly inserted text
     popupInput.selectionStart = popupInput.value.length + 1;
@@ -393,6 +396,7 @@ export default async function ({ addon, msg, console }) {
   }
 
   popupInput.addEventListener("keydown", (e) => {
+    if (e.isComposing || e.keyCode === 229) return;
     switch (e.key) {
       case "Escape":
         // If there's something in the input, clear it

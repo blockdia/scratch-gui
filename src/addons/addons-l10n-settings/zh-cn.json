@@ -401,5 +401,7 @@
     "hide-stage/@name": "隐藏舞台和角色窗格",
     "editor-stepping/@description": "项目运行时高亮正在运行的积木",
     "editor-stepping/@name": "给运行中的积木显示边框",
-    "editor-stepping/@settings-name-highlight-color": "高亮色"
+    "editor-stepping/@settings-name-highlight-color": "高亮色",
+    "layer-manager/@name": "图层管理器",
+    "layer-manager/@description": "查看舞台上的角色和克隆体图层，并通过拖拽调整顺序。"
 }

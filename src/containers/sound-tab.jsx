@@ -45,6 +45,7 @@ class SoundTab extends React.Component {
     constructor (props) {
         super(props);
         bindAll(this, [
+            'handleResourceSelection',
             'handleSelectSound',
             'handleDeleteSound',
             'handleDuplicateSound',
@@ -59,6 +60,9 @@ class SoundTab extends React.Component {
         this.state = {selectedSoundIndex: 0};
     }
 
+    componentDidMount () {
+        this.props.vm.on('EDITOR_SELECT_RESOURCE', this.handleResourceSelection);
+    }
     componentWillReceiveProps (nextProps) {
         const {
             editingTarget,
@@ -79,6 +83,20 @@ class SoundTab extends React.Component {
         }
     }
 
+    componentWillUnmount () {
+        this.props.vm.removeListener('EDITOR_SELECT_RESOURCE', this.handleResourceSelection);
+    }
+    handleResourceSelection (request) {
+        if (request.resourceKind !== 'sound' || this.props.editingTarget !== request.targetId) return;
+        const target = this.props.vm.editingTarget;
+        if (!target || target.id !== request.targetId) return;
+        const items = target.sprite.sounds;
+        const index = items.findIndex(item => item.name === request.name && item.assetId === request.assetId);
+        if (index < 0) return;
+        // Select the editor item without playing it.
+        this.setState({selectedSoundIndex: index});
+        request.selected = true;
+    }
     handleSelectSound (soundIndex) {
         this.setState({selectedSoundIndex: soundIndex});
     }

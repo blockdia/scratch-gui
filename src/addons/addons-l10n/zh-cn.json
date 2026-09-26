@@ -262,5 +262,7 @@
     "swap-local-global/edit-variable-option": "重命名或改变变量类型",
     "swap-local-global/to-global": "转换为“适用于所有角色”",
     "swap-local-global/to-local": "转换为“仅适用于当前角色”",
-    "hide-stage/hide-stage": "隐藏舞台"
+    "hide-stage/hide-stage": "隐藏舞台",
+    "debugger/title": "调试器",
+    "debugger/compiler-warning": "禁用编译器时，调试器的运行效果最佳。"
 }

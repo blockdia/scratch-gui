@@ -14,15 +14,14 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import windowManager from '../lib/editor-windows/manager';
+import AddonWindows from './window-registry';
 import IntlMessageFormat from 'intl-messageformat';
 import SettingsStore from './settings-store-singleton';
 import dataURLToBlob from '../lib/data-uri-to-blob';
 import EventTargetShim from './event-target';
 import AddonHooks from './hooks';
 import addons from './generated/addon-manifests';
-import addonMessages from './addons-l10n/en.json';
-import l10nEntries from './generated/l10n-entries';
+import {loadAddonMessages, resolveAddonLocale} from './translations';
 import addonEntries from './generated/addon-entries';
 import {addContextMenu} from './contextmenu';
 import * as modal from './modal';
@@ -116,25 +115,11 @@ const getEditorMode = () => {
     return 'editor';
 };
 
-/**
- * @returns {string} Locale code
- */
-const getLocale = () => {
-    const locale = reduxInstance.state.locales.locale;
-    if (Object.prototype.hasOwnProperty.call(l10nEntries, locale)) {
-        return locale;
-    }
-    return locale.split('-')[0];
-};
-const language = getLocale();
-
-const getTranslations = async () => {
-    if (Object.prototype.hasOwnProperty.call(l10nEntries, language)) {
-        const localeMessages = await l10nEntries[language]();
-        Object.assign(addonMessages, localeMessages);
-    }
-};
-const addonMessagesPromise = getTranslations();
+const language = resolveAddonLocale(reduxInstance.state.locales.locale);
+let addonMessages = {};
+const addonMessagesPromise = loadAddonMessages(language).then(messages => {
+    addonMessages = messages;
+});
 
 const untilInEditor = () => {
     if (
@@ -196,6 +181,7 @@ class Tab extends EventTargetShim {
     constructor (id) {
         super();
         this._id = id;
+        this._windows = new AddonWindows(id, () => SettingsStore.getAddonEnabled(id));
         this._seenElements = new WeakSet();
         // traps is public API
         this.traps = {
@@ -663,37 +649,11 @@ class Tab extends EventTargetShim {
     }
 
     createWindow (definition) {
-        const options = {...definition, id: `${this._id}/${definition.id}`};
-        const record = {handle: windowManager.registerWindow(options), options, unread: false};
-        if (!this._windows) this._windows = new Set();
-        this._windows.add(record);
-        const api = {};
-        for (const name of ['open', 'focus', 'hide', 'close', 'setPinned', 'own']) {
-            api[name] = (...args) => (record.handle ? record.handle[name](...args) : null);
-        }
-        api.setUnread = unread => {
-            record.unread = unread;
-            if (record.handle) record.handle.setUnread(unread);
-        };
-        api.unregister = () => {
-            if (record.handle) record.handle.unregister();
-            record.handle = null;
-            this._windows.delete(record);
-        };
-        return api;
+        return this._windows.create(definition);
     }
 
     _setWindowsEnabled (enabled) {
-        if (!this._windows) return;
-        for (const record of this._windows) {
-            if (enabled && !record.handle) {
-                record.handle = windowManager.registerWindow(record.options);
-                record.handle.setUnread(record.unread);
-            } else if (!enabled && record.handle) {
-                record.handle.unregister();
-                record.handle = null;
-            }
-        }
+        this._windows.setEnabled(enabled);
     }
 
     createModal (title, {isOpen = false} = {}) {

@@ -58,7 +58,7 @@
         "gui.windows.close": "关闭",
         "gui.windows.more": "更多工具",
         "gui.windows.tools": "编辑器工具",
-        "gui.windows.debugger": "调试器"
+        "gui.windows.addonError": "此工具无法显示。请关闭并重新打开窗口以重试。"
     },
     "zh-tw": {
         "blockdia.backpack.pin": "固定到積木欄",
@@ -119,6 +119,6 @@
         "gui.windows.close": "關閉",
         "gui.windows.more": "更多工具",
         "gui.windows.tools": "編輯器工具",
-        "gui.windows.debugger": "偵錯工具"
+        "gui.windows.addonError": "此工具無法顯示。請關閉並重新開啟視窗以重試。"
     }
 }

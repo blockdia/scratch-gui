@@ -276,3 +276,20 @@
 .sa-debugger-compiler-warning[hidden] {
   display: none;
 }
+
+/* React owns the shell; keep embedded log/chart views inside the window body. */
+.sa-debugger-managed-content > [role="tabpanel"] {
+  flex: 1;
+  min-height: 0;
+  height: auto;
+}
+button.sa-debugger-compiler-warning {
+  flex-shrink: 0;
+  height: auto;
+  min-height: 24px;
+  padding: 4px 8px;
+  border: 0;
+  background: var(--ui-tertiary);
+  font: inherit;
+  cursor: pointer;
+}

@@ -24,7 +24,10 @@ const childProcess = require('child_process');
 const rimraf = require('rimraf');
 const pathUtil = require('path');
 const {addons, newAddons} = require('./addons.js');
-const applyLocalPatches = require('./patches/apply.cjs');
+// Addons are maintained locally. Importing upstream is an explicit destructive operation.
+if (!process.argv.includes('--overwrite-local-addons')) {
+    throw new Error('Addons are maintained manually. Use --overwrite-local-addons only to replace local sources.');
+}
 
 const walk = dir => {
     const children = fs.readdirSync(dir);
@@ -317,7 +320,6 @@ const processAddon = (id, oldDirectory, newDirectory) => {
                 contents = rewriteAssetImports(contents);
             }
 
-            contents = applyLocalPatches(`${id}/${file}`, contents);
             detectUnimplementedAPIs(id, contents);
         }
 

@@ -1,9 +1,5 @@
 import {WindowManager, constrain} from '../../../src/lib/editor-windows/manager';
 import reducer from '../../../src/reducers/editor-windows';
-import fs from 'fs';
-import path from 'path';
-import applyPatches from '../../../src/addons/patches/apply.cjs';
-import patches from '../../../src/addons/patches/editor-windows.json';
 
 let manager;
 const element = () => ({contains: target => target === 'inside', focus: jest.fn(),
@@ -125,19 +121,6 @@ test('unregister destroys once, removes Redux state and permits fresh registrati
     expect(manager.state.windows.a.status).toBe('closed');
     unbind();
 });
-test.each(patches.map(patch => [patch.file, patch]))('patch for %s rejects drift and round-trips reversible edits', (file, patch) => {
-    const current = fs.readFileSync(path.resolve(__dirname, '../../../src/addons/addons', file), 'utf8');
-    let upstream = current;
-    // Empty replacements need an upstream fixture; reconstruct from the checked-in patch sequence instead.
-    if (patch.replacements.some(item => !item.after)) {
-        expect(() => applyPatches(file, 'upstream changed')).toThrow(/no longer matches/);
-        return;
-    }
-    [...patch.replacements].reverse().forEach(({before, after}) => { upstream = upstream.replace(after, () => before); });
-    expect(applyPatches(file, upstream)).toBe(current);
-    expect(() => applyPatches(file, 'upstream changed')).toThrow(/no longer matches/);
-});
-
 test('unpin preserves geometry until the next open and external focus is not stolen', () => {
     register('a', {anchor: element()});
     manager.open('a', {pinned: true});

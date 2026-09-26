@@ -3,13 +3,8 @@ import createLogsTab from "./logs.js";
 import createThreadsTab from "./threads.js";
 import createPerformanceTab from "./performance.js";
 import Utils from "../find-bar/blockly/Utils.js";
+import createDebuggerWindow from "./window.jsx";
 
-
-const removeAllChildren = (element) => {
-  while (element.firstChild) {
-    element.removeChild(element.firstChild);
-  }
-};
 
 export default async function ({ addon, console, msg }) {
   setup(addon);
@@ -77,52 +72,6 @@ export default async function ({ addon, console, msg }) {
     if (windowHandle) windowHandle.setUnread(value);
   };
 
-  const interfaceContainer = Object.assign(document.createElement("div"), {
-    className: "sa-debugger-managed-content",
-  });
-  const interfaceHeader = Object.assign(document.createElement("div"), {
-    className: addon.tab.scratchClass("card_header-buttons"),
-  });
-  const tabListElement = Object.assign(document.createElement("ul"), {
-    className: "sa-debugger-tabs",
-  });
-  tabListElement.setAttribute("role", "tablist");
-  const buttonContainerElement = Object.assign(document.createElement("div"), {
-    className: addon.tab.scratchClass("card_header-buttons-right", { others: "sa-debugger-header-buttons" }),
-  });
-  const tabContentContainer = Object.assign(document.createElement("div"), {
-    className: "sa-debugger-tab-content",
-  });
-
-  const compilerWarning = document.createElement("a");
-  compilerWarning.addEventListener("click", () => {
-    addon.tab.redux.dispatch({
-      type: "scratch-gui/modals/OPEN_MODAL",
-      modal: "settingsModal"
-    });
-  });
-  compilerWarning.className = "sa-debugger-log sa-debugger-compiler-warning";
-  compilerWarning.textContent = "The debugger works best when the compiler is disabled.";
-  const updateCompilerWarningVisibility = () => {
-    compilerWarning.hidden = !vm.runtime.compilerOptions.enabled;
-  };
-  vm.on("COMPILER_OPTIONS_CHANGED", updateCompilerWarningVisibility);
-  updateCompilerWarningVisibility();
-
-  let isInterfaceVisible = false;
-  const setInterfaceVisible = (_isVisible) => {
-    isInterfaceVisible = _isVisible;
-
-    if (isInterfaceVisible) {
-      activeTab.show();
-    } else {
-      activeTab.hide();
-    }
-  };
-
-  interfaceHeader.append(tabListElement, buttonContainerElement);
-  interfaceContainer.append(interfaceHeader, compilerWarning, tabContentContainer);
-
   const createHeaderButton = ({ text, icon, description }) => {
     const button = Object.assign(document.createElement("button"), {
       type: "button",
@@ -148,31 +97,7 @@ export default async function ({ addon, console, msg }) {
     };
   };
 
-  const createHeaderTab = ({ text, icon }) => {
-    const tab = document.createElement("li");
-    tab.tabIndex = 0;
-    tab.setAttribute("role", "tab");
-    tab.addEventListener("keydown", (event) => {
-      if (event.key === "Enter" || event.key === " ") {
-        event.preventDefault();
-        tab.click();
-      }
-    });
-    const imageElement = document.createElement("span");
-    imageElement.className = "sa-debugger-action-icon";
-    imageElement.style.setProperty("--debugger-icon", `url("${icon}")`);
-    imageElement.setAttribute("aria-hidden", "true");
-    const textElement = Object.assign(document.createElement("span"), {
-      textContent: text,
-    });
-    tab.appendChild(imageElement);
-    tab.appendChild(textElement);
-    return {
-      element: tab,
-      image: imageElement,
-      text: textElement,
-    };
-  };
+  const createHeaderTab = ({ text, icon }) => ({ text, icon });
 
   const unpauseButton = createHeaderButton({
     text: msg("unpause"),
@@ -482,50 +407,12 @@ export default async function ({ addon, console, msg }) {
   }
   messagesLoggedBeforeLogsTabLoaded.length = 0;
 
-  let activeTab;
-  const setActiveTab = (tab) => {
-    if (tab === activeTab) return;
-    const selectedClass = "sa-debugger-tab-selected";
-    if (activeTab) {
-      activeTab.hide();
-      activeTab.tab.element.classList.remove(selectedClass);
-      activeTab.tab.element.setAttribute("aria-selected", "false");
-    }
-    tab.tab.element.classList.add(selectedClass);
-    tab.tab.element.setAttribute("aria-selected", "true");
-    activeTab = tab;
-
-    removeAllChildren(tabContentContainer);
-    tabContentContainer.appendChild(tab.content);
-
-    removeAllChildren(buttonContainerElement);
-    buttonContainerElement.appendChild(unpauseButton.element);
-    for (const button of tab.buttons) {
-      buttonContainerElement.appendChild(button.element);
-    }
-
-
-    if (isInterfaceVisible) {
-      activeTab.show();
-    }
-  };
-  for (const tab of allTabs) {
-    tab.tab.element.addEventListener("click", () => {
-      setActiveTab(tab);
-    });
-    tabListElement.appendChild(tab.tab.element);
-  }
-  setActiveTab(allTabs[0]);
-
   windowHandle = addon.tab.createWindow({
     id: "debugger",
-    title: { id: "gui.windows.debugger", defaultMessage: "Debugger" },
+    title: { id: "addons.debugger.title" },
     icon: addon.self.getResource("/icons/debug.svg"),
-    content: interfaceContainer,
-    onShow: () => setInterfaceVisible(true),
-    onHide: () => setInterfaceVisible(false),
+    component: createDebuggerWindow({ addon, vm, tabs: allTabs, unpauseButton }),
     onReset: () => {
-      setActiveTab(allTabs[0]);
       for (const tab of allTabs) {
         if (tab.resetView) tab.resetView();
       }

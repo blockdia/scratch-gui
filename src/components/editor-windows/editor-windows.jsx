@@ -5,6 +5,7 @@ import PropTypes from 'prop-types';
 import {connect} from 'react-redux';
 import {injectIntl, intlShape, defineMessages} from 'react-intl';
 import manager from '../../lib/editor-windows/manager';
+import withAddonIntl from '../../addons/intl-provider.jsx';
 import styles from './editor-windows.css';
 
 const messages = defineMessages({
@@ -180,7 +181,13 @@ export class WindowFrame extends React.Component {
                     ref={this.setContent}
                     className={styles.content}
                 >
-                    {entry.render ? entry.render() : null}
+                    {entry.render ? entry.render({
+                        status: state.status,
+                        visible: state.status === 'visible' && !suspended,
+                        locale: intl.locale,
+                        direction: this.props.rtl ? 'rtl' : 'ltr',
+                        theme: this.props.theme
+                    }) : null}
                 </div>
                 {['n', 's', 'e', 'w', 'ne', 'nw', 'se', 'sw'].map(edge => (
                     <div
@@ -204,6 +211,8 @@ WindowFrame.propTypes = {
     active: PropTypes.bool,
     suspended: PropTypes.bool,
     index: PropTypes.number,
+    rtl: PropTypes.bool,
+    theme: PropTypes.string,
     intl: intlShape
 };
 
@@ -270,18 +279,27 @@ class Host extends React.Component {
                         suspended={this.props.suspended}
                         index={state.order.indexOf(entry.id)}
                         intl={this.props.intl}
+                        rtl={this.props.rtl}
+                        theme={this.props.theme}
                     />
                 ))}
             </div>, document.body);
     }
 }
 Host.contextTypes = {store: PropTypes.object};
-Host.propTypes = {suspended: PropTypes.bool, rtl: PropTypes.bool, vm: PropTypes.object, intl: intlShape};
+Host.propTypes = {
+    suspended: PropTypes.bool,
+    rtl: PropTypes.bool,
+    vm: PropTypes.object,
+    intl: intlShape,
+    theme: PropTypes.string
+};
 export const WindowHost = connect(state => ({
     suspended: state.scratchGui.mode.isPlayerOnly || state.scratchGui.mode.isFullScreen,
     rtl: state.locales.isRtl,
+    theme: state.scratchGui.theme.theme.gui,
     vm: state.scratchGui.vm
-}))(injectIntl(Host));
+}))(withAddonIntl(injectIntl(Host)));
 
 export class Toolbar extends React.Component {
     constructor (props) {
@@ -397,4 +415,4 @@ export class Toolbar extends React.Component {
     }
 }
 Toolbar.propTypes = {intl: intlShape};
-export const WindowToolbar = injectIntl(Toolbar);
+export const WindowToolbar = withAddonIntl(injectIntl(Toolbar));

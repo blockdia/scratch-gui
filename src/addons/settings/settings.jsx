@@ -20,7 +20,7 @@ import classNames from 'classnames';
 
 import Search from './search';
 import importedAddons from '../generated/addon-manifests';
-import messagesByLocale from '../generated/l10n-settings-entries';
+import {addonSettingsLocales, loadAddonSettingsMessages} from './addon-translations';
 import settingsTranslationsEnglish from './en.json';
 import settingsTranslationsOther from './translations.json';
 import upstreamMeta from '../generated/upstream-meta.json';
@@ -44,12 +44,10 @@ import '../../lib/normalize.css';
 /* eslint-disable react/no-multi-comp */
 /* eslint-disable react/jsx-no-bind */
 
-// messagesByLocale only has the non-English strings, so we have to add English as a supported
-// locale so that a non-English device with their editor language set to English gets English.
-const locale = detectLocale(['en', ...Object.keys(messagesByLocale)]);
+const locale = detectLocale(addonSettingsLocales);
 document.documentElement.lang = locale;
 
-const addonTranslations = messagesByLocale[locale] ? messagesByLocale[locale]() : {};
+const addonTranslations = loadAddonSettingsMessages(locale);
 
 const settingsTranslations = settingsTranslationsEnglish;
 if (locale !== 'en') {

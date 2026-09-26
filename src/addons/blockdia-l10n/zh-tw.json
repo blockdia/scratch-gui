@@ -1,0 +1,5 @@
+{
+    "gamepad/config-header": "這個註解包含第三方工具或網站（如 https://editor.blockdia.com/）中的遊戲手柄配置。\n請勿手動修改",
+    "debugger/title": "偵錯工具",
+    "debugger/compiler-warning": "停用編譯器時，偵錯工具的運作效果最佳。"
+}

@@ -441,9 +441,12 @@ class SettingsStore extends EventTargetShim {
             if (JSON.stringify(oldSettings) !== JSON.stringify(newSettings)) {
                 const manifest = this.getAddonManifest(addonId);
                 // Dynamic enable is always supported.
-                const dynamicEnable = !oldSettings.enabled && newSettings.enabled;
-                // Dynamic disable requires addon support.
-                const dynamicDisable = !!manifest.dynamicDisable && oldSettings.enabled && !newSettings.enabled;
+                const oldEnabled = this.getAddonEnabled(addonId);
+                const newEnabled = !manifest.unsupported && (typeof newSettings.enabled === 'boolean' ?
+                    newSettings.enabled : !!manifest.enabledByDefault);
+                const dynamicEnable = !oldEnabled && newEnabled;
+                // Include manifest defaults when an enabled flag has never been saved.
+                const dynamicDisable = !!manifest.dynamicDisable && oldEnabled && !newEnabled;
                 // Clone to avoid pass-by-reference issues
                 this.store[addonId] = JSON.parse(JSON.stringify(newSettings));
                 this.dispatchEvent(new CustomEvent('addon-changed', {

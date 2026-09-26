@@ -403,5 +403,10 @@
     "editor-stepping/@name": "给运行中的积木显示边框",
     "editor-stepping/@settings-name-highlight-color": "高亮色",
     "layer-manager/@name": "图层管理器",
-    "layer-manager/@description": "查看舞台上的角色和克隆体图层，并通过拖拽调整顺序。"
+    "layer-manager/@description": "查看舞台上的角色和克隆体图层，并通过拖拽调整顺序。",
+    "keyboard-editing/@name": "键盘编辑模式",
+    "keyboard-editing/@description": "使用键盘导航积木、编辑参数和搜索插入积木。",
+    "keyboard-editing/@settings-name-popup_scale": "弹出积木大小",
+    "keyboard-editing/@settings-name-popup_width": "弹出窗口宽度",
+    "keyboard-editing/@settings-name-popup_max_height": "弹出窗口最大高度"
 }

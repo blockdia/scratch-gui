@@ -1,7 +1,7 @@
-import WorkspaceQuerier from '../../../src/addons/addons/middle-click-popup/WorkspaceQuerier';
+import WorkspaceQuerier from '../../../src/addons/libraries/block-search/WorkspaceQuerier';
 import {BlockInstance, BlockShape, BlockInputNumber, BlockInputString, BlockInputEnum}
-    from '../../../src/addons/addons/middle-click-popup/BlockTypeInfo';
-import {createSearchAliases, appendableSuggestion} from '../../../src/addons/addons/middle-click-popup/search-aliases';
+    from '../../../src/addons/libraries/block-search/BlockTypeInfo';
+import {createSearchAliases, appendableSuggestion} from '../../../src/addons/libraries/block-search/search-aliases';
 
 const block = (id, parts, shape = BlockShape.Stack) => {
     const type = {id, parts, shape, inputs: parts.filter(p => typeof p !== 'string')};

@@ -272,5 +272,15 @@
     "swap-local-global/to-local": "Convert to \"For this sprite only\"",
     "hide-stage/hide-stage": "Hide stage",
     "debugger/title": "Debugger",
-    "debugger/compiler-warning": "The debugger works best when the compiler is disabled."
+    "debugger/compiler-warning": "The debugger works best when the compiler is disabled.",
+    "layer-manager/title": "Layer manager",
+    "layer-manager/front": "Frontmost",
+    "layer-manager/back": "Backmost",
+    "layer-manager/forward": "Move forward",
+    "layer-manager/backward": "Move backward",
+    "layer-manager/clone": "Clone {number}",
+    "layer-manager/hidden": "Hidden",
+    "layer-manager/stage": "Stage",
+    "layer-manager/drag": "Drag to reorder {name}",
+    "layer-manager/cancelled": "Layer move cancelled because the project or target changed."
 }

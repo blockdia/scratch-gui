@@ -1,0 +1,41 @@
+.sa-layer-manager {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+    color: var(--text-primary);
+    background: var(--ui-primary);
+    font-size: 12px;
+}
+.sa-layer-actions { display: flex; gap: 8px; padding: 10px; }
+.sa-layer-manager button { font: inherit; color: inherit; }
+.sa-layer-actions button {
+    background: var(--ui-tertiary);
+    border: 1px solid var(--ui-black-transparent);
+    border-radius: 6px;
+    padding: 6px 10px;
+}
+.sa-layer-manager button:disabled { opacity: .45; }
+.sa-layer-manager button:focus-visible { outline: 2px solid var(--looks-secondary); outline-offset: -2px; }
+.sa-layer-boundary { padding: 4px 12px; opacity: .7; font-size: 11px; }
+.sa-layer-list { flex: 1; min-height: 0; overflow: auto; padding: 3px 8px; overscroll-behavior: contain; }
+.sa-layer-row { display: flex; align-items: stretch; position: relative; min-height: 52px; border-radius: 6px; }
+.sa-layer-row:hover { background: var(--ui-tertiary); }
+.sa-layer-row.is-selected { background: var(--ui-tertiary); box-shadow: inset 0 0 0 2px var(--looks-secondary); }
+.sa-layer-row.is-dragging { opacity: .4; }
+.sa-layer-row.insert-before::before {
+    content: ''; position: absolute; inset-inline: 0; top: -2px; height: 3px;
+    background: var(--looks-secondary); border-radius: 2px; pointer-events: none; z-index: 1;
+}
+.sa-layer-select { display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0; text-align: start;
+    background: transparent; border: 0; padding: 6px; cursor: pointer; }
+.sa-layer-select img, .sa-layer-thumbnail { width: 36px; height: 36px; object-fit: contain; flex-shrink: 0; }
+.sa-layer-label { display: flex; flex-direction: column; min-width: 0; flex: 1; }
+.sa-layer-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sa-layer-manager small { font-size: 10px; opacity: .7; }
+.sa-layer-handle, .sa-layer-stage-mark { width: 26px; flex-shrink: 0; border: 0; background: transparent;
+    display: flex; align-items: center; justify-content: center; }
+.sa-layer-handle { cursor: grab; touch-action: none; user-select: none; }
+.sa-layer-handle:active { cursor: grabbing; }
+.sa-layer-notice:empty { display: none; }
+.sa-layer-notice { padding: 6px 12px; }

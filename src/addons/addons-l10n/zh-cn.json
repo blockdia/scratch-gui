@@ -264,5 +264,15 @@
     "swap-local-global/to-local": "转换为“仅适用于当前角色”",
     "hide-stage/hide-stage": "隐藏舞台",
     "debugger/title": "调试器",
-    "debugger/compiler-warning": "禁用编译器时，调试器的运行效果最佳。"
+    "debugger/compiler-warning": "禁用编译器时，调试器的运行效果最佳。",
+    "layer-manager/title": "图层管理器",
+    "layer-manager/front": "最前层",
+    "layer-manager/back": "最后层",
+    "layer-manager/forward": "前移",
+    "layer-manager/backward": "后移",
+    "layer-manager/clone": "克隆体 {number}",
+    "layer-manager/hidden": "已隐藏",
+    "layer-manager/stage": "舞台",
+    "layer-manager/drag": "拖拽排序：{name}",
+    "layer-manager/cancelled": "项目或角色已变化，已取消图层移动。"
 }

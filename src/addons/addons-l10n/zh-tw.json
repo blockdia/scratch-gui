@@ -222,5 +222,7 @@
     "swap-local-global/edit-variable-option": "編輯變數",
     "swap-local-global/to-global": "轉換成「適用於所有角色」",
     "swap-local-global/to-local": "轉換成「僅適用當前角色」",
-    "hide-stage/hide-stage": "隱藏舞台"
+    "hide-stage/hide-stage": "隱藏舞台",
+    "debugger/title": "偵錯工具",
+    "debugger/compiler-warning": "停用編譯器時，偵錯工具的運作效果最佳。"
 }

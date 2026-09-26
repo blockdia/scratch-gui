@@ -274,5 +274,7 @@
     "layer-manager/hidden": "已隐藏",
     "layer-manager/stage": "舞台",
     "layer-manager/drag": "拖拽排序：{name}",
-    "layer-manager/cancelled": "项目或角色已变化，已取消图层移动。"
+    "layer-manager/cancelled": "项目或角色已变化，已取消图层移动。",
+    "keyboard-editing/keyboard-label": "积木工作区键盘编辑器",
+    "keyboard-editing/keyboard-help": "键入搜索 · Enter 编辑 · ← → 行内输入 · ↑ ↓ 积木/连接点 · Shift+↑ ↓ 栈首尾 · Tab / Shift+Tab 跨层输入 · Alt+← → 进出 reporter · Alt+↑ ↓ 脚本 · Ctrl/Cmd+Enter 拖拽"
 }

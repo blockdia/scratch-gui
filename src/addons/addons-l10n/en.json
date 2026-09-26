@@ -282,5 +282,7 @@
     "layer-manager/hidden": "Hidden",
     "layer-manager/stage": "Stage",
     "layer-manager/drag": "Drag to reorder {name}",
-    "layer-manager/cancelled": "Layer move cancelled because the project or target changed."
+    "layer-manager/cancelled": "Layer move cancelled because the project or target changed.",
+    "keyboard-editing/keyboard-label": "Block workspace keyboard editor",
+    "keyboard-editing/keyboard-help": "Type: search · Enter: edit · ← →: inline inputs · ↑ ↓: blocks/connections · Shift+↑ ↓: stack ends · Tab / Shift+Tab: nested inputs · Alt+← →: reporter · Alt+↑ ↓: scripts · Ctrl/Cmd+Enter: drag"
 }

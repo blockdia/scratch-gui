@@ -19,6 +19,9 @@ const manifest = {
     },
     {
       "name": "retronbv"
+    },
+    {
+      "name": "LuYifei2011"
     }
   ],
   "userscripts": [

@@ -18,6 +18,9 @@ const manifest = {
     {
       "name": "CST1229",
       "link": "https://scratch.mit.edu/users/CST1229/"
+    },
+    {
+      "name": "LuYifei2011"
     }
   ],
   "tags": [

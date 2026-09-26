@@ -62,6 +62,9 @@ const contributors = [
     },
     {
         username: 'Wowfunhappy'
+    },
+    {
+        username: 'LuYifei2011'
     }
 ].map(fromHardcoded);
 
@@ -172,6 +175,9 @@ const addonDevelopers = [
     },
     {
         username: 'TheKodeToad'
+    },
+    {
+        username: 'LuYifei2011'
     }
 ].map(fromHardcoded);
 

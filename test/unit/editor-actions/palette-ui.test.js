@@ -110,6 +110,62 @@ test('symbol Escape clears the query before closing, retaining the symbol prefix
     expect(instance.state.open).toBe(false);
 });
 
+test('code symbol filters keep events distinct from broadcasts and allow literal names', async () => {
+    const target = vm.editingTarget;
+    target.variables.v = {id: 'v', name: 'score', type: ''};
+    target.variables.l = {id: 'l', name: 'v 1', type: 'list'};
+    target.blocks._blocks.use = {id: 'use', opcode: 'data_variable', fields: {VARIABLE: {id: 'v'}}};
+    target.blocks._blocks.flag = {id: 'flag', opcode: 'event_whenflagclicked', topLevel: true};
+    target.blocks._blocks.receive = {id: 'receive', opcode: 'event_whenbroadcastreceived',
+        fields: {BROADCAST_OPTION: {value: 'hello'}}, topLevel: true};
+    target.blocks._blocks.definition = {id: 'definition', opcode: 'procedures_definition',
+        inputs: {custom_block: {block: 'prototype'}}};
+    target.blocks._blocks.prototype = {id: 'prototype', opcode: 'procedures_prototype',
+        mutation: {proccode: 'custom %s'}};
+    instance.navigation.locate = jest.fn(async (location, options) => {
+        options.activate();
+        return true;
+    });
+    instance.open({mode: 'symbols'});
+    instance.setState({query: '@v '});
+    expect(instance.results().map(item => item.kind)).toEqual(['variable']);
+    instance.setState({query: '@l v 1'});
+    expect(instance.results().map(item => item.kind)).toEqual(['list']);
+    instance.setState({query: '@ v 1'});
+    expect(instance.results().map(item => item.kind)).toEqual(['list']);
+    instance.setState({query: '@v 1'});
+    expect(instance.results()).toEqual([]);
+    instance.setState({query: '@c custom'});
+    expect(instance.results().map(item => item.kind)).toEqual(['procedure']);
+    instance.setState({query: '@e '});
+    expect(instance.results().map(item => item.kind)).toEqual(['event']);
+    instance.setState({query: '@b '});
+    expect(instance.results().map(item => item.kind)).toEqual(['broadcast']);
+    instance.tab = 1;
+    instance.props.editorState.scratchGui.editorTab.activeTabIndex = 1;
+    instance.setState({query: '@v score'});
+    expect(instance.results().map(item => item.kind)).toEqual(['variable']);
+    await instance.choose(instance.results()[0]);
+    expect(instance.props.dispatch).toHaveBeenCalledWith(expect.objectContaining({activeTabIndex: 0}));
+});
+
+test('costumes and sounds follow the active tab without category prefixes', () => {
+    const target = vm.editingTarget;
+    target.sprite.costumes = [{name: 'Blue', assetId: 'blue'}];
+    target.sprite.sounds = [{name: 'Pop', assetId: 'pop'}];
+    instance.open({mode: 'symbols'});
+    instance.tab = 1;
+    instance.setState({query: '@blue'});
+    expect(instance.results().map(item => item.kind)).toEqual(['costume']);
+    instance.setState({query: '@c blue'});
+    expect(instance.results()).toEqual([]);
+    instance.tab = 2;
+    instance.setState({query: '@pop'});
+    expect(instance.results().map(item => item.kind)).toEqual(['sound']);
+    instance.setState({query: '@s pop'});
+    expect(instance.results()).toEqual([]);
+});
+
 test('symbol arrows preview without wrapping; repeated clicks and horizontal arrows cycle references', async () => {
     const receive = id => ({id, opcode: 'event_whenbroadcastreceived', fields: {BROADCAST_OPTION: {value: 'hello'}}});
     vm.editingTarget.blocks._blocks = {a: receive('a'), b: receive('b')};

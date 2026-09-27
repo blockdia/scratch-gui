@@ -146,6 +146,7 @@
         "gui.palette.local": "仅适用于当前角色",
         "gui.palette.failed": "此位置已不可用",
         "gui.palette.symbolHint": "↑ ↓ 定位 · ← → 引用 · Enter 确认 · Esc 清空／关闭",
+        "gui.palette.symbolFilters": "前缀后加空格：@v 变量 · @l 列表 · @c 自制积木 · @e 事件 · @b 广播；@ 名称不筛选",
         "gui.palette.hint": "↑ ↓ 选择 · Enter 打开 · Esc 关闭"
     },
     "zh-tw": {

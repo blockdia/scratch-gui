@@ -14,6 +14,15 @@ test('prefixes, Chinese matching, exact/prefix/substring/subsequence priority an
     expect(parseQuery('> 保存 ')).toEqual({mode: 'commands', query: '保存'});
     expect(parseQuery('@计分')).toEqual({mode: 'symbols', query: '计分'});
     expect(parseQuery('猫')).toEqual({mode: 'targets', query: '猫'});
+    expect(parseQuery('@v ')).toEqual({mode: 'symbols', kind: 'variable', query: ''});
+    expect(parseQuery('@V  计分 ')).toEqual({mode: 'symbols', kind: 'variable', query: '计分'});
+    expect(parseQuery('@v')).toEqual({mode: 'symbols', query: 'v'});
+    expect(parseQuery('@ v 1')).toEqual({mode: 'symbols', query: 'v 1'});
+    expect(parseQuery('@x test')).toEqual({mode: 'symbols', query: 'x test'});
+    expect(['l', 'c', 'e', 'b'].map(code => parseQuery(`@${code} `).kind))
+        .toEqual(['list', 'procedure', 'event', 'broadcast']);
+    expect(parseQuery('@p test')).toEqual({mode: 'symbols', query: 'p test'});
+    expect(parseQuery('@s pop')).toEqual({mode: 'symbols', query: 's pop'});
     const items = ['复位分数', '分数1', '计分数', '分数', '分数2', '分开计算数值', '其他'].map(label => ({label}));
     expect(filterResults(items, '分数').map(item => item.label))
         .toEqual(['分数', '分数1', '分数2', '计分数', '复位分数', '分开计算数值']);

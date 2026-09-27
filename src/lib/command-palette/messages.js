@@ -26,5 +26,7 @@ export default {
     failed: {id: 'gui.palette.failed', defaultMessage: 'This location is no longer available'},
     symbolHint: {id: 'gui.palette.symbolHint',
         defaultMessage: '↑ ↓ jump · ← → references · Enter confirm · Esc clear / close'},
+    symbolFilters: {id: 'gui.palette.symbolFilters',
+        defaultMessage: 'Space after code: @v vars · @l lists · @c custom blocks · @e events · @b broadcasts · @ name'},
     hint: {id: 'gui.palette.hint', defaultMessage: '↑ ↓ select · Enter open · Esc close'}
 };

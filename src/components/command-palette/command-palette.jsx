@@ -188,7 +188,7 @@ export class CommandPalette extends React.Component {
         if (this.state.open && this.panel && !this.panel.contains(event.target)) this.close();
     }
     results () {
-        const {mode, query} = parseQuery(this.state.query);
+        const {mode, query, kind} = parseQuery(this.state.query);
         if (this.sourceLocale !== this.props.intl.locale) {
             this.sourceLocale = this.props.intl.locale;
             this.sourceNames = loadAddonSettingsMessages(this.sourceLocale);
@@ -200,7 +200,9 @@ export class CommandPalette extends React.Component {
                 source => (source === 'builtin' ? this.props.intl.formatMessage(actionMessages.builtin) :
                     this.sourceNames[`${source}/@name`] || (addonManifests[source] || {}).name || source));
         } else {
-            items = symbolResults(this.vm, this.originId, this.tab, this.workspace, key => this.t(key));
+            const tab = kind ? 0 : this.tab;
+            items = symbolResults(this.vm, this.originId, tab, this.workspace, key => this.t(key));
+            if (kind) items = items.filter(item => item.kind === kind);
             for (const item of items) {
                 // Blockly labels are localized; keep them during a cross-target reference tour.
                 if (this.vm.editingTarget && this.vm.editingTarget.id === this.originId) {
@@ -472,7 +474,10 @@ export class CommandPalette extends React.Component {
                     )) : <div className={styles.empty}>{this.t('empty')}</div>}
                 </div>
                 {this.state.error && <div role="alert">{this.t('failed')}</div>}
-                <footer>{this.t(symbols ? 'symbolHint' : 'hint')}</footer>
+                <footer>
+                    <div>{this.t(symbols ? 'symbolHint' : 'hint')}</div>
+                    {symbols && <div>{this.t('symbolFilters')}</div>}
+                </footer>
             </div>, document.body);
     }
 }

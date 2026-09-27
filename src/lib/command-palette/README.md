@@ -14,6 +14,17 @@ captured separately from React's reserved `context` field and checked again on
 execution. Commands execute synchronously from the confirmation gesture, including
 file pickers, after initiating palette dismissal.
 
+In symbol mode, a single-letter filter followed by whitespace restricts code
+symbols: `@v ` variables, `@l ` lists, `@c ` custom blocks, `@e ` events, and
+`@b ` broadcasts. Events include non-broadcast hat blocks such as flag, key,
+and clone starts; broadcasts have their own category. Text after the space
+still uses the usual fuzzy matching. A filter searches code symbols from any
+editor tab and selection activates the code tab. Costumes and sounds continue
+to follow the active tab without filters. Without the space, `@v` remains a
+normal name query. To search a name that begins with a filter code and a space,
+insert a space after `@`: `@ v 1` finds a list named `v 1` without treating `v`
+as a variable filter. `@l v 1` also finds that list.
+
 The symbol provider queries VM IDs, never names for variable identity. Procedures
 and variable/list references stay target-local; broadcasts span original targets.
 The first symbol/resource is previewed immediately on opening or filtering.

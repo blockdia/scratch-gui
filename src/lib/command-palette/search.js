@@ -1,5 +1,22 @@
+const symbolFilters = {
+    v: 'variable',
+    l: 'list',
+    c: 'procedure',
+    e: 'event',
+    b: 'broadcast'
+};
+
 export const parseQuery = value => {
     const prefix = value.charAt(0);
+    const filter = prefix === '@' && /^@([vlceb])\s+/i.exec(value);
+    if (filter) {
+        return {
+            mode: 'symbols',
+            kind: symbolFilters[filter[1].toLowerCase()],
+            query: value.slice(filter[0].length).trim()
+                .toLocaleLowerCase()
+        };
+    }
     return {mode: prefix === '>' ? 'commands' : prefix === '@' ? 'symbols' : 'targets',
         query: (prefix === '>' || prefix === '@' ? value.slice(1) : value).trim().toLocaleLowerCase()};
 };

@@ -97,6 +97,9 @@ export const indexTarget = function* (target, context, limit) {
     const colors = new Map();
     const broken = new Map();
     for (const root of list) {
+        if (!root.parent && root.topLevel === false) {
+            broken.set(root.id, 'orphan');
+        }
         if (root.parent && (!blocks[root.parent] || !edges(blocks[root.parent]).includes(root.id))) {
             broken.set(root.id, 'connection');
         }

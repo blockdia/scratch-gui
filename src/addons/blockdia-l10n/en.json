@@ -110,6 +110,7 @@
     "linter/reason-invalid-argument-return-type": "The call and definition disagree on whether the custom block returns a value.",
     "linter/reason-invalid-argument-parameter": "This custom block has no input with this name. Drag the input you need from its definition block.",
     "linter/reason-invalid-argument-outside": "This return block is not inside a custom block definition. Here it stops the current script.",
+    "linter/reason-invalid-graph-orphan": "This block has no parent but is not marked as a top-level block, so it cannot form a valid script. Try undoing the recent edit or adding the block again.",
     "linter/reason-invalid-graph-connection": "A block connected here is missing. Try undoing the recent edit or reconnecting the blocks.",
     "linter/reason-invalid-graph-cycle": "Block connections lead back to themselves, forming a damaged connection. Try undoing or reconnecting them. A custom block calling itself is allowed.",
     "linter/reason-broadcast-flow-sender": "No block broadcasting \"{name}\" was found. Plugins or messages determined during a run may still trigger this event.",

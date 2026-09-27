@@ -1,4 +1,4 @@
-import {parseQuery, filterResults} from '../../../src/lib/command-palette/search';
+import {parseQuery, filterResults, sortCommands} from '../../../src/lib/command-palette/search';
 import {targetResults, symbolResults, referencesFor, commandResults} from '../../../src/lib/command-palette/providers';
 import {ActionRegistry, STORAGE_KEY} from '../../../src/lib/editor-actions/registry';
 import AddonActions from '../../../src/addons/action-registry';
@@ -156,4 +156,17 @@ test('migration preserves explicit unbindings, prefers new IDs and permanently r
     expect(referencesFor(vm, symbol).map(ref => ref.blockId)).toEqual(['root', 'visible']);
     a.blocks.getScripts = () => [];
     expect(referencesFor(vm, symbol)).toEqual([]);
+});
+
+test('commands prioritize availability then recency even when searching', () => {
+    const items = [
+        {id: 'disabled', label: 'save', available: false},
+        {id: 'exact', label: 'save', available: true},
+        {id: 'recent', label: 'save project', available: true},
+        {id: 'other', label: 'save copy', available: true}
+    ];
+    for (const query of ['', 'save']) {
+        expect(sortCommands(filterResults(items, query), ['disabled', 'recent']).map(item => item.id))
+            .toEqual(['recent', 'exact', 'other', 'disabled']);
+    }
 });

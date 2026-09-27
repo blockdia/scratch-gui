@@ -2,6 +2,7 @@ import {availableIn, reservations, scopesOverlap} from './context';
 import {normalizeBinding, resolveBinding} from './keys';
 
 export const STORAGE_KEY = 'blockdia:shortcuts';
+export const RECENT_STORAGE_KEY = 'blockdia:recent-palette-actions';
 export class ActionRegistry {
     constructor ({mac = false, storage = null} = {}) {
         this.mac = mac;
@@ -14,6 +15,13 @@ export class ActionRegistry {
         this.settingsOpen = false;
         this.recording = false;
         this.read();
+        this.recentActions = [];
+        try {
+            const saved = this.storage && JSON.parse(this.storage.getItem(RECENT_STORAGE_KEY));
+            if (Array.isArray(saved)) {
+                this.recentActions = [...new Set(saved.filter(id => typeof id === 'string'))].slice(0, 100);
+            }
+        } catch (_) { /* History is optional; keep working without storage. */ }
     }
     subscribe (listener) {
         this.listeners.add(listener);
@@ -123,6 +131,23 @@ export class ActionRegistry {
         const bindings = Object.prototype.hasOwnProperty.call(this.overrides, id) ? this.overrides[id] :
             ((this.definitions.get(id) || {}).defaultBindings || []);
         return bindings.slice();
+    }
+    recordUsage (id, result) {
+        if (result !== false && this.definitions.has(id) && !this.definitions.get(id).internal) {
+            this.recentActions = [id, ...this.recentActions.filter(other => other !== id)].slice(0, 100);
+            try {
+                if (this.storage) this.storage.setItem(RECENT_STORAGE_KEY, JSON.stringify(this.recentActions));
+            } catch (_) { /* Retain session history when storage is unavailable. */ }
+            this.emit();
+        }
+        return result;
+    }
+    executeFromPalette (id, context) {
+        const result = this.execute(id, context);
+        if (result && typeof result.then === 'function') {
+            return result.then(value => this.recordUsage(id, value));
+        }
+        return this.recordUsage(id, result);
     }
     execute (id, context) {
         const definition = this.definitions.get(id);

@@ -13,6 +13,7 @@ const intl = new IntlProvider({locale: 'en', messages: {}}, {}).getChildContext(
 const event = (key, extra = {}) => ({key, preventDefault: jest.fn(), stopImmediatePropagation: jest.fn(), ...extra});
 
 beforeEach(() => {
+    actions.recentActions = [];
     vm = new EventEmitter();
     vm.runtime = new EventEmitter();
     const target = {id: 'sprite', isOriginal: true, getName: () => 'Sprite', variables: {},
@@ -46,6 +47,7 @@ test('command availability survives React re-renders, Enter executes and closes'
     expect(instance.results()[0].available).toBe(true);
     act(() => instance.keydown(event('Enter', {target: instance.input})));
     expect(run).toHaveBeenCalledTimes(1);
+    expect(actions.recentActions).toEqual(['builtin/palette-test']);
     expect(instance.state.open).toBe(false);
     expect(actions.paletteOpen).toBe(false);
     handle.unregister();
@@ -225,4 +227,99 @@ test('deleting an active reference clears its stale navigation state', () => {
     global.requestAnimationFrame = original;
     expect(instance.state.reference).toBeNull();
     expect(instance.state.error).toBe(false);
+});
+
+test('target history records confirmations, survives reopening and breaks search ties', async () => {
+    const original = vm.editingTarget;
+    vm.runtime.targets.push(
+        {...original, id: 'copy', getName: () => 'Sprite copy'},
+        {...original, id: 'other', getName: () => 'Sprite other'}
+    );
+    instance.focusEditor = jest.fn();
+    const ids = () => instance.results().map(item => item.id);
+    instance.open();
+    instance.keydown(event('ArrowDown', {target: instance.input}));
+    instance.close();
+    expect(instance.recentTargets).toEqual([]);
+    instance.open();
+    await instance.choose(instance.results().find(item => item.id === 'other'));
+    instance.open();
+    expect(ids()).toEqual(['other', 'copy', 'sprite']);
+    instance.setState({query: 'Sprite'});
+    expect(ids()).toEqual(['sprite', 'other', 'copy']);
+    instance.setState({query: ''});
+    await instance.choose(instance.results().find(item => item.id === 'copy'));
+    instance.open();
+    expect(ids()).toEqual(['copy', 'other', 'sprite']);
+    vm.runtime.targets[1].getName = () => 'Renamed';
+    expect(instance.results()[0].label).toBe('Renamed');
+    await instance.choose(instance.results()[0]);
+    expect(instance.recentTargets).toEqual(['copy', 'other']);
+});
+
+test('target history prunes deleted targets while closed and resets on project load', async () => {
+    const other = {...vm.editingTarget, id: 'other', getName: () => 'Other'};
+    vm.runtime.targets.push(other);
+    instance.focusEditor = jest.fn();
+    instance.open();
+    await instance.choose(instance.results().find(item => item.id === 'other'));
+    vm.runtime.targets.pop();
+    instance.bindWorkspace = jest.fn();
+    instance.refresh();
+    expect(instance.recentTargets).toEqual([]);
+    vm.runtime.targets.push(other);
+    instance.open();
+    expect(instance.results().map(item => item.id)).toEqual(['other', 'sprite']);
+    await instance.choose(instance.results()[0]);
+    instance.projectLoaded();
+    expect(instance.recentTargets).toEqual([]);
+    instance.open();
+    expect(instance.results().map(item => item.id)).toEqual(['other', 'sprite']);
+});
+
+test('current target comes last except when its search match is stronger', async () => {
+    vm.runtime.targets.push(
+        {...vm.editingTarget, id: 'copy', getName: () => 'Sprite copy'},
+        {...vm.editingTarget, id: 'other', getName: () => 'Sprite other'}
+    );
+    vm.setEditingTarget.mockImplementation(id => {
+        vm.editingTarget = vm.runtime.targets.find(target => target.id === id);
+    });
+    instance.focusEditor = jest.fn();
+    instance.recentTargets = ['sprite', 'other'];
+    const ids = () => instance.results().map(item => item.id);
+    instance.open();
+    expect(ids()).toEqual(['other', 'copy', 'sprite']);
+    instance.setState({query: 'Sprite'});
+    expect(ids()).toEqual(['sprite', 'other', 'copy']);
+    instance.setState({query: 'Spr'});
+    expect(ids()).toEqual(['other', 'copy', 'sprite']);
+    await instance.choose(instance.results()[0]);
+    instance.open();
+    expect(ids()).toEqual(['sprite', 'copy', 'other']);
+    vm.runtime.targets = [vm.editingTarget];
+    expect(ids()).toEqual(['other']);
+});
+
+test('zero-reference symbols sort last but stronger search matches still win', () => {
+    vm.editingTarget.variables = {
+        unused: {id: 'unused', name: 'Score', type: ''},
+        used: {id: 'used', name: 'Score used', type: ''},
+        unusedList: {id: 'unusedList', name: 'Scores', type: 'list'}
+    };
+    vm.editingTarget.blocks._blocks = {
+        use: {id: 'use', opcode: 'data_variable', fields: {VARIABLE: {id: 'used'}}}
+    };
+    instance.selectFirst = jest.fn();
+    instance.open({mode: 'symbols'});
+    const names = () => instance.results().map(item => item.label);
+    expect(names()).toEqual(['Score used', 'Score', 'Scores']);
+    instance.setState({query: '@ Sco'});
+    expect(names()).toEqual(['Score used', 'Score', 'Scores']);
+    instance.setState({query: '@ Score'});
+    expect(names()).toEqual(['Score', 'Score used', 'Scores']);
+    instance.setState({query: '@v '});
+    expect(names()).toEqual(['Score used', 'Score']);
+    delete vm.editingTarget.blocks._blocks.use;
+    expect(names()).toEqual(['Score', 'Score used']);
 });

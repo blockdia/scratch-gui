@@ -14,7 +14,7 @@ import {navigationFor} from '../../lib/block-navigation';
 import service from '../../lib/command-palette/service';
 import installGestures from '../../lib/command-palette/gestures';
 import messages from '../../lib/command-palette/messages';
-import {parseQuery, filterResults, createSearchAliases} from '../../lib/command-palette/search';
+import {parseQuery, filterResults, createSearchAliases, sortCommands} from '../../lib/command-palette/search';
 import {targetResults, commandResults, symbolResults, referencesFor} from '../../lib/command-palette/providers';
 import addonManifests from '../../addons/generated/addon-manifests';
 import {loadAddonSettingsMessages} from '../../addons/settings/addon-translations';
@@ -30,7 +30,9 @@ export class CommandPalette extends React.Component {
         this.refresh = this.refresh.bind(this);
         this.keydown = this.keydown.bind(this);
         this.outside = this.outside.bind(this);
+        this.recentTargets = [];
         this.projectLoaded = () => {
+            this.recentTargets = [];
             this.navigation.reset();
             this.close(false);
         };
@@ -116,7 +118,12 @@ export class CommandPalette extends React.Component {
     t (key, values) {
         return this.props.intl.formatMessage(messages[key], values);
     }
+    pruneRecentTargets () {
+        const ids = new Set(this.vm.runtime.targets.filter(target => target.isOriginal).map(target => target.id));
+        this.recentTargets = this.recentTargets.filter(id => ids.has(id));
+    }
     refresh () {
+        this.pruneRecentTargets();
         this.bindWorkspace();
         if (!this.state.open || this.refreshFrame) return;
         this.refreshFrame = requestAnimationFrame(() => {
@@ -196,8 +203,18 @@ export class CommandPalette extends React.Component {
             this.sourceNames = loadAddonSettingsMessages(this.sourceLocale);
         }
         let items;
-        if (mode === 'targets') items = targetResults(this.vm, key => this.t(key));
-        else if (mode === 'commands') {
+        if (mode === 'targets') {
+            this.pruneRecentTargets();
+            const recent = new Map(this.recentTargets.map((id, index) => [id, index]));
+            const rank = item => (recent.has(item.id) ? recent.get(item.id) : recent.size);
+            const currentId = this.vm.editingTarget && this.vm.editingTarget.id;
+            // Search preserves this order only for equally relevant matches.
+            items = targetResults(this.vm, key => this.t(key))
+                .map((item, index) => ({item, index}))
+                .sort((a, b) => Number(a.item.id === currentId) - Number(b.item.id === currentId) ||
+                    rank(a.item) - rank(b.item) || a.index - b.index)
+                .map(result => result.item);
+        } else if (mode === 'commands') {
             items = commandResults(actions, this.originContext, this.props.intl,
                 source => (source === 'builtin' ? this.props.intl.formatMessage(actionMessages.builtin) :
                     this.sourceNames[`${source}/@name`] || (addonManifests[source] || {}).name || source));
@@ -211,8 +228,18 @@ export class CommandPalette extends React.Component {
                     this.labelCache.set(item.id, item.label);
                 } else if (this.labelCache.has(item.id)) item.label = this.labelCache.get(item.id);
             }
+            if (tab === 0) {
+                const referenced = [];
+                const unused = [];
+                for (const item of items) {
+                    (referencesFor(this.vm, item).length ? referenced : unused).push(item);
+                }
+                // Search relevance wins; stable ties keep unused symbols at the bottom.
+                items = referenced.concat(unused);
+            }
         }
-        return filterResults(items, query, this.getSearchAliases);
+        const matches = filterResults(items, query, this.getSearchAliases);
+        return mode === 'commands' ? sortCommands(matches, actions.recentActions) : matches;
     }
     keydown (event) {
         if (!this.state.open) return;
@@ -307,11 +334,12 @@ export class CommandPalette extends React.Component {
         const operation = ++this.operation;
         if (item.kind === 'command') {
             this.close();
-            actions.execute(item.id, this.originContext);
+            actions.executeFromPalette(item.id, this.originContext);
         } else if (['sprite', 'stage', 'component'].includes(item.kind)) {
             if (!this.vm.runtime.targets.some(target => target.id === item.targetId)) return this.refresh();
             this.close(false);
             this.vm.setEditingTarget(item.targetId);
+            this.recentTargets = [item.targetId, ...this.recentTargets.filter(id => id !== item.targetId)];
             this.focusEditor();
         } else if (item.kind === 'costume' || item.kind === 'sound') {
             this.setState({symbol: item, reference: null, error: false});

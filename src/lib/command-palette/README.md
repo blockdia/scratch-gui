@@ -9,10 +9,27 @@ The Edit menu invokes the same registered actions. All bindings are configurable
 No prefix searches original sprite/stage/component targets, `>` discovers editor
 actions, and `@` searches the current target's symbols or the active costume/sound
 editor's resources. The Variables tab uses code symbols. Internal commands stay
-hidden; unavailable commands remain visible. The originating shortcut context is
+hidden; unavailable commands remain visible at the bottom. Available commands
+used most recently come first, including when searching; remaining ties retain
+search relevance and registration order. Successful executions selected from the command palette update a
+bounded, device-local history under `blockdia:recent-palette-actions`.
+Shortcut and button invocations do not change this history. Failed or unavailable executions do
+not update history; blocked storage falls back to session history. The originating shortcut context is
 captured separately from React's reserved `context` field and checked again on
 execution. Commands execute synchronously from the confirmation gesture, including
 file pickers, after initiating palette dismissal.
+
+Target results default to most recently opened through this palette, followed by
+unused targets in project order, with the current target placed last. Search
+relevance takes priority; equally relevant matches put the current target last
+and otherwise follow recency. Only confirmed target navigation updates this in-memory history;
+closing the palette retains it, deleting a target removes its ID, and loading or
+creating a project clears it. It is never persisted or exported with the project.
+
+Code symbols with zero references appear after symbols with references, preserving
+provider order within both groups. Search relevance still wins, with zero-reference
+symbols placed last only among equally relevant matches. Costume and sound ordering
+is unchanged.
 
 In symbol mode, a single-letter filter followed by whitespace restricts code
 symbols: `@v ` variables, `@l ` lists, `@c ` custom blocks, `@e ` events, and

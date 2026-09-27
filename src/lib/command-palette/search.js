@@ -53,3 +53,13 @@ export const filterResults = (items, query, getAliases = createSearchAliases()) 
         .sort((a, b) => a.rank - b.rank || a.index - b.index)
         .map(result => result.item);
 };
+
+// Apply after search so unavailable commands stay last even for exact matches.
+export const sortCommands = (items, recentActions) => {
+    const recent = new Map(recentActions.map((id, index) => [id, index]));
+    const rank = item => (recent.has(item.id) ? recent.get(item.id) : recent.size);
+    return items.map((item, index) => ({item, index}))
+        .sort((a, b) => Number(a.item.available === false) - Number(b.item.available === false) ||
+            rank(a.item) - rank(b.item) || a.index - b.index)
+        .map(result => result.item);
+};

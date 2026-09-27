@@ -102,6 +102,34 @@ test('closing during asynchronous resource selection prevents stale focus and er
     expect(instance.focusEditor).not.toHaveBeenCalled();
 });
 
+test('localized event searches survive a broadcast preview in another target', async () => {
+    const original = vm.editingTarget;
+    const receive = id => ({id, opcode: 'event_whenbroadcastreceived',
+        fields: {BROADCAST_OPTION: {value: 'hello'}}});
+    original.blocks._blocks = {
+        flag: {id: 'flag', opcode: 'event_whenflagclicked', topLevel: true},
+        flag2: {id: 'flag2', opcode: 'event_whenflagclicked', topLevel: true},
+        a: receive('a')
+    };
+    const other = {...original, id: 'other', blocks: {_blocks: {b: receive('b')}}};
+    vm.runtime.targets.push(other);
+    instance.workspace = {isDragging: () => false, getBlockById: () => ({inputList: [
+        {fieldRow: [{getText: () => '当绿旗被点击'}]}
+    ]})};
+    instance.navigation.locate = jest.fn(async ref => {
+        vm.editingTarget = vm.runtime.targets.find(target => target.id === ref.targetId);
+        return true;
+    });
+    instance.open({mode: 'symbols'});
+    const before = instance.results().find(item => item.kind === 'event');
+    const broadcast = instance.results().find(item => item.kind === 'broadcast');
+    await instance.navigate(broadcast, 1);
+    expect(vm.editingTarget).toBe(other);
+    instance.setState({query: '@e 绿旗'});
+    expect(instance.results()).toEqual([before]);
+    expect(instance.results()[0].blockIds).toEqual(['flag', 'flag2']);
+});
+
 test('symbol Escape clears the query before closing, retaining the symbol prefix', () => {
     instance.open({mode: 'symbols'});
     instance.setState({query: '@score'});

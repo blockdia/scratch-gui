@@ -125,7 +125,10 @@ export const symbolResults = (vm, targetId, tab, workspace, t) => {
                 .join(' ')).filter(Boolean)
                 .join(' ') :
                 [block.opcode, ...Object.values(block.fields || {}).map(item => item.value)].join(' ');
-            const id = `event:${label}`;
+            // Labels depend on the active Blockly workspace and locale. Keep
+            // group identity in VM data so cached labels survive target switches.
+            const id = `event:${JSON.stringify([block.opcode, Object.keys(block.fields || {}).sort()
+                .map(name => [name, block.fields[name].value])])}`;
             const existing = grouped.get(id);
             if (existing) existing.blockIds.push(block.id);
             else {

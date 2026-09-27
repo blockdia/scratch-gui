@@ -2,8 +2,8 @@
 
 `editor-actions` is the editor's command registry, separate from Redux actions.
 It does not store functions, DOM nodes or shortcuts in project files. The GUI host
-owns the capture listener; registered operations can also be used by a future
-command palette. This release supports single strokes, not multi-stroke chords.
+owns the capture listener; registered operations are also used by the built-in
+[command palette](../command-palette/README.md). This release supports single strokes, not multi-stroke chords.
 
 ## Register and execute
 
@@ -114,7 +114,10 @@ Mod+Alt+k. Other new commands have no default binding.
 The save shortcut preserves local smart-save behavior. File → Save now uses the
 internal `builtin/save-to-server` action and the host's `onClickSave` callback
 when `canSave` is enabled; a local file handler does not override this destination.
-Addon migrations: pause, mute, find, history navigation, costume
+Built-in quick navigation: Mod+P opens targets, Mod+Shift+P opens commands,
+and Mod+F opens symbols/resources. Find/history bindings migrate from the retired
+find-bar addon; its old action IDs are removed.
+Addon migrations: pause, mute, costume
 navigation, mouse block search and keyboard block search. GUI costume navigation
 uses the selection bridge, not a synthetic DOM click.
 Keyboard-editing mode toggle, Variables tab, sprite search, project recording,

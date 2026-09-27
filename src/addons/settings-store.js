@@ -68,9 +68,6 @@ const migrateSettings = settings => {
     if (oldVersion < 4) {
         const editorDevtools = settings['editor-devtools'];
         if (editorDevtools && editorDevtools.enabled === false) {
-            settings['find-bar'] = {
-                enabled: false
-            };
             settings['middle-click-popup'] = {
                 enabled: false
             };

@@ -325,8 +325,7 @@ class Tab extends EventTargetShim {
             afterSoundTab: {
                 element: () => q("[class^='react-tabs_react-tabs__tab-list']"),
                 from: () => [q("[class^='react-tabs_react-tabs__tab-list']").children[2]],
-                // Element used in find-bar addon
-                until: () => [q('.sa-find-bar')]
+                until: () => []
             },
             assetContextMenuAfterExport: {
                 element: () => scope,

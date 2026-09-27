@@ -512,7 +512,7 @@ test('Settings migration 3 -> 4', () => {
     });
     store.readLocalStorage();
     expect(store.getAddonEnabled('editor-devtools')).toBe(true);
-    expect(store.getAddonEnabled('find-bar')).toBe(true);
+    expect(store.store['find-bar']).toBeUndefined();
     expect(store.getAddonEnabled('middle-click-popup')).toBe(true);
 
     global.localStorage.getItem = () => JSON.stringify({
@@ -523,7 +523,7 @@ test('Settings migration 3 -> 4', () => {
     });
     store.readLocalStorage();
     expect(store.getAddonEnabled('editor-devtools')).toBe(false);
-    expect(store.getAddonEnabled('find-bar')).toBe(false);
+    expect(store.store['find-bar']).toBeUndefined();
     expect(store.getAddonEnabled('middle-click-popup')).toBe(false);
 });
 

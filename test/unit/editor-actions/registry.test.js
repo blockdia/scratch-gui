@@ -189,3 +189,41 @@ test('legacy fullscreen overrides merge into the public toggle and preserve expl
     }}));
     expect(new ActionRegistry({storage: saved}).overrides).toEqual({'builtin/toggle-fullscreen': []});
 });
+
+test('recent actions retain successful usage across reloads and ignore failed executions', async () => {
+    const saved = storage();
+    const registry = new ActionRegistry({storage: saved});
+    register(registry, 'builtin/a');
+    register(registry, 'builtin/b', {run: () => Promise.resolve(true)});
+    register(registry, 'builtin/disabled', {enabled: () => false});
+    register(registry, 'builtin/failed', {run: () => false});
+    register(registry, 'builtin/rejected', {run: () => Promise.reject(new Error('failure'))});
+    registry.executeFromPalette('builtin/a');
+    await registry.executeFromPalette('builtin/b');
+    registry.executeFromPalette('builtin/a');
+    registry.executeFromPalette('builtin/disabled');
+    registry.executeFromPalette('builtin/failed');
+    await registry.executeFromPalette('builtin/rejected');
+    expect(registry.recentActions).toEqual(['builtin/a', 'builtin/b']);
+    expect(new ActionRegistry({storage: saved}).recentActions).toEqual(['builtin/a', 'builtin/b']);
+});
+
+test('recent actions tolerate malformed or inaccessible storage', () => {
+    for (const getItem of [() => '{', () => '{"bad":true}', () => { throw new Error('blocked'); }]) {
+        const registry = new ActionRegistry({storage: {getItem, setItem: () => { throw new Error('blocked'); }}});
+        register(registry, 'builtin/a');
+        expect(registry.executeFromPalette('builtin/a')).toBe(true);
+        expect(registry.recentActions).toEqual(['builtin/a']);
+    }
+});
+
+test('ordinary command executions do not change palette history', async () => {
+    const registry = new ActionRegistry();
+    const button = register(registry, 'builtin/button');
+    register(registry, 'builtin/shortcut', {run: () => Promise.resolve(true)});
+    register(registry, 'builtin/palette');
+    registry.executeFromPalette('builtin/palette');
+    button.execute();
+    await registry.execute('builtin/shortcut');
+    expect(registry.recentActions).toEqual(['builtin/palette']);
+});

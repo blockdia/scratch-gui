@@ -33,7 +33,8 @@ export class ShortcutController {
     }
     keydown (event) {
         const registry = this.registry;
-        if (registry.recording || registry.settingsOpen || event.defaultPrevented || event.isComposing ||
+        if (registry.paletteOpen || registry.recording || registry.settingsOpen ||
+            event.defaultPrevented || event.isComposing ||
             event.keyCode === 229 || this.pointerDown || this.isDragging() || hasModal()) return;
         const binding = eventBinding(event, registry.mac);
         if (!binding) return;

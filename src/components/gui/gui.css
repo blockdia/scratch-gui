@@ -338,5 +338,3 @@ $fade-out-distance: 15px;
 .tab-row { display: flex; align-items: flex-end; height: $stage-menu-height; flex-shrink: 0; gap: 8px; padding-inline-end: 8px; }
 .tab-row .tab-list { width: auto; flex: 1 1 auto; min-width: 0; }
 .tab-row .tab { flex-grow: 0; flex-shrink: 0; }
-.tab-row :global(.sa-find-bar) { min-width: 60px; flex: 1 1 160px; }
-.tab-row :global(.sa-find-wrapper) { min-width: 0; }

@@ -155,3 +155,14 @@ test('the keyboard proxy keeps printable input for type-to-search even if an edi
     expect(run).not.toHaveBeenCalled();
     expect(event.preventDefault).not.toHaveBeenCalled();
 });
+
+test.each(['ArrowUp', 'ArrowDown'])('Alt+%s stays available for keyboard script navigation', arrow => {
+    const run = add('builtin/run', {scopes: ['editor'], defaultBindings: ['Mod+Enter']});
+    expect(registry.setBindings('builtin/run', [`Alt+${arrow}`], true).reserved.length).toBeGreaterThan(0);
+    expect(registry.bindings('builtin/run')).toEqual(['Mod+Enter']);
+    const event = key(arrow, {altKey: true, target: target(['data-shortcut-keyboard', 'textarea'])});
+    controller.keydown(event);
+    expect(run).not.toHaveBeenCalled();
+    expect(event.preventDefault).not.toHaveBeenCalled();
+    expect(event.stopImmediatePropagation).not.toHaveBeenCalled();
+});

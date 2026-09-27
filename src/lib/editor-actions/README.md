@@ -111,6 +111,9 @@ Built-in commands: save/open, run/stop/turbo, editor tabs, toggle fullscreen,
 shortcut settings and each tool window toggle. Run defaults to Mod+Enter, stop
 to Mod+Shift+Enter, full-screen toggle to Alt+f, and shortcut settings to
 Mod+Alt+k. Other new commands have no default binding.
+The save shortcut preserves local smart-save behavior. File → Save now uses the
+internal `builtin/save-to-server` action and the host's `onClickSave` callback
+when `canSave` is enabled; a local file handler does not override this destination.
 Addon migrations: pause, mute, find, history navigation, costume
 navigation, mouse block search and keyboard block search. GUI costume navigation
 uses the selection bridge, not a synthetic DOM click.

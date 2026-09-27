@@ -1,5 +1,6 @@
 import actions from '../../lib/editor-actions';
 import actionMessages from '../../lib/editor-actions/messages';
+import registerSaveActions from '../../lib/editor-actions/save';
 import classNames from 'classnames';
 import {connect} from 'react-redux';
 import {compose} from 'redux';
@@ -233,16 +234,11 @@ class MenuBar extends React.Component {
         ]);
     }
     componentDidMount () {
-        this.actionHandles = [actions.registerAction({
-            id: 'builtin/save',
-            title: actionMessages.save,
-            source: 'builtin',
-            scopes: ['global'],
-            allowInInput: true,
-            defaultBindings: ['Mod+s'],
-            enabled: () => Boolean(this.props.handleSaveProject || this.props.onClickSave),
-            run: () => (this.props.handleSaveProject || this.props.onClickSave)()
-        }), actions.registerAction({
+        this.actionHandles = [...registerSaveActions(actions, () => ({
+            canSave: this.props.canSave,
+            onClickSave: this.props.onClickSave,
+            handleSaveProject: this.props.handleSaveProject
+        })), actions.registerAction({
             id: 'builtin/open',
             title: actionMessages.open,
             source: 'builtin',
@@ -283,7 +279,7 @@ class MenuBar extends React.Component {
         return actions.execute('builtin/open');
     }
     handleClickSave () {
-        actions.execute('builtin/save');
+        actions.execute('builtin/save-to-server');
         this.props.onRequestCloseFile();
     }
     handleClickSaveAsCopy () {

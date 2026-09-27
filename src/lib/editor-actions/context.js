@@ -1,4 +1,4 @@
-export const areas = ['blocks', 'keyboard', 'costumes', 'sounds', 'stage', 'window'];
+export const areas = ['blocks', 'keyboard', 'costumes', 'sounds', 'variables', 'stage', 'window'];
 export const expandScopes = scopes => (scopes || ['editor']).reduce((result, scope) => {
     const expanded = scope === 'global' ? areas : scope === 'editor' ? areas.filter(area => area !== 'stage') : [scope];
     return [...new Set([...result, ...expanded])];
@@ -19,7 +19,7 @@ export const reservations = [
             'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown',
             'Shift+ArrowLeft', 'Shift+ArrowRight', 'Shift+ArrowUp', 'Shift+ArrowDown'],
         name: 'navigation'},
-    {scopes: ['blocks', 'keyboard', 'costumes', 'sounds'],
+    {scopes: ['blocks', 'keyboard', 'costumes', 'sounds', 'variables'],
         keys: ['Mod+c', 'Mod+x', 'Mod+v', 'Mod+z', 'Mod+Shift+z', 'Mod+y',
             'Mod+a', 'Delete', 'Backspace'],
         name: 'editing'},

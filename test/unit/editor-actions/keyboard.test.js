@@ -103,6 +103,19 @@ test('tab changes resolve the current context and inactive scopes never compete'
     expect(registry.notice).toBeNull();
 });
 
+test('Variables addon tab keeps editor and global shortcuts available', () => {
+    const editor = add('addon/variable-manager/open', {scopes: ['editor']});
+    const variables = add('addon/variable-manager/local', {scopes: ['variables'], defaultBindings: ['Mod+j']});
+    const save = add('builtin/save', {scopes: ['global'], defaultBindings: ['Mod+s'], allowInInput: true});
+    state.scratchGui.editorTab.activeTabIndex = 3;
+    controller.keydown(key('k', {ctrlKey: true}));
+    controller.keydown(key('j', {ctrlKey: true}));
+    controller.keydown(key('s', {ctrlKey: true, target: target(['input'])}));
+    expect(editor).toHaveBeenCalledTimes(1);
+    expect(variables).toHaveBeenCalledTimes(1);
+    expect(save).toHaveBeenCalledTimes(1);
+});
+
 test('even an input-enabled global action never consumes ordinary unmodified typing', () => {
     const save = add('builtin/save', {scopes: ['global'], allowInInput: true, defaultBindings: ['q']});
     controller.keydown(key('q', {target: target(['input'])}));
@@ -122,7 +135,7 @@ test('one public fullscreen binding enters and exits, including stage context', 
     const handles = registerFullscreenActions(registry, () => state.scratchGui.mode.isFullScreen,
         value => { state.scratchGui.mode.isFullScreen = value; });
     expect(registry.listActions().map(action => action.id)).toEqual(['builtin/toggle-fullscreen']);
-    registry.setBindings('builtin/toggle-fullscreen', ['Alt+f']);
+    expect(registry.bindings('builtin/toggle-fullscreen')).toEqual(['Alt+f']);
     controller.keydown(key('f', {altKey: true}));
     expect(state.scratchGui.mode.isFullScreen).toBe(true);
     controller.keydown(key('f', {altKey: true}));

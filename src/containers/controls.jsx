@@ -22,6 +22,7 @@ class Controls extends React.Component {
             title: actionMessages.run,
             source: 'builtin',
             scopes: ['editor'],
+            defaultBindings: ['Mod+Enter'],
             run: () => {
                 if (!this.props.isStarted) this.props.vm.start();
                 this.props.vm.greenFlag();
@@ -31,6 +32,7 @@ class Controls extends React.Component {
             title: actionMessages.stop,
             source: 'builtin',
             scopes: ['editor'],
+            defaultBindings: ['Mod+Shift+Enter'],
             run: () => this.props.vm.stopAll()
         }), actions.registerAction({
             id: 'builtin/turbo',

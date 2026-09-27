@@ -22,6 +22,7 @@ export default (registry, isFullscreen, setFullscreen) => [
         id: 'builtin/toggle-fullscreen',
         title: messages.toggleFullscreen,
         scopes: ['global'],
+        defaultBindings: ['Alt+f'],
         run: () => registry.execute(isFullscreen() ? 'builtin/exit-fullscreen' : 'builtin/fullscreen')
     })
 ];

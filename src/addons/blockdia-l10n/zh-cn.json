@@ -154,6 +154,12 @@
     "find-bar/action-forward": "前进到下一个浏览位置",
     "middle-click-popup/action-search": "搜索积木",
     "keyboard-editing/action-search": "在键盘光标处搜索积木",
+    "keyboard-editing/action-toggle-mode": "开启／关闭积木键盘编辑模式",
+    "variable-manager/action-open": "切换到变量页",
+    "search-sprites/action-focus": "搜索角色",
+    "mediarecorder/action-toggle": "开始／停止项目录制",
+    "hide-stage/action-toggle": "显示／隐藏舞台和角色栏",
+    "hide-flyout/action-toggle-lock": "锁定／解锁积木栏",
     "editor-devtools/action-previousCostume": "切换到上一个造型",
     "editor-devtools/action-nextCostume": "切换到下一个造型"
 }

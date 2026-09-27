@@ -28,7 +28,7 @@ export class ShortcutController {
         const window = target && target.closest && target.closest('[data-editor-window]');
         const stage = gui.mode.isFullScreen || gui.mode.isPlayerOnly || this.stageFocused;
         return {area: stage ? 'stage' : window ? 'window' : keyboard ? 'keyboard' :
-            ['blocks', 'costumes', 'sounds'][gui.editorTab.activeTabIndex],
+            ['blocks', 'costumes', 'sounds', 'variables'][gui.editorTab.activeTabIndex],
         editing: !keyboard && editableTarget(target)};
     }
     keydown (event) {

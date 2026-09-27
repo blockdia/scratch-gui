@@ -8,6 +8,9 @@ import {ShortcutController} from './keyboard';
 import {activateTab} from '../../reducers/editor-tab';
 import {setFullScreen} from '../../reducers/mode';
 import AddonHooks from '../../addons/hooks';
+import settingsStore from '../../addons/settings-store-singleton';
+import channels from '../../addons/channels';
+import upstreamMeta from '../../addons/generated/upstream-meta.json';
 import windowManager from '../editor-windows/manager';
 import ShortcutSettings from '../../components/shortcut-settings/shortcut-settings.jsx';
 
@@ -29,10 +32,24 @@ class ActionHost extends React.Component {
             () => this.props.state.scratchGui.mode.isFullScreen,
             value => this.props.dispatch(setFullScreen(value))));
         this.handles.push(actions.registerAction({
+            id: 'addon/keyboard-editing/toggle-mode',
+            title: {id: 'addons.keyboard-editing.action-toggle-mode'},
+            source: 'keyboard-editing',
+            scopes: ['editor'],
+            run: () => {
+                settingsStore.setAddonEnabled('keyboard-editing',
+                    !settingsStore.getAddonEnabled('keyboard-editing'));
+                if (channels.changeChannel) {
+                    channels.changeChannel.postMessage({version: upstreamMeta.commit, store: settingsStore.store});
+                }
+            }
+        }));
+        this.handles.push(actions.registerAction({
             id: 'builtin/shortcuts',
             title: messages.openShortcuts,
             source: 'builtin',
             scopes: ['editor'],
+            defaultBindings: ['Mod+Alt+k'],
             run: () => actions.openSettings()
         }));
         this.controller = new ShortcutController(actions, () => this.props.state, () =>

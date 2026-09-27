@@ -7,6 +7,7 @@ export default {
     toggleWindow: {id: 'gui.actions.toggleWindow', defaultMessage: 'Toggle {name} window'},
 
     toggleFullscreen: {id: 'gui.actions.toggleFullscreen', defaultMessage: 'Toggle full screen'},
+    toggleSmallStage: {id: 'gui.actions.toggleSmallStage', defaultMessage: 'Toggle small stage'},
     all: {id: 'gui.actions.all', defaultMessage: 'All'},
     assigned: {id: 'gui.actions.assigned', defaultMessage: 'Assigned'},
     custom: {id: 'gui.actions.custom', defaultMessage: 'Custom'},
@@ -56,6 +57,10 @@ export default {
     sounds: {
         id: 'gui.actions.sounds',
         defaultMessage: 'Sounds'
+    },
+    variables: {
+        id: 'gui.actions.variables',
+        defaultMessage: 'Variables'
     },
     fullscreen: {
         id: 'gui.actions.fullscreen',

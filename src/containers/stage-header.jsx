@@ -1,4 +1,5 @@
 import actions from '../lib/editor-actions';
+import actionMessages from '../lib/editor-actions/messages';
 import {hasModal} from '../lib/editor-actions/context';
 import PropTypes from 'prop-types';
 import React from 'react';
@@ -16,21 +17,43 @@ const enterFullscreen = () => actions.execute('builtin/fullscreen');
 const exitFullscreen = () => actions.execute('builtin/exit-fullscreen');
 
 // eslint-disable-next-line react/prefer-stateless-function
-class StageHeader extends React.Component {
+export class StageHeader extends React.Component {
     constructor (props) {
         super(props);
+        this.lastNonSmallStageSize = props.stageSizeMode === STAGE_SIZE_MODES.small ?
+            STAGE_SIZE_MODES.full : props.stageSizeMode;
         bindAll(this, [
             'handleKeyPress'
         ]);
         this.checkInvalidStageSizeMode();
     }
     componentDidMount () {
+        this.smallStageAction = actions.registerAction({
+            id: 'builtin/toggle-small-stage',
+            title: actionMessages.toggleSmallStage,
+            scopes: ['editor'],
+            enabled: () => !this.props.isFullScreen && !this.props.isPlayerOnly && !this.props.isEmbedded,
+            run: () => {
+                if (this.props.stageSizeMode !== STAGE_SIZE_MODES.small) {
+                    this.lastNonSmallStageSize = this.props.stageSizeMode;
+                    this.props.onSetStageSmall();
+                } else if (this.lastNonSmallStageSize === STAGE_SIZE_MODES.large && this.showFixedLargeSize()) {
+                    this.props.onSetStageLarge();
+                } else {
+                    this.props.onSetStageFull();
+                }
+            }
+        });
         document.addEventListener('keydown', this.handleKeyPress);
     }
     componentDidUpdate () {
+        if (this.props.stageSizeMode !== STAGE_SIZE_MODES.small) {
+            this.lastNonSmallStageSize = this.props.stageSizeMode;
+        }
         this.checkInvalidStageSizeMode();
     }
     componentWillUnmount () {
+        this.smallStageAction.unregister();
         document.removeEventListener('keydown', this.handleKeyPress);
     }
     handleKeyPress (event) {
@@ -79,6 +102,8 @@ StageHeader.propTypes = {
     dimensions: PropTypes.arrayOf(PropTypes.number),
     isPlayerOnly: PropTypes.bool,
     onSetStageFull: PropTypes.func.isRequired,
+    onSetStageLarge: PropTypes.func.isRequired,
+    onSetStageSmall: PropTypes.func.isRequired,
     onOpenSettings: PropTypes.func.isRequired,
     // tw: replace showBranding
     isEmbedded: PropTypes.bool.isRequired,

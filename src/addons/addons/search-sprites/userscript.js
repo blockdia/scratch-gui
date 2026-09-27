@@ -17,6 +17,12 @@ export default async function ({ addon, console, msg }) {
   // the libraries, so this fits right in.
   searchBox.type = "text";
 
+  addon.tab.actions.register({
+    id: 'focus', title: {id: 'addons.search-sprites.action-focus'}, scopes: ['editor'],
+    enabled: () => container.isConnected && Boolean(searchBox.getClientRects().length),
+    run: () => { searchBox.focus(); searchBox.select(); }
+  });
+
   const search = (query) => {
     if (!spritesContainer) return;
 

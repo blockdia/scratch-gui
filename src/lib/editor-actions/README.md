@@ -61,7 +61,7 @@ window keeps its action; unregistering the window removes the action.
 ## Context and keyboard dispatch
 
 Scopes: `blocks`, `keyboard` (the IME-capable block-editing focus proxy),
-`costumes`, `sounds`, `stage`, `window`; `editor` expands to all except stage,
+`costumes`, `sounds`, `variables`, `stage`, `window`; `editor` expands to all except stage,
 and `global` includes stage. Overlap is computed from these explicit regions,
 not arbitrary availability predicates. Two different predicates do not establish
 that commands are mutually exclusive for the configuration UI.
@@ -108,10 +108,18 @@ with addon settings or exported with the project.
 ## Initial commands and verification
 
 Built-in commands: save/open, run/stop/turbo, editor tabs, toggle fullscreen,
-shortcut settings and each tool window toggle. New commands have no default
-binding. Addon migrations: pause, mute, find, history navigation, costume
+shortcut settings and each tool window toggle. Run defaults to Mod+Enter, stop
+to Mod+Shift+Enter, full-screen toggle to Alt+f, and shortcut settings to
+Mod+Alt+k. Other new commands have no default binding.
+Addon migrations: pause, mute, find, history navigation, costume
 navigation, mouse block search and keyboard block search. GUI costume navigation
 uses the selection bridge, not a synthetic DOM click.
+Keyboard-editing mode toggle, Variables tab, sprite search, project recording,
+stage visibility and block-palette lock are also actions without default bindings.
+The small-stage toggle also has no default binding. Running it again restores
+the previous non-small size, or full size if the fixed large size is unavailable.
+The keyboard-editing mode toggle stays registered while its addon is disabled so
+the shortcut can enable it again. The Variables tab has its own shortcut context.
 
 Sound editing, paint editing, Blockly editing and local input/navigation handlers
 are intentionally not migrated in this release. Existing save/open, Alt+X,

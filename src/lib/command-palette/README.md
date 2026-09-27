@@ -1,0 +1,59 @@
+# Command palette
+
+The editor owns the palette. `service.open({mode})` accepts `targets`, `commands`
+or `symbols`; `service.close()` cancels and restores focus. ActionHost registers
+`builtin/quick-open` (Mod+P), `builtin/command-palette` (Mod+Shift+P),
+`builtin/find-symbol` (Mod+F), and `builtin/navigate-back` / `navigate-forward`.
+The Edit menu invokes the same registered actions. All bindings are configurable.
+
+No prefix searches original sprite/stage/component targets, `>` discovers editor
+actions, and `@` searches the current target's symbols or the active costume/sound
+editor's resources. The Variables tab uses code symbols. Internal commands stay
+hidden; unavailable commands remain visible. The originating shortcut context is
+captured separately from React's reserved `context` field and checked again on
+execution. Commands execute synchronously from the confirmation gesture, including
+file pickers, after initiating palette dismissal.
+
+The symbol provider queries VM IDs, never names for variable identity. Procedures
+and variable/list references stay target-local; broadcasts span original targets.
+The first symbol/resource is previewed immediately on opening or filtering.
+Symbol and resource clicks preview without closing. Up/down preview adjacent results
+without wrapping, left/right cycle references, clicking the same result again
+advances its reference, and Enter confirms and closes. Escape clears a symbol query
+first (retaining `@`), then closes. A compact `◀ n / N ▶` control appears on the
+right of the active result; colored block-palette-icons identify symbol categories.
+Cross-target navigation freezes the query origin until a new search session.
+Resources use the existing `EDITOR_SELECT_RESOURCE` bridge. Loading another project
+clears the palette and navigation history; pending navigation can be cancelled.
+
+`../block-navigation` provides per-VM shared navigation and viewport history,
+waiting for the requested Blockly block or resource selection bridge before acting.
+Palette navigation refreshes scrollbar geometry, excludes the toolbox/flyout and
+palette rectangle, and accounts for zoom, RTL and protruding hat shapes. It keeps
+already-visible stacks in place; offscreen stacks use a stable 32px top-left
+anchor in the unobscured area, shared with jump-to-definition navigation;
+ResizeObserver maintains visibility when the panel or workspace resizes.
+The former find-bar helper paths are compatibility exports/adapters for debugger,
+linter and jump-to-def. Find-bar is no longer a separately enabled addon; the old
+UI/runtime/manifest are removed. Its find/back/forward binding overrides migrate
+once to the built-in IDs (including explicit unbindings); new IDs take precedence
+and old IDs are removed from persisted storage. A storage write failure preserves
+the migrated session configuration and uses the registry's existing notice.
+
+Indexing and navigation originated in Scratch Addons' find-bar by griffpatch and
+TheColaber (https://github.com/ScratchAddons/ScratchAddons). Keep their attribution
+when updating the extracted helpers.
+
+## Verification
+
+The normal `npm run test:unit` includes palette search/provider, migration,
+navigation and interaction-controller tests under `test/unit/editor-actions`.
+The controller tests use lightweight DOM/VM doubles; browser checks remain necessary
+for native focus, Blockly rendering, IME and asset editor integration.
+
+Browser acceptance: all three keyboard/menu entries; prefix switching and Chinese
+queries; unavailable commands and addon enable/disable; stage/sprite/component
+selection; active-tab resource selection without playback; repeated broadcast
+navigation across targets; Escape/outside click and focus restoration; shortcut
+rebinding; light/dark themes and narrow viewports. Preserve keyup delivery to the
+VM so keys held before opening cannot become stuck.

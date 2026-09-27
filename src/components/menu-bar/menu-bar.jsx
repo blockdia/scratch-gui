@@ -1,3 +1,4 @@
+import PaletteMenu from '../command-palette/menu.jsx';
 import actions from '../../lib/editor-actions';
 import actionMessages from '../../lib/editor-actions/messages';
 import registerSaveActions from '../../lib/editor-actions/save';
@@ -763,6 +764,7 @@ class MenuBar extends React.Component {
                                         </MenuItem>
                                     )}</DeletionRestorer>
                                 )}
+                                {!this.props.isPlayerOnly && <PaletteMenu onClose={this.props.onRequestCloseEdit} />}
                                 <MenuSection>
                                     {this.props.isPlayerOnly ? null : (
                                         <KeyboardEditingMenu onClose={this.props.onRequestCloseEdit} />

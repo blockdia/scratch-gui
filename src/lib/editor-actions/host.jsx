@@ -1,3 +1,4 @@
+/* eslint-disable react/jsx-no-bind */
 import React from 'react';
 import PropTypes from 'prop-types';
 import {connect} from 'react-redux';
@@ -12,6 +13,10 @@ import settingsStore from '../../addons/settings-store-singleton';
 import channels from '../../addons/channels';
 import upstreamMeta from '../../addons/generated/upstream-meta.json';
 import windowManager from '../editor-windows/manager';
+import CommandPalette from '../../components/command-palette/command-palette.jsx';
+import palette from '../command-palette/service';
+import paletteMessages from '../command-palette/messages';
+import {navigationFor} from '../block-navigation';
 import ShortcutSettings from '../../components/shortcut-settings/shortcut-settings.jsx';
 
 class ActionHost extends React.Component {
@@ -56,6 +61,27 @@ class ActionHost extends React.Component {
             windowManager.gesturing ||
             Boolean(AddonHooks.blocklyWorkspace && AddonHooks.blocklyWorkspace.isDragging()));
         this.unmount = this.controller.mount();
+        const enabled = () => !this.props.state.scratchGui.mode.isPlayerOnly &&
+            !this.props.state.scratchGui.mode.isFullScreen;
+        for (const [id, mode, binding] of [['quick-open', 'targets', 'Mod+p'],
+            ['command-palette', 'commands', 'Mod+Shift+p'], ['find-symbol', 'symbols', 'Mod+f']]) {
+            this.handles.push(actions.registerAction({id: `builtin/${id}`,
+                title: paletteMessages[mode],
+                scopes: ['global'],
+                defaultBindings: [binding],
+                allowInInput: true,
+                enabled,
+                run: () => palette.open({mode})}));
+        }
+        for (const [direction, key] of [['back', 'ArrowLeft'], ['forward', 'ArrowRight']]) {
+            this.handles.push(actions.registerAction({id: `builtin/navigate-${direction}`,
+                title: paletteMessages[direction],
+                scopes: ['blocks', 'keyboard'],
+                defaultBindings: [`Mod+${key}`],
+                enabled,
+                run: () => navigationFor(this.props.state.scratchGui.vm).travel(direction,
+                    () => this.props.dispatch(activateTab(0)))}));
+        }
     }
     componentWillUnmount () {
         this.unmount();
@@ -64,7 +90,14 @@ class ActionHost extends React.Component {
         actions.settingsOpen = false;
     }
     render () {
-        return <ShortcutSettings />;
+        return (<React.Fragment>
+            <ShortcutSettings />
+            <CommandPalette
+                dispatch={this.props.dispatch}
+                editorState={this.props.state}
+                getContext={target => (this.controller ? this.controller.context(target) : {area: 'blocks'})}
+            />
+        </React.Fragment>);
     }
 }
 ActionHost.propTypes = {

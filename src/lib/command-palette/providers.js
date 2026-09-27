@@ -1,0 +1,171 @@
+const thumbnailCache = new WeakMap();
+const originals = vm => vm.runtime.targets.filter(target => target.isOriginal || target.isStage);
+const blocksOf = target => {
+    const blocks = target && target.blocks;
+    if (!blocks) return [];
+    const map = blocks._blocks || {};
+    // Match the workspace tree: orphaned VM records and obscured shadows are
+    // not navigable references. Start where the VM's workspace XML starts.
+    if (!blocks.getScripts) return Object.values(map);
+    const visible = new Set();
+    const pending = [...blocks.getScripts()];
+    while (pending.length) {
+        const id = pending.pop();
+        const block = map[id];
+        if (!block || visible.has(id)) continue;
+        visible.add(id);
+        if (block.next) pending.push(block.next);
+        for (const input of Object.values(block.inputs || {})) {
+            if (input.block) pending.push(input.block);
+        }
+    }
+    return Object.values(map).filter(block => visible.has(block.id));
+};
+const blockMap = target => (target && target.blocks && target.blocks._blocks) || {};
+const field = (block, name) => block.fields && block.fields[name];
+const procedureCode = (block, map) => {
+    const input = block.inputs && block.inputs.custom_block;
+    const prototype = input && map[input.block];
+    return (prototype && prototype.mutation && prototype.mutation.proccode) ||
+        (block.mutation && block.mutation.proccode);
+};
+const broadcastName = (block, map) => {
+    if (block.opcode === 'event_whenbroadcastreceived') return (field(block, 'BROADCAST_OPTION') || {}).value;
+    if (block.opcode !== 'event_broadcast' && block.opcode !== 'event_broadcastandwait') return;
+    const input = block.inputs && block.inputs.BROADCAST_INPUT;
+    const menu = input && map[input.block];
+    return menu && menu.opcode === 'event_broadcast_menu' ? (field(menu, 'BROADCAST_OPTION') || {}).value : null;
+};
+const location = (target, block) => ({targetId: target.id, blockId: block.id});
+
+export const targetResults = (vm, t) => originals(vm).map(target => {
+    const kind = target.isStage ? 'stage' : target.component ? 'component' : 'sprite';
+    const costume = target.getCostumes && target.getCostumes()[target.currentCostume];
+    let image;
+    if (costume && costume.asset) {
+        if (!thumbnailCache.has(costume.asset)) thumbnailCache.set(costume.asset, costume.asset.encodeDataURI());
+        image = thumbnailCache.get(costume.asset);
+    }
+    return {id: target.id,
+        label: target.isStage ? t('stage') : target.getName(),
+        kind,
+        targetId: target.id,
+        detail: t(kind),
+        image};
+});
+
+export const commandResults = (registry, context, intl, sourceName) => {
+    const label = value => (typeof value === 'string' ? value : intl.formatMessage(value));
+    return registry.listActions(context).map(action => ({
+        id: action.id,
+        kind: 'command',
+        available: action.available,
+        label: action.titleValues ? intl.formatMessage(action.title,
+            Object.keys(action.titleValues).reduce((values, key) => ({...values,
+                [key]: label(action.titleValues[key])}), {})) : label(action.title),
+        detail: sourceName(action.source),
+        bindings: action.bindings
+    }));
+};
+
+export const symbolResults = (vm, targetId, tab, workspace, t) => {
+    const target = originals(vm).find(item => item.id === targetId);
+    if (!target) return [];
+    if (tab === 1 || tab === 2) {
+        const kind = tab === 1 ? 'costume' : 'sound';
+        return (target.sprite[tab === 1 ? 'costumes' : 'sounds'] || []).map((asset, index) => ({
+            id: `${kind}:${asset.assetId}:${index}`,
+            label: asset.name,
+            detail: t(kind),
+            kind,
+            targetId,
+            name: asset.name,
+            assetId: asset.assetId
+        }));
+    }
+    const rows = [];
+    const map = blockMap(target);
+    const grouped = new Map();
+    for (const block of blocksOf(target)) {
+        const eventName = broadcastName(block, map);
+        if (typeof eventName !== 'undefined') {
+            const id = `broadcast:${JSON.stringify(eventName)}`;
+            if (!grouped.has(id)) {
+                const row = {id,
+                    kind: 'broadcast',
+                    targetId,
+                    eventName,
+                    label: eventName === null ? t('expression') : eventName,
+                    detail: t('broadcast')};
+                grouped.set(id, row);
+                rows.push(row);
+            }
+        } else if (block.opcode === 'procedures_definition') {
+            const code = procedureCode(block, map);
+            if (code) {
+                rows.push({id: block.id,
+                    kind: 'procedure',
+                    targetId,
+                    code,
+                    label: code,
+                    detail: t('procedure')});
+            }
+        } else if (block.topLevel && (block.opcode.startsWith('event_when') ||
+            block.opcode === 'control_start_as_clone')) {
+            const visual = workspace && vm.editingTarget === target && workspace.getBlockById(block.id);
+            // A header's own fields omit the connected script body.
+            const label = visual ? visual.inputList.map(input => input.fieldRow.map(item =>
+                item.getText && item.getText()).filter(Boolean)
+                .join(' ')).filter(Boolean)
+                .join(' ') :
+                [block.opcode, ...Object.values(block.fields || {}).map(item => item.value)].join(' ');
+            const id = `event:${label}`;
+            const existing = grouped.get(id);
+            if (existing) existing.blockIds.push(block.id);
+            else {
+                const row = {id, kind: 'event', targetId, label, detail: t('event'), blockIds: [block.id]};
+                grouped.set(id, row);
+                rows.push(row);
+            }
+        }
+    }
+    const stage = originals(vm).find(item => item.isStage);
+    for (const owner of target === stage ? [target] : [target, stage].filter(Boolean)) {
+        for (const variable of Object.values(owner.variables || {})) {
+            if (variable.type !== '' && variable.type !== 'list') continue;
+            const kind = variable.type === 'list' ? 'list' : 'variable';
+            rows.push({id: `${kind}:${variable.id}`,
+                kind,
+                variableId: variable.id,
+                targetId,
+                label: variable.name,
+                detail: `${t(kind)} · ${t(owner.isStage ? 'global' : 'local')}`});
+        }
+    }
+    return rows;
+};
+
+export const referencesFor = (vm, symbol) => {
+    const targets = originals(vm).filter(target => symbol.kind === 'broadcast' || target.id === symbol.targetId);
+    const results = [];
+    for (const target of targets) {
+        const map = blockMap(target);
+        for (const block of blocksOf(target)) {
+            let matches = false;
+            if (symbol.kind === 'broadcast') matches = broadcastName(block, map) === symbol.eventName;
+            else if (symbol.kind === 'procedure') {
+                matches =
+                ['procedures_definition', 'procedures_call', 'procedures_call_return'].includes(block.opcode) &&
+                procedureCode(block, map) === symbol.code;
+            } else if (symbol.kind === 'variable' || symbol.kind === 'list') {
+                matches =
+                Object.values(block.fields || {}).some(value => value.id === symbol.variableId);
+            } else if (symbol.kind === 'event') matches = symbol.blockIds.includes(block.id);
+            if (matches) {
+                results.push({...location(target, block), definition: block.opcode === 'procedures_definition'});
+            }
+        }
+    }
+    return results.sort((a, b) => Number(b.definition) - Number(a.definition) ||
+        Number(b.targetId === symbol.targetId) - Number(a.targetId === symbol.targetId));
+};

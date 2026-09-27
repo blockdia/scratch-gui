@@ -166,3 +166,15 @@ test.each(['ArrowUp', 'ArrowDown'])('Alt+%s stays available for keyboard script 
     expect(event.preventDefault).not.toHaveBeenCalled();
     expect(event.stopImmediatePropagation).not.toHaveBeenCalled();
 });
+
+test('palette owns keydown while open and never consumes keyup', () => {
+    const run = add('builtin/palette-protected');
+    registry.paletteOpen = true;
+    const event = key('k', {ctrlKey: true});
+    controller.keydown(event);
+    expect(run).not.toHaveBeenCalled();
+    expect(event.preventDefault).not.toHaveBeenCalled();
+    registry.paletteOpen = false;
+    controller.keydown(event);
+    expect(run).toHaveBeenCalledTimes(1);
+});

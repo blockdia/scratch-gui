@@ -292,16 +292,6 @@ button[class*="action-menu_more-button"] {
   display: none;
 }
 
-.sa-find-bar {
-  align-self: center;
-}
-.sa-find-wrapper {
-  height: 20px;
-}
-.sa-find-dropdown-out {
-  margin-top: 0;
-}
-
 /* Code tab */
 body:not(.sa-columns-enabled) [class*="gui_tab-panel"] .scratchCategoryMenuItem {
   padding: 0.25rem 0;

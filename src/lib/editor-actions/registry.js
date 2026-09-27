@@ -49,7 +49,25 @@ export class ActionRegistry {
                     keys.concat(next[id] || []), []))];
             }
             oldFullscreen.forEach(id => delete next[id]);
+            const migratedFind = Object.keys(next).some(id => id.startsWith('addon/find-bar/'));
+            for (const [oldName, newName] of [['find', 'find-symbol'], ['back', 'navigate-back'],
+                ['forward', 'navigate-forward']]) {
+                const oldId = `addon/find-bar/${oldName}`;
+                const newId = `builtin/${newName}`;
+                if (!Object.prototype.hasOwnProperty.call(next, newId) &&
+                    Object.prototype.hasOwnProperty.call(next, oldId)) next[newId] = next[oldId];
+                delete next[oldId];
+            }
+            Object.keys(next).filter(id => id.startsWith('addon/find-bar/'))
+                .forEach(id => delete next[id]);
             this.overrides = next;
+            if (migratedFind) {
+                try {
+                    this.storage.setItem(STORAGE_KEY, JSON.stringify({version: 1, overrides: next}));
+                } catch (_) {
+                    this.notice = {type: 'storage'};
+                }
+            }
         } catch (_) {
             this.overrides = {};
             this.notice = {type: 'invalidStorage'};

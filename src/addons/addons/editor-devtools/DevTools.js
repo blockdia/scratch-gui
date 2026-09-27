@@ -13,12 +13,16 @@ export default class DevTools {
     this.domHelpers = new DomHelpers(addon);
 
     this.codeTab = null;
-    this.costTab = null;
-    this.costTabBody = null;
     this.selVarID = null;
     this.canShare = false;
 
     this.mouseXY = { x: 0, y: 0 };
+    for (const [id, key, direction] of [['previousCostume', 'ArrowLeft', -1], ['nextCostume', 'ArrowRight', 1]]) {
+      addon.tab.actions.register({
+        id, title: {id: `addons.editor-devtools.action-${id}`}, scopes: ['costumes'], defaultBindings: [`Mod+${key}`],
+        run: () => addon.tab.selectAdjacentCostume(direction)
+      });
+    }
   }
 
   async init() {
@@ -165,10 +169,6 @@ export default class DevTools {
 
   getWorkspace() {
     return Blockly.getMainWorkspace();
-  }
-
-  isCostumeEditor() {
-    return this.costTab.className.indexOf("gui_is-selected") >= 0;
   }
 
   /**
@@ -612,55 +612,8 @@ export default class DevTools {
   }
 
   eventKeyDown(e) {
-    const switchCostume = (up) => {
-      // todo: select previous costume
-      let selected = this.costTabBody.querySelector("div[class*='sprite-selector-item_is-selected']");
-      let node = up ? selected.parentNode.previousSibling : selected.parentNode.nextSibling;
-      if (node) {
-        let wrapper = node.closest("div[class*=gui_flex-wrapper]");
-        node.querySelector("div[class^='sprite-selector-item_sprite-name']").click();
-        node.scrollIntoView({
-          behavior: "auto",
-          block: "center",
-          inline: "start",
-        });
-        wrapper.scrollTop = 0;
-      }
-    };
-
-    if (document.URL.indexOf("editor") <= 0) {
-      return;
-    }
-
+    if (document.URL.indexOf("editor") <= 0) return;
     let ctrlKey = e.ctrlKey || e.metaKey;
-
-    if (e.key === "ArrowLeft" && ctrlKey) {
-      // Ctrl + Left Arrow Key
-      if (document.activeElement.tagName === "INPUT") {
-        return;
-      }
-
-      if (this.isCostumeEditor()) {
-        switchCostume(true);
-        e.cancelBubble = true;
-        e.preventDefault();
-        return true;
-      }
-    }
-
-    if (e.key === "ArrowRight" && ctrlKey) {
-      // Ctrl + Right Arrow Key
-      if (document.activeElement.tagName === "INPUT") {
-        return;
-      }
-
-      if (this.isCostumeEditor()) {
-        switchCostume(false);
-        e.cancelBubble = true;
-        e.preventDefault();
-        return true;
-      }
-    }
 
     if (e.keyCode === 86 && ctrlKey && !e.griff) {
       // Ctrl + V
@@ -720,8 +673,6 @@ export default class DevTools {
     }
 
     this.codeTab = guiTabs[0];
-    this.costTab = guiTabs[1];
-    this.costTabBody = document.querySelector("div[aria-labelledby=" + this.costTab.id + "]");
 
     this.domHelpers.bindOnce(document, "keydown", (...e) => this.eventKeyDown(...e), true);
     this.domHelpers.bindOnce(document, "mousemove", (...e) => this.eventMouseMove(...e), true);

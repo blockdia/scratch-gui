@@ -2,6 +2,7 @@ import downloadBlob from "../../libraries/common/cs/download-blob.js";
 
 export default async ({ addon, console, msg }) => {
   let recordElem;
+  let toggleRecording;
   let isRecording = false;
   let isWaitingForFlag = false;
   let waitingForFlagFunc = null;
@@ -21,6 +22,12 @@ export default async ({ addon, console, msg }) => {
     "video/mp4",
   ].find((i) => MediaRecorder.isTypeSupported(i));
   const fileExtension = mimeType.split(";")[0].split("/")[1];
+
+  const recordAction = addon.tab.actions.register({
+    id: 'toggle', title: {id: 'addons.mediarecorder.action-toggle'}, scopes: ['editor'],
+    enabled: () => Boolean(toggleRecording && (isRecording || recordElem?.isConnected)),
+    run: () => toggleRecording()
+  });
 
   while (true) {
     const elem = await addon.tab.waitForElement('div[class*="menu-bar_file-group"] > div:last-child:not(.sa-record)', {
@@ -327,23 +334,21 @@ export default async ({ addon, console, msg }) => {
         (delay - roundedDelay) * 1000
       );
     };
-    if (!recordElem) {
+    toggleRecording = async () => {
+      if (isRecording) {
+        stopRecording();
+      } else {
+        const opts = await getOptions();
+        if (!opts) return;
+        return startRecording(opts);
+      }
+    };
+    if (!recordElem || !recordElem.isConnected) {
       recordElem = Object.assign(document.createElement("div"), {
         className: "sa-record " + elem.className,
-        textContent: msg("record"),
+        textContent: msg(isRecording ? "stop" : "record"),
       });
-      recordElem.addEventListener("click", async () => {
-        if (isRecording) {
-          stopRecording();
-        } else {
-          const opts = await getOptions();
-          if (!opts) {
-            console.log("Canceled");
-            return;
-          }
-          startRecording(opts);
-        }
-      });
+      recordElem.addEventListener("click", () => recordAction.execute());
     }
     elem.parentElement.appendChild(recordElem);
   }

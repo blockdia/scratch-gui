@@ -50,7 +50,21 @@ export default async function ({ addon, console, msg }) {
   });
   hideStageIcon.setAttribute("aria-hidden", true);
   hideStageButton.appendChild(hideStageIcon);
-  hideStageButton.addEventListener("click", hideStage);
+  const toggleStage = addon.tab.actions.register({
+    id: 'toggle', title: {id: 'addons.hide-stage.action-toggle'}, scopes: ['editor'],
+    enabled: () => Boolean(bodyWrapper && hideStageButton.isConnected),
+    run: () => stageHidden ? unhideStage() : hideStage()
+  });
+  hideStageButton.addEventListener("click", () => toggleStage.execute());
+
+  addon.tab.redux.initialize();
+  addon.tab.redux.addEventListener("statechanged", ({ detail }) => {
+    if (detail.action.type === "scratch-gui/StageSize/SET_STAGE_SIZE" && stageHidden) {
+      queueMicrotask(() => {
+        if (stageHidden && !addon.self.disabled) unhideStage();
+      });
+    }
+  });
 
   addon.self.addEventListener("disabled", () => {
     unhideStage();
@@ -81,9 +95,5 @@ export default async function ({ addon, console, msg }) {
     if (!addon.self.disabled) stageControls.insertBefore(hideStageButton, smallStageButton);
     if (stageHidden) hideStage();
     else unhideStage();
-
-    if (smallStageButton) smallStageButton.addEventListener("click", unhideStage);
-    if (largeStageButton) largeStageButton.addEventListener("click", unhideStage);
-    if (fullStageButton) fullStageButton.addEventListener("click", unhideStage);
   }
 }

@@ -60,3 +60,13 @@ test('a slow previous locale cannot replace messages after switching back', asyn
     expect(root.root.findByType('span').children).toEqual(['Logs']);
     root.unmount();
 });
+
+test('plugin action labels use Blockdia overlays and retain English fallback', async () => {
+    const chinese = namespaceAddonMessages(await loadAddonMessages('zh-CN'));
+    const french = namespaceAddonMessages(await loadAddonMessages('fr-CA'));
+    expect(chinese['addons.pause.action-toggle']).toBe('暂停／继续项目');
+    expect(chinese['addons.find-bar.action-back']).toBe('返回上一个浏览位置');
+    expect(french['addons.pause.action-toggle']).toBe('Pause / resume project');
+    expect(chinese['addons.find-bar.find-placeholder']).toBe('查找');
+    expect(french['addons.find-bar.find-placeholder']).toBe('Rechercher');
+});

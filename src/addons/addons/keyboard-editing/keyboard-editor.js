@@ -13,6 +13,7 @@ export default class KeyboardEditor {
     this.targetId = null;
     this.focusInput = document.createElement('textarea');
     this.focusInput.className = 'sa-mcp-keyboard-focus';
+    this.focusInput.setAttribute('data-shortcut-keyboard', '');
     this.focusInput.setAttribute('aria-label', msg('keyboard-label'));
     this.focusInput.setAttribute('autocomplete', 'off');
     this.focusInput.setAttribute('autocapitalize', 'off');
@@ -368,11 +369,6 @@ export default class KeyboardEditor {
     this.syncWorkspace();
     if (this.workspace.isDragging()) return;
     const consume = () => { event.preventDefault(); event.stopImmediatePropagation(); };
-    if ((event.ctrlKey || event.metaKey) && event.key === ' ') {
-      consume();
-      this.openPopup({keyboard: true});
-      return;
-    }
     if (event.ctrlKey || event.metaKey || event.key === 'Backspace' || event.key === 'Delete') {
       // The focus proxy is a text input for IME support. Explicitly delegate block
       // shortcuts so Blockly does not mistake it for an open literal editor.

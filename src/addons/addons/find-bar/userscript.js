@@ -17,7 +17,19 @@ export default async function ({ addon, msg, console }) {
       this.dropdownOut = null;
       this.dropdown = new Dropdown(this.utils);
 
-      document.addEventListener("keydown", (e) => this.eventKeyDown(e), true);
+      addon.tab.actions.register({
+        id: 'find', title: {id: 'addons.find-bar.action-find'}, scopes: ['blocks', 'keyboard', 'costumes', 'sounds'],
+        defaultBindings: ['Mod+f'], allowInInput: true,
+        enabled: () => Boolean(this.findInput && this.findInput.isConnected),
+        run: () => { this.findInput.focus(); this.findInput.select(); }
+      });
+      for (const [id, key, method] of [['back', 'ArrowLeft', 'goBack'], ['forward', 'ArrowRight', 'goForward']]) {
+        addon.tab.actions.register({
+          id, title: {id: `addons.find-bar.action-${id}`}, scopes: ['blocks', 'keyboard'], defaultBindings: [`Mod+${key}`],
+          enabled: () => Boolean(this.findBarOuter && this.findBarOuter.isConnected),
+          run: () => this.utils.navigationHistory[method]()
+        });
+      }
     }
 
     get workspace() {
@@ -125,49 +137,6 @@ export default async function ({ addon, msg, console }) {
         }
         e.preventDefault();
         return;
-      }
-    }
-
-    eventKeyDown(e) {
-      if (addon.self.disabled || !this.findBarOuter) return;
-
-      let ctrlKey = e.ctrlKey || e.metaKey;
-
-      if (e.key.toLowerCase() === "f" && ctrlKey && !e.shiftKey) {
-        // Ctrl + F (Override default Ctrl+F find)
-        this.findInput.focus();
-        this.findInput.select();
-        e.cancelBubble = true;
-        e.preventDefault();
-        return true;
-      }
-
-      if (e.key === "ArrowLeft" && ctrlKey) {
-        // Ctrl + Left Arrow Key
-        if (document.activeElement.tagName === "INPUT") {
-          return;
-        }
-
-        if (this.selectedTab === 0) {
-          this.utils.navigationHistory.goBack();
-          e.cancelBubble = true;
-          e.preventDefault();
-          return true;
-        }
-      }
-
-      if (e.key === "ArrowRight" && ctrlKey) {
-        // Ctrl + Right Arrow Key
-        if (document.activeElement.tagName === "INPUT") {
-          return;
-        }
-
-        if (this.selectedTab === 0) {
-          this.utils.navigationHistory.goForward();
-          e.cancelBubble = true;
-          e.preventDefault();
-          return true;
-        }
       }
     }
 

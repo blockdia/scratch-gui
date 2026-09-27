@@ -145,5 +145,21 @@
     "linter/constant-control-repeat": "This loop will never run",
     "linter/constant-control-empty": "This control block has no blocks inside",
     "keyboard-editing/keyboard-label": "Block workspace keyboard editor",
-    "keyboard-editing/keyboard-help": "Type: search · Enter: edit · ← →: inline inputs · ↑ ↓: blocks/connections · Shift+↑ ↓: stack ends · Tab / Shift+Tab: nested inputs · Alt+← →: reporter · Alt+↑ ↓: scripts · Ctrl/Cmd+Enter: drag"
+    "keyboard-editing/keyboard-help": "Type: search · Enter: edit · ← →: inline inputs · ↑ ↓: blocks/connections · Shift+↑ ↓: stack ends · Tab / Shift+Tab: nested inputs · Alt+← →: reporter · Alt+↑ ↓: scripts · Ctrl/Cmd+Enter: drag",
+    "find-bar/find-placeholder": "Find",
+    "pause/action-toggle": "Pause / resume project",
+    "mute-project/action-toggle": "Mute / unmute project",
+    "find-bar/action-find": "Find in editor",
+    "find-bar/action-back": "Go back in navigation history",
+    "find-bar/action-forward": "Go forward in navigation history",
+    "middle-click-popup/action-search": "Search blocks",
+    "keyboard-editing/action-search": "Search blocks at keyboard cursor",
+    "keyboard-editing/action-toggle-mode": "Toggle keyboard block editing mode",
+    "variable-manager/action-open": "Switch to Variables tab",
+    "search-sprites/action-focus": "Search sprites",
+    "mediarecorder/action-toggle": "Start or stop project recording",
+    "hide-stage/action-toggle": "Show or hide stage and sprite pane",
+    "hide-flyout/action-toggle-lock": "Lock or unlock block palette",
+    "editor-devtools/action-previousCostume": "Switch to previous costume",
+    "editor-devtools/action-nextCostume": "Switch to next costume"
 }

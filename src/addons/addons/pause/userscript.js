@@ -12,27 +12,15 @@ export default async function ({ addon, console, msg }) {
     img.src = addon.self.getResource((isPaused() ? "/play.svg" : "/pause.svg")) /* rewritten by pull.js */;
     img.title = isPaused() ? msg("play") : msg("pause");
   };
-  img.addEventListener("click", () => setPaused(!isPaused()));
+  const togglePause = addon.tab.actions.register({
+    id: 'toggle', title: {id: 'addons.pause.action-toggle'}, scopes: ['editor'], defaultBindings: ['Alt+x'],
+    run: () => setPaused(!isPaused())
+  });
+  img.addEventListener("click", () => togglePause.execute());
   addon.tab.displayNoneWhileDisabled(img);
   addon.self.addEventListener("disabled", () => setPaused(false));
   setSrc();
   onPauseChanged(setSrc);
-
-  document.addEventListener(
-    "keydown",
-    function (e) {
-      // e.code is not enough because that corresponds to physical keys, ignoring keyboard layouts.
-      // e.key is not enough because on macOS, option+x types ≈ and shift+option+x types ˛
-      // e.keyCode is always 88 when pressing x regardless of modifier keys, so that's how we'll handle macOS.
-      // Because keyCode is deprecated we'll still check e.key in case keyCode is not as reliable as we think it is
-      if (e.altKey && (e.key.toLowerCase() === "x" || e.keyCode === 88) && !addon.self.disabled) {
-        e.preventDefault();
-        e.stopImmediatePropagation();
-        setPaused(!isPaused());
-      }
-    },
-    { capture: true }
-  );
 
   while (true) {
     await addon.tab.waitForElement("[class^='green-flag']", {

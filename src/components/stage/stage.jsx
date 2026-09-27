@@ -44,6 +44,7 @@ const StageComponent = props => {
     return (
         <React.Fragment>
             <Box
+                data-shortcut-stage
                 className={classNames(
                     styles.stageWrapper,
                     {[styles.withColorPicker]: !isFullScreen && isColorPicking})}

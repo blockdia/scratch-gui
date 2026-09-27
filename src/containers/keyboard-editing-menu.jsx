@@ -2,9 +2,8 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import {FormattedMessage} from 'react-intl';
 import {MenuItem} from '../components/menu/menu.jsx';
+import actions from '../lib/editor-actions';
 import settings from '../addons/settings-store-singleton';
-import channels from '../addons/channels';
-import upstreamMeta from '../addons/generated/upstream-meta.json';
 
 const addonId = 'keyboard-editing';
 const isEnabled = () => settings.getAddonEnabled(addonId);
@@ -15,11 +14,7 @@ class KeyboardEditingMenu extends React.Component {
         this.state = {enabled: isEnabled()};
         this.handleChange = () => this.setState({enabled: isEnabled()});
         this.handleToggle = () => {
-            const enabled = !isEnabled();
-            settings.setAddonEnabled(addonId, enabled);
-            if (channels.changeChannel) {
-                channels.changeChannel.postMessage({version: upstreamMeta.commit, store: settings.store});
-            }
+            actions.execute('addon/keyboard-editing/toggle-mode');
             this.props.onClose();
         };
     }

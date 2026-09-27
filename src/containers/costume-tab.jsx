@@ -1,3 +1,4 @@
+import AddonHooks from '../addons/hooks';
 import PropTypes from 'prop-types';
 import React from 'react';
 import bindAll from 'lodash.bindall';
@@ -104,6 +105,15 @@ class CostumeTab extends React.Component {
         }
     }
     componentDidMount () {
+        this.selectAdjacentCostume = direction => {
+            const target = this.props.vm.editingTarget;
+            if (!target || ![-1, 1].includes(direction)) return false;
+            const index = this.state.selectedCostumeIndex + direction;
+            if (index < 0 || index >= target.sprite.costumes.length) return false;
+            this.handleSelectCostume(index);
+            return true;
+        };
+        AddonHooks.selectAdjacentCostume = this.selectAdjacentCostume;
         this.props.vm.on('EDITOR_SELECT_RESOURCE', this.handleResourceSelection);
     }
     componentWillReceiveProps (nextProps) {
@@ -135,6 +145,7 @@ class CostumeTab extends React.Component {
         }
     }
     componentWillUnmount () {
+        if (AddonHooks.selectAdjacentCostume === this.selectAdjacentCostume) AddonHooks.selectAdjacentCostume = null;
         this.props.vm.removeListener('EDITOR_SELECT_RESOURCE', this.handleResourceSelection);
     }
     handleResourceSelection (request) {

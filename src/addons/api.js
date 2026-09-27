@@ -15,6 +15,7 @@
  */
 
 import AddonWindows from './window-registry';
+import AddonActions from './action-registry';
 import IntlMessageFormat from 'intl-messageformat';
 import SettingsStore from './settings-store-singleton';
 import dataURLToBlob from '../lib/data-uri-to-blob';
@@ -182,6 +183,7 @@ class Tab extends EventTargetShim {
         super();
         this._id = id;
         this._windows = new AddonWindows(id, () => SettingsStore.getAddonEnabled(id));
+        this.actions = new AddonActions(id, () => SettingsStore.getAddonEnabled(id));
         this._seenElements = new WeakSet();
         // traps is public API
         this.traps = {
@@ -648,12 +650,17 @@ class Tab extends EventTargetShim {
         return this.redux.state.locales.isRtl ? 'rtl' : 'ltr';
     }
 
+    selectAdjacentCostume (direction) {
+        return AddonHooks.selectAdjacentCostume ? AddonHooks.selectAdjacentCostume(direction) : false;
+    }
+
     createWindow (definition) {
         return this._windows.create(definition);
     }
 
     _setWindowsEnabled (enabled) {
         this._windows.setEnabled(enabled);
+        this.actions.setEnabled(enabled);
     }
 
     createModal (title, {isOpen = false} = {}) {

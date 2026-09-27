@@ -1,3 +1,4 @@
 {
-    "gamepad/config-header": "Ta komentar vsebuje nastavitve za podporo igralnih ploščkov v orodju ali spletnih straneh, kot je https://editor.blockdia.com/\nNe spreminjajte ročno"
+    "gamepad/config-header": "Ta komentar vsebuje nastavitve za podporo igralnih ploščkov v orodju ali spletnih straneh, kot je https://editor.blockdia.com/\nNe spreminjajte ročno",
+    "find-bar/find-placeholder": "Iskanje"
 }

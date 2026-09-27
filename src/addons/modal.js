@@ -9,6 +9,7 @@ export const createEditorModal = (tab, title, {isOpen = false} = {}) => {
         className: tab.scratchClass('modal_modal-overlay'),
         dir: tab.direction
     });
+    container.setAttribute('data-addon-modal', '');
     container.style.display = isOpen ? '' : 'none';
     document.body.appendChild(container);
     const modal = Object.assign(document.createElement('div'), {

@@ -69,7 +69,6 @@ const StageHeaderComponent = function (props) {
         showFixedLargeSize,
         isFullScreen,
         isPlayerOnly,
-        onKeyPress,
         onSetStageFullScreen,
         onSetStageUnFullScreen,
         onSetStageLarge,
@@ -108,7 +107,6 @@ const StageHeaderComponent = function (props) {
                 <Button
                     className={styles.stageButton}
                     onClick={onSetStageUnFullScreen}
-                    onKeyPress={onKeyPress}
                 >
                     <img
                         alt={props.intl.formatMessage(messages.unFullScreenMessage)}
@@ -244,7 +242,6 @@ StageHeaderComponent.propTypes = {
     showFixedLargeSize: PropTypes.bool,
     isFullScreen: PropTypes.bool.isRequired,
     isPlayerOnly: PropTypes.bool.isRequired,
-    onKeyPress: PropTypes.func.isRequired,
     onSetStageFullScreen: PropTypes.func.isRequired,
     onSetStageUnFullScreen: PropTypes.func.isRequired,
     onSetStageLarge: PropTypes.func.isRequired,

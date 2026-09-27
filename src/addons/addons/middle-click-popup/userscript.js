@@ -4,18 +4,13 @@ export default async function (context) {
   const {addon} = context;
   const search = await getBlockSearch(context);
   const Blockly = await addon.tab.traps.getBlockly();
-  const open = () => {
-    if (!addon.self.disabled) search.openPopup({settings: addon.settings});
-  };
-  addon.self.addEventListener('disabled', search.closeMousePopup);
-  document.addEventListener('keydown', event => {
-    if (addon.self.disabled) return;
-    if (event.key === ' ' && (event.ctrlKey || event.metaKey)) {
-      open();
-      event.preventDefault();
-      event.stopPropagation();
-    }
+  const openAction = addon.tab.actions.register({
+    id: 'search', title: {id: 'addons.middle-click-popup.action-search'}, scopes: ['blocks'], defaultBindings: ['Mod+Space'],
+    enabled: () => Boolean(addon.tab.traps.getWorkspace()) && !addon.tab.traps.getWorkspace().isDragging(),
+    run: () => search.openPopup({settings: addon.settings})
   });
+  const open = () => openAction.execute();
+  addon.self.addEventListener('disabled', search.closeMousePopup);
   const original = Blockly.Gesture.prototype.doWorkspaceClick_;
   Blockly.Gesture.prototype.doWorkspaceClick_ = function () {
     search.setMousePosition(this.mostRecentEvent_);

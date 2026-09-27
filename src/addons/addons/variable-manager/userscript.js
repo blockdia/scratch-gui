@@ -59,6 +59,12 @@ export default async function ({ addon, console, msg }) {
   varTab.appendChild(varTabIcon);
   varTab.appendChild(varTabText);
 
+  const openVariables = addon.tab.actions.register({
+    id: 'open', title: {id: 'addons.variable-manager.action-open'}, scopes: ['editor'],
+    enabled: () => varTab.isConnected && !addon.tab.redux.state.scratchGui.mode.isPlayerOnly,
+    run: () => addon.tab.redux.dispatch({ type: "scratch-gui/navigation/ACTIVATE_TAB", activeTabIndex: 3 })
+  });
+
   function updateHeadingVisibility() {
     // used to hide the headings if there are no variables
     let filteredLocals = localVariables.filter((v) => v.row.style.display !== "none");
@@ -329,7 +335,7 @@ export default async function ({ addon, console, msg }) {
   }
 
   varTab.addEventListener("click", (e) => {
-    addon.tab.redux.dispatch({ type: "scratch-gui/navigation/ACTIVATE_TAB", activeTabIndex: 3 });
+    openVariables.execute();
   });
 
   function setVisible(visible) {

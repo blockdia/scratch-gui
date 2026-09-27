@@ -5,6 +5,8 @@ export default async function ({ addon, console, msg }) {
   let lockIcon = null;
   let flyOut = null;
   let scrollBar = null;
+  let toolbox = null;
+  let addExtensionButton = null;
   let toggle = false;
   let flyoutLock = false;
   let closeOnMouseUp = false;
@@ -46,6 +48,31 @@ export default async function ({ addon, console, msg }) {
     lockIcon.src = addon.self.getResource(`/${flyoutLock ? "" : "un"}lock.svg`) /* rewritten by pull.js */;
   }
 
+  function hoverAreas() {
+    const areas = [toolbox, addExtensionButton, flyOut, scrollBar];
+    if (getToggleSetting() === "hover") areas.push(placeHolderDiv);
+    return areas.filter(Boolean);
+  }
+
+  function isPointerOverPalette() {
+    return hoverAreas().some((element) => element.matches(":hover"));
+  }
+
+  function isPaletteHoverTarget(target) {
+    return target && hoverAreas().some((element) => element.contains(target));
+  }
+
+  const toggleLock = addon.tab.actions.register({
+    id: 'toggle-lock', title: {id: 'addons.hide-flyout.action-toggle-lock'}, scopes: ['blocks', 'keyboard'],
+    enabled: () => Boolean(lockButton && lockButton.isConnected && getToggleSetting() !== "category"),
+    run: () => {
+      flyoutLock = !flyoutLock;
+      updateLockDisplay();
+      if (flyoutLock) onmouseenter();
+      else if (!isPointerOverPalette()) onmouseleave();
+    }
+  });
+
   function autoLock() {
     const option = addon.settings.get("lockLoad");
     if (option) {
@@ -81,6 +108,7 @@ export default async function ({ addon, console, msg }) {
 
   function onmouseleave(e, speed = getSpeedValue()) {
     if (flyoutLock) return;
+    if (e && isPaletteHoverTarget(e.relatedTarget)) return;
     if (e && e.buttons) {
       // dragging a block or scrollbar
       closeOnMouseUp = true;
@@ -264,10 +292,7 @@ export default async function ({ addon, console, msg }) {
     lockIcon = document.createElement("img");
     lockIcon.alt = "";
     updateLockDisplay();
-    lockButton.onclick = () => {
-      flyoutLock = !flyoutLock;
-      updateLockDisplay();
-    };
+    lockButton.onclick = () => toggleLock.execute();
     lockButton.appendChild(lockIcon);
     lockObject.appendChild(lockButton);
     flyOut.appendChild(lockObject);
@@ -275,8 +300,8 @@ export default async function ({ addon, console, msg }) {
     onmouseleave(null, 0);
     toggle = false;
 
-    const toolbox = document.querySelector(".blocklyToolboxDiv");
-    const addExtensionButton = document.querySelector("[class^=gui_extension-button-container_]");
+    toolbox = document.querySelector(".blocklyToolboxDiv");
+    addExtensionButton = document.querySelector("[class^=gui_extension-button-container_]");
 
     for (let element of [toolbox, addExtensionButton, flyOut, scrollBar]) {
       element.onmouseenter = (e) => {

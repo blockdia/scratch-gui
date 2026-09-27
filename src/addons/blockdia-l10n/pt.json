@@ -1,3 +1,4 @@
 {
-    "gamepad/config-header": "Esse comentário contém configuração de suporte para controle em sites e ferramentas de terceiros como https://editor.blockdia.com/\nNão edite manualmente"
+    "gamepad/config-header": "Esse comentário contém configuração de suporte para controle em sites e ferramentas de terceiros como https://editor.blockdia.com/\nNão edite manualmente",
+    "find-bar/find-placeholder": "Localizar"
 }

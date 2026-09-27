@@ -17,11 +17,14 @@ export default async function ({ addon, console }) {
   onVolumeChanged(updateIcon);
   updateIcon();
 
+  const toggleMute = addon.tab.actions.register({
+    id: 'toggle', title: {id: 'addons.mute-project.action-toggle'}, scopes: ['editor'], run: () => setMuted(!isMuted())
+  });
   const clickMuteButton = (e) => {
     if (!addon.self.disabled && (e.ctrlKey || e.metaKey)) {
       e.cancelBubble = true;
       e.preventDefault();
-      setMuted(!isMuted());
+      toggleMute.execute();
     }
   };
 

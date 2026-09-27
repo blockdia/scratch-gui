@@ -39,6 +39,8 @@ import vmListenerHOC from '../lib/vm-listener-hoc.jsx';
 import vmManagerHOC from '../lib/vm-manager-hoc.jsx';
 import cloudManagerHOC from '../lib/cloud-manager-hoc.jsx';
 
+import ActionHost from '../lib/editor-actions/host.jsx';
+import actions from '../lib/editor-actions';
 import {WindowHost} from '../components/editor-windows/editor-windows.jsx';
 import GUIComponent from '../components/gui/gui.jsx';
 import {setIsScratchDesktop} from '../lib/isScratchDesktop.js';
@@ -56,6 +58,10 @@ const setProjectIdMetadata = projectId => {
         unsetMetadata(RequestMetadata.ProjectId);
     }
 };
+
+const activateActionTab = index => actions.execute(`builtin/tab-${['blocks', 'costumes', 'sounds'][index]}`);
+const activateActionCostumes = () => actions.execute('builtin/tab-costumes');
+const activateActionSounds = () => actions.execute('builtin/tab-sounds');
 
 class GUI extends React.Component {
     componentDidMount () {
@@ -105,6 +111,9 @@ class GUI extends React.Component {
             projectId,
             /* eslint-enable no-unused-vars */
             children,
+            onActivateTab: handleActivateTab,
+            onActivateCostumesTab: handleActivateCostumesTab,
+            onActivateSoundsTab: handleActivateSoundsTab,
             fetchingProject,
             isLoading,
             loadingStateVisible,
@@ -112,10 +121,18 @@ class GUI extends React.Component {
         } = this.props;
         return (
             <React.Fragment>
+                <ActionHost
+                    onActivateTab={handleActivateTab}
+                    onActivateCostumesTab={handleActivateCostumesTab}
+                    onActivateSoundsTab={handleActivateSoundsTab}
+                />
                 <WindowHost />
                 <GUIComponent
                     loading={fetchingProject || isLoading || loadingStateVisible}
                     {...componentProps}
+                    onActivateTab={activateActionTab}
+                    onActivateCostumesTab={activateActionCostumes}
+                    onActivateSoundsTab={activateActionSounds}
                 >
                     {children}
                 </GUIComponent>
@@ -125,6 +142,9 @@ class GUI extends React.Component {
 }
 
 GUI.propTypes = {
+    onActivateTab: PropTypes.func,
+    onActivateCostumesTab: PropTypes.func,
+    onActivateSoundsTab: PropTypes.func,
     assetHost: PropTypes.string,
     children: PropTypes.node,
     cloudHost: PropTypes.string,

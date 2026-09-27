@@ -1,15 +1,19 @@
+import actions from '../lib/editor-actions';
+import {hasModal} from '../lib/editor-actions/context';
 import PropTypes from 'prop-types';
 import React from 'react';
 import bindAll from 'lodash.bindall';
 import VM from 'scratch-vm';
 import {STAGE_DISPLAY_SCALE_METADATA, STAGE_DISPLAY_SIZES, STAGE_SIZE_MODES} from '../lib/layout-constants';
 import {setStageSize} from '../reducers/stage-size';
-import {setFullScreen} from '../reducers/mode';
 import {openSettingsModal} from '../reducers/modals';
 
 import {connect} from 'react-redux';
 
 import StageHeaderComponent from '../components/stage-header/stage-header.jsx';
+
+const enterFullscreen = () => actions.execute('builtin/fullscreen');
+const exitFullscreen = () => actions.execute('builtin/exit-fullscreen');
 
 // eslint-disable-next-line react/prefer-stateless-function
 class StageHeader extends React.Component {
@@ -30,8 +34,8 @@ class StageHeader extends React.Component {
         document.removeEventListener('keydown', this.handleKeyPress);
     }
     handleKeyPress (event) {
-        if (event.key === 'Escape' && this.props.isFullScreen) {
-            this.props.onSetStageUnFullScreen();
+        if (event.key === 'Escape' && this.props.isFullScreen && !event.defaultPrevented && !hasModal()) {
+            actions.execute('builtin/exit-fullscreen');
         }
     }
     checkInvalidStageSizeMode () {
@@ -56,7 +60,8 @@ class StageHeader extends React.Component {
         return (
             <StageHeaderComponent
                 {...props}
-                onKeyPress={this.handleKeyPress}
+                onSetStageFullScreen={enterFullscreen}
+                onSetStageUnFullScreen={exitFullscreen}
                 showFixedLargeSize={this.showFixedLargeSize()}
             />
         );
@@ -73,7 +78,6 @@ StageHeader.propTypes = {
     }).isRequired,
     dimensions: PropTypes.arrayOf(PropTypes.number),
     isPlayerOnly: PropTypes.bool,
-    onSetStageUnFullScreen: PropTypes.func.isRequired,
     onSetStageFull: PropTypes.func.isRequired,
     onOpenSettings: PropTypes.func.isRequired,
     // tw: replace showBranding
@@ -98,8 +102,6 @@ const mapDispatchToProps = dispatch => ({
     onSetStageLarge: () => dispatch(setStageSize(STAGE_SIZE_MODES.large)),
     onSetStageSmall: () => dispatch(setStageSize(STAGE_SIZE_MODES.small)),
     onSetStageFull: () => dispatch(setStageSize(STAGE_SIZE_MODES.full)),
-    onSetStageFullScreen: () => dispatch(setFullScreen(true)),
-    onSetStageUnFullScreen: () => dispatch(setFullScreen(false)),
     onOpenSettings: () => dispatch(openSettingsModal())
 });
 

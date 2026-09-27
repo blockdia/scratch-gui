@@ -1,3 +1,4 @@
 {
-    "gamepad/config-header": "Deze opmerking bevat configuratie voor gamepad-ondersteuning in hulpmiddelen of websites van derde partijen, zoals https://editor.blockdia.com/\nNiet met de hand bewerken"
+    "gamepad/config-header": "Deze opmerking bevat configuratie voor gamepad-ondersteuning in hulpmiddelen of websites van derde partijen, zoals https://editor.blockdia.com/\nNiet met de hand bewerken",
+    "find-bar/find-placeholder": "Zoeken"
 }

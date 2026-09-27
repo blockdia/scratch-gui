@@ -9,4 +9,9 @@ export default async function (context) {
     openPopup: options => search.openPopup({...options, settings: addon.settings}),
     closePopup: search.closeKeyboardPopup, popupOpen: search.popupOpen});
   search.attachKeyboard(editor);
+  addon.tab.actions.register({
+    id: 'search', title: {id: 'addons.keyboard-editing.action-search'}, scopes: ['keyboard'], defaultBindings: ['Mod+Space'],
+    enabled: () => editor.enabled && editor.available() && !editor.composing && !editor.editingField,
+    run: () => editor.openPopup({keyboard: true})
+  });
 }

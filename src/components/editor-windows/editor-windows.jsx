@@ -363,6 +363,7 @@ export class Toolbar extends React.Component {
                     if (overflow) entry.anchor = this.more;
                     // The first click opens immediately; the second promotes it to a pinned window.
                     if (event.detail === 2) manager.open(entry.id, {pinned: true});
+                    else if (entry.action) entry.action.execute();
                     else manager.toggle(entry.id);
                     this.setState({expanded: false});
                 }}

@@ -1,3 +1,4 @@
 {
-    "gamepad/config-header": "Tämä kommentti sisältää peliohjaintuen määritykset kolmannen osapuolen työkaluissa tai verkkosivustoissa, kuten https://editor.blockdia.com/\nÄlä muokkaa käsin"
+    "gamepad/config-header": "Tämä kommentti sisältää peliohjaintuen määritykset kolmannen osapuolen työkaluissa tai verkkosivustoissa, kuten https://editor.blockdia.com/\nÄlä muokkaa käsin",
+    "find-bar/find-placeholder": "Etsi"
 }

@@ -1,3 +1,4 @@
 {
-    "gamepad/config-header": "以下のコメントには、https://editor.blockdia.com/ などの外部のツールやウェブサイトで利用されるゲームパッド設定が保存されています。\n編集しないこと。"
+    "gamepad/config-header": "以下のコメントには、https://editor.blockdia.com/ などの外部のツールやウェブサイトで利用されるゲームパッド設定が保存されています。\n編集しないこと。",
+    "find-bar/find-placeholder": "検索"
 }

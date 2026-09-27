@@ -1,3 +1,5 @@
+import actions from '../editor-actions';
+import actionMessages from '../editor-actions/messages';
 import {changeWindows, editorWindowsInitialState} from '../../reducers/editor-windows';
 
 export const constrain = (rect, bounds, minimum = {width: 360, height: 240}) => {
@@ -13,7 +15,8 @@ export const constrain = (rect, bounds, minimum = {width: 360, height: 240}) => 
 
 // Content, callbacks and DOM references deliberately never enter Redux.
 export class WindowManager {
-    constructor () {
+    constructor (actionRegistry = null) {
+        this.actions = actionRegistry;
         this.definitions = new Map();
         this.listeners = new Set();
         this.state = editorWindowsInitialState;
@@ -46,6 +49,18 @@ export class WindowManager {
         const entry = Object.assign({size: {width: 565, height: 400}, minimum: {width: 360, height: 240}},
             definition, {owned: new Set()});
         this.definitions.set(id, entry);
+        if (this.actions) {
+            entry.action = this.actions.registerAction({
+                id: id.includes('/') ? `addon/${id}/toggle-window` : `builtin/window-${id}`,
+                title: actionMessages.toggleWindow,
+                titleValues: {name: entry.title},
+                category: 'window',
+                source: id.includes('/') ? id.split('/')[0] : 'builtin',
+                scopes: ['editor'],
+                enabled: () => !this.suspended,
+                run: () => this.toggle(id)
+            });
+        }
         this.commit({...this.state,
             windows: {...this.state.windows,
                 [id]: {status: 'closed', pinned: false, rect: null, unread: false}}});
@@ -179,10 +194,12 @@ export class WindowManager {
         if (!this.definitions.has(id)) return;
         this.hide(id);
         this.call(id, 'onDestroy');
+        const entry = this.definitions.get(id);
+        if (entry.action) entry.action.unregister();
         this.definitions.delete(id);
         const windows = {...this.state.windows};
         delete windows[id];
         this.commit({...this.state, windows, order: this.state.order.filter(item => item !== id)});
     }
 }
-export default new WindowManager();
+export default new WindowManager(actions);

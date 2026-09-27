@@ -1,10 +1,11 @@
+import actions from '../../lib/editor-actions';
+import actionMessages from '../../lib/editor-actions/messages';
 import classNames from 'classnames';
 import {connect} from 'react-redux';
 import {compose} from 'redux';
 import {defineMessages, FormattedMessage, injectIntl, intlShape} from 'react-intl';
 import PropTypes from 'prop-types';
 import bindAll from 'lodash.bindall';
-import bowser from 'bowser';
 import React from 'react';
 
 import VM from 'scratch-vm';
@@ -218,6 +219,7 @@ class MenuBar extends React.Component {
             'handleClickNewWindow',
             'handleClickRemix',
             'handleClickSave',
+            'handleOpenProject',
             'handleClickSaveAsCopy',
             'handleClickPackager',
             'handleClickDesktopSettings',
@@ -225,17 +227,34 @@ class MenuBar extends React.Component {
             'handleClickSeeCommunity',
             'handleClickShare',
             'handleSetMode',
-            'handleKeyPress',
             'handleRestoreOption',
             'getSaveToComputerHandler',
             'restoreOptionMessage'
         ]);
     }
     componentDidMount () {
-        document.addEventListener('keydown', this.handleKeyPress);
+        this.actionHandles = [actions.registerAction({
+            id: 'builtin/save',
+            title: actionMessages.save,
+            source: 'builtin',
+            scopes: ['global'],
+            allowInInput: true,
+            defaultBindings: ['Mod+s'],
+            enabled: () => Boolean(this.props.handleSaveProject || this.props.onClickSave),
+            run: () => (this.props.handleSaveProject || this.props.onClickSave)()
+        }), actions.registerAction({
+            id: 'builtin/open',
+            title: actionMessages.open,
+            source: 'builtin',
+            scopes: ['global'],
+            allowInInput: true,
+            defaultBindings: ['Mod+o'],
+            enabled: () => Boolean(this.props.canManageFiles && this.props.onStartSelectingFileUpload),
+            run: () => this.props.onStartSelectingFileUpload()
+        })];
     }
     componentWillUnmount () {
-        document.removeEventListener('keydown', this.handleKeyPress);
+        this.actionHandles.forEach(handle => handle.unregister());
     }
     handleClickNew () {
         // if the project is dirty, and user owns the project, we will autosave.
@@ -260,8 +279,11 @@ class MenuBar extends React.Component {
         this.props.onClickRemix();
         this.props.onRequestCloseFile();
     }
+    handleOpenProject () {
+        return actions.execute('builtin/open');
+    }
     handleClickSave () {
-        this.props.onClickSave();
+        actions.execute('builtin/save');
         this.props.onRequestCloseFile();
     }
     handleClickSaveAsCopy () {
@@ -336,18 +358,6 @@ class MenuBar extends React.Component {
             restoreFun();
             this.props.onRequestCloseEdit();
         };
-    }
-    handleKeyPress (event) {
-        const modifier = bowser.mac ? event.metaKey : event.ctrlKey;
-        if (modifier) {
-            if (event.key.toLowerCase() === 's') {
-                this.props.handleSaveProject();
-                event.preventDefault();    
-            } else if (event.key.toLowerCase() === 'o') {
-                event.preventDefault();    
-                this.props.onStartSelectingFileUpload();
-            }
-        }
     }
     getSaveToComputerHandler (downloadProjectCallback) {
         return () => {
@@ -632,7 +642,7 @@ class MenuBar extends React.Component {
                                     )}
                                     <MenuSection>
                                         <MenuItem
-                                            onClick={this.props.onStartSelectingFileUpload}
+                                            onClick={this.handleOpenProject}
                                         >
                                             {this.props.intl.formatMessage(sharedMessages.loadFromComputerTitle)}
                                         </MenuItem>

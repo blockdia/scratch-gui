@@ -4,7 +4,9 @@ import {FormattedMessage} from 'react-intl';
 
 import LanguageMenu from './language-menu.jsx';
 import MenuBarMenu from './menu-bar-menu.jsx';
-import {MenuSection} from '../menu/menu.jsx';
+import actions from '../../lib/editor-actions';
+import messages from '../../lib/editor-actions/messages';
+import {MenuItem, MenuSection} from '../menu/menu.jsx';
 import MenuLabel from './tw-menu-label.jsx';
 import TWAccentThemeMenu from './tw-theme-accent.jsx';
 import TWGuiThemeMenu from './tw-theme-gui.jsx';
@@ -26,52 +28,70 @@ const SettingsMenu = ({
     onRequestClose,
     onRequestOpen,
     settingsMenuOpen
-}) => (
-    <MenuLabel
-        open={settingsMenuOpen}
-        onOpen={onRequestOpen}
-        onClose={onRequestClose}
-    >
-        <img
-            src={settingsIcon}
-            draggable={false}
-            width={20}
-            height={20}
-        />
-        <span className={styles.dropdownLabel}>
-            <FormattedMessage
-                defaultMessage="Settings"
-                description="Settings menu"
-                id="gui.menuBar.settings"
-            />
-        </span>
-        <img
-            src={dropdownCaret}
-            draggable={false}
-            width={8}
-            height={5}
-        />
-        <MenuBarMenu
-            className={menuBarStyles.menuBarMenu}
+}) => {
+    const openShortcuts = () => {
+        onRequestClose();
+        actions.execute('builtin/shortcuts');
+    };
+    return (
+        <MenuLabel
             open={settingsMenuOpen}
-            place={isRtl ? 'left' : 'right'}
+            onOpen={onRequestOpen}
+            onClose={onRequestClose}
         >
-            <MenuSection>
-                {canChangeLanguage && <LanguageMenu onRequestCloseSettings={onRequestClose} />}
-                {canChangeTheme && (
-                    <React.Fragment>
-                        <TWGuiThemeMenu />
-                        <TWBlocksThemeMenu
-                            onOpenCustomSettings={onOpenCustomSettings}
-                        />
-                        <TWAccentThemeMenu />
-                    </React.Fragment>
-                )}
-                {onClickDesktopSettings && <TWDesktopSettings onClick={onClickDesktopSettings} />}
-            </MenuSection>
-        </MenuBarMenu>
-    </MenuLabel>
-);
+            <img
+                src={settingsIcon}
+                draggable={false}
+                width={20}
+                height={20}
+            />
+            <span className={styles.dropdownLabel}>
+                <FormattedMessage
+                    defaultMessage="Settings"
+                    description="Settings menu"
+                    id="gui.menuBar.settings"
+                />
+            </span>
+            <img
+                src={dropdownCaret}
+                draggable={false}
+                width={8}
+                height={5}
+            />
+            <MenuBarMenu
+                className={menuBarStyles.menuBarMenu}
+                open={settingsMenuOpen}
+                place={isRtl ? 'left' : 'right'}
+            >
+                <MenuSection>
+                    {canChangeLanguage && <LanguageMenu onRequestCloseSettings={onRequestClose} />}
+                    {canChangeTheme && (
+                        <React.Fragment>
+                            <TWGuiThemeMenu />
+                            <TWBlocksThemeMenu
+                                onOpenCustomSettings={onOpenCustomSettings}
+                            />
+                            <TWAccentThemeMenu />
+                        </React.Fragment>
+                    )}
+                    <MenuItem
+                        // eslint-disable-next-line react/jsx-no-bind
+                        onClick={openShortcuts}
+                    >
+                        <div className={styles.option}>
+                            <span
+                                className={styles.iconSpacer}
+                                aria-hidden="true"
+                            />
+                            <FormattedMessage {...messages.shortcuts} />
+                        </div>
+                    </MenuItem>
+                    {onClickDesktopSettings && <TWDesktopSettings onClick={onClickDesktopSettings} />}
+                </MenuSection>
+            </MenuBarMenu>
+        </MenuLabel>
+    );
+};
 
 SettingsMenu.propTypes = {
     canChangeLanguage: PropTypes.bool,

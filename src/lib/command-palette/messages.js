@@ -18,6 +18,7 @@ export default {
     procedure: {id: 'gui.palette.procedure', defaultMessage: 'My block'},
     event: {id: 'gui.palette.event', defaultMessage: 'Event'},
     broadcast: {id: 'gui.palette.broadcast', defaultMessage: 'Broadcast'},
+    greenFlag: {id: 'addons._general.blocks.green-flag', defaultMessage: 'flag'},
     expression: {id: 'gui.palette.expression', defaultMessage: '(expression)'},
     costume: {id: 'gui.palette.costume', defaultMessage: 'Costume'},
     sound: {id: 'gui.palette.sound', defaultMessage: 'Sound'},

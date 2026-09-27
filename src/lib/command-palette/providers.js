@@ -37,6 +37,12 @@ const broadcastName = (block, map) => {
     return menu && menu.opcode === 'event_broadcast_menu' ? (field(menu, 'BROADCAST_OPTION') || {}).value : null;
 };
 const location = (target, block) => ({targetId: target.id, blockId: block.id});
+const visibleFieldText = (item, t) => {
+    // FieldImage.getText() is its English alt text, even in a localized workspace.
+    const value = item.getValue && item.getValue();
+    if (typeof value === 'string' && value.endsWith('/green-flag.svg')) return t('greenFlag');
+    return item.getText && item.getText();
+};
 
 export const targetResults = (vm, t) => originals(vm).map(target => {
     const kind = target.isStage ? 'stage' : target.component ? 'component' : 'sprite';
@@ -115,7 +121,7 @@ export const symbolResults = (vm, targetId, tab, workspace, t) => {
             const visual = workspace && vm.editingTarget === target && workspace.getBlockById(block.id);
             // A header's own fields omit the connected script body.
             const label = visual ? visual.inputList.map(input => input.fieldRow.map(item =>
-                item.getText && item.getText()).filter(Boolean)
+                visibleFieldText(item, t)).filter(Boolean)
                 .join(' ')).filter(Boolean)
                 .join(' ') :
                 [block.opcode, ...Object.values(block.fields || {}).map(item => item.value)].join(' ');

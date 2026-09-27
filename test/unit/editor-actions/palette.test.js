@@ -2,6 +2,8 @@ import {parseQuery, filterResults} from '../../../src/lib/command-palette/search
 import {targetResults, symbolResults, referencesFor, commandResults} from '../../../src/lib/command-palette/providers';
 import {ActionRegistry, STORAGE_KEY} from '../../../src/lib/editor-actions/registry';
 import AddonActions from '../../../src/addons/action-registry';
+import {loadAddonMessages, namespaceAddonMessages} from '../../../src/addons/translations';
+import paletteMessages from '../../../src/lib/command-palette/messages';
 
 const t = key => key;
 const target = (id, blocks = {}, variables = {}, extra = {}) => ({id, isOriginal: true, variables,
@@ -68,6 +70,21 @@ test('broadcasts span originals, ignore clones, retain the query target after sw
     expect(referencesFor(vm, row).map(ref => ref.targetId)).toEqual(['a', 'b']);
     vm.runtime.targets.splice(1, 1);
     expect(referencesFor(vm, row)).toHaveLength(1);
+});
+
+test('event labels use the localized green flag name instead of the image alt text', async () => {
+    const flag = block('flag', 'event_whenflagclicked', {}, {topLevel: true});
+    const sprite = target('a', {flag});
+    const vm = vmFor([sprite]);
+    const image = {getValue: () => '/media/green-flag.svg', getText: () => 'flag'};
+    const words = text => ({getText: () => text});
+    const workspace = {getBlockById: () => ({inputList: [{fieldRow: [words('当'), image, words('被点击')]}]})};
+    const translations = namespaceAddonMessages(await loadAddonMessages('zh-CN'));
+    const localize = key => key === 'greenFlag' ? translations[paletteMessages.greenFlag.id] : key;
+    const row = symbolResults(vm, 'a', 0, workspace, localize)[0];
+    expect(row.label).toBe('当 旗 被点击');
+    expect(filterResults([row], '旗')).toEqual([row]);
+    expect(filterResults([row], 'flag')).toEqual([]);
 });
 
 test('resource provider uses stable asset identity and tab context', () => {

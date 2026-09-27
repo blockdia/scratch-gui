@@ -1,3 +1,7 @@
+import {createSearchAliases} from '../../addons/libraries/block-search/search-aliases';
+
+export {createSearchAliases};
+
 const symbolFilters = {
     v: 'variable',
     l: 'list',
@@ -36,8 +40,16 @@ export const score = (text, query) => {
     return 3 + (at / (text.length + 1));
 };
 
-export const filterResults = (items, query) => items.map((item, index) => ({item,
-    index,
-    rank: score(item.label, query)})).filter(item => Number.isFinite(item.rank))
-    .sort((a, b) => a.rank - b.rank || a.index - b.index)
-    .map(result => result.item);
+export const filterResults = (items, query, getAliases = createSearchAliases()) => {
+    query = query.toLocaleLowerCase();
+    if (!query) return items.slice();
+    return items.map((item, index) => ({item,
+        index,
+        // Each spelling keeps exact/prefix/substring/subsequence ordering.
+        // Literal matches always precede full pinyin, then initials.
+        rank: Math.min(...getAliases(item.label).map(alias => (alias.rank * 4) +
+            (alias.rank ? score(alias.text.replace(/\s+/g, ''), query.replace(/\s+/g, '')) : score(alias.text, query))))
+    })).filter(item => Number.isFinite(item.rank))
+        .sort((a, b) => a.rank - b.rank || a.index - b.index)
+        .map(result => result.item);
+};

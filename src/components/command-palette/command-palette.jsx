@@ -14,7 +14,7 @@ import {navigationFor} from '../../lib/block-navigation';
 import service from '../../lib/command-palette/service';
 import installGestures from '../../lib/command-palette/gestures';
 import messages from '../../lib/command-palette/messages';
-import {parseQuery, filterResults} from '../../lib/command-palette/search';
+import {parseQuery, filterResults, createSearchAliases} from '../../lib/command-palette/search';
 import {targetResults, commandResults, symbolResults, referencesFor} from '../../lib/command-palette/providers';
 import addonManifests from '../../addons/generated/addon-manifests';
 import {loadAddonSettingsMessages} from '../../addons/settings/addon-translations';
@@ -36,6 +36,7 @@ export class CommandPalette extends React.Component {
         };
         this.workspace = null;
         this.operation = 0;
+        this.getSearchAliases = createSearchAliases();
         this.getOcclusion = () => this.panel && this.panel.getBoundingClientRect();
         this.keepVisible = () => {
             const ref = this.state.reference;
@@ -177,6 +178,7 @@ export class CommandPalette extends React.Component {
         if (item) this.choose(item);
     }
     close (restore = true) {
+        this.getSearchAliases = createSearchAliases();
         this.operation++;
         this.navigation.cancel();
         actions.paletteOpen = false;
@@ -210,7 +212,7 @@ export class CommandPalette extends React.Component {
                 } else if (this.labelCache.has(item.id)) item.label = this.labelCache.get(item.id);
             }
         }
-        return filterResults(items, query);
+        return filterResults(items, query, this.getSearchAliases);
     }
     keydown (event) {
         if (!this.state.open) return;

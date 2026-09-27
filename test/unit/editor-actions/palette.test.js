@@ -12,6 +12,23 @@ const target = (id, blocks = {}, variables = {}, extra = {}) => ({id, isOriginal
 const block = (id, opcode, fields = {}, extra = {}) => ({id, opcode, fields, ...extra});
 const vmFor = targets => ({runtime: {targets}, editingTarget: targets[0]});
 
+test.each([
+    ['> baocun', '保存项目'], ['> BCXM', '保存项目'], ['> bao cun', '保存项目'],
+    ['xiaomao', '小猫'], ['xm', '小猫'], ['@v fs', '分数'],
+    ['@c chongfuzhixing', '重复执行'], ['@ wdbl', '我的變量'],
+    ['> lvqi', '绿旗'], ['@ ydabc', '移动ABC']
+])('palette search supports pinyin and initials: %s', (input, label) => {
+    const item = {label};
+    expect(filterResults([item, {label: 'other'}], parseQuery(input).query)).toEqual([item]);
+});
+
+test('pinyin ranks after literal matches, before initials, and preserves stable ties', () => {
+    const items = ['牙医', '衣服', 'yi', '衣', '依'].map(label => ({label}));
+    expect(filterResults(items, 'yi').map(item => item.label)).toEqual(['yi', '衣', '依', '衣服', '牙医']);
+    expect(filterResults(items, '')).toEqual(items);
+    expect(filterResults(items, 'zzzz')).toEqual([]);
+});
+
 test('prefixes, Chinese matching, exact/prefix/substring/subsequence priority and stable ties', () => {
     expect(parseQuery('> 保存 ')).toEqual({mode: 'commands', query: '保存'});
     expect(parseQuery('@计分')).toEqual({mode: 'symbols', query: '计分'});

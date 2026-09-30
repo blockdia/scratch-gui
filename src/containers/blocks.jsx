@@ -3,6 +3,7 @@ import debounce from 'lodash.debounce';
 import defaultsDeep from 'lodash.defaultsdeep';
 import {categoryXML, subscribe as subscribePins} from '../lib/backpack/pinned-scripts';
 import makeToolboxXML from '../lib/make-toolbox-xml';
+import hydrateWorkspaceShadows from '../lib/hydrate-workspace-shadows';
 import PropTypes from 'prop-types';
 import React from 'react';
 import {intlShape, injectIntl, defineMessages} from 'react-intl';
@@ -506,12 +507,16 @@ class Blocks extends React.Component {
             this.onWorkspaceMetricsChange();
         }
 
-        // Remove and reattach the workspace listener (but allow flyout events)
+        // Suppress load-time events at their source: Blockly dispatches them
+        // asynchronously, after a temporarily detached listener is reattached.
         const targetId = this.props.vm.editingTarget && this.props.vm.editingTarget.id;
         this.workspace.removeChangeListener(this.props.vm.blockListener);
-        const dom = this.ScratchBlocks.Xml.textToDom(data.xml);
+        this.ScratchBlocks.Events.disable();
         try {
+            const dom = this.ScratchBlocks.Xml.textToDom(data.xml);
             this.ScratchBlocks.Xml.clearWorkspaceAndLoadFromXml(dom, this.workspace);
+            hydrateWorkspaceShadows(this.ScratchBlocks, this.workspace,
+                this.props.vm.runtime.getTargetById(targetId));
         } catch (error) {
             // The workspace is likely incomplete. What did update should be
             // functional.
@@ -526,29 +531,10 @@ class Blocks extends React.Component {
                 error.message = `Workspace Update Error: ${error.message}`;
             }
             log.error(error);
+        } finally {
+            this.ScratchBlocks.Events.enable();
+            this.workspace.addChangeListener(this.props.vm.blockListener);
         }
-        // Boolean checkbox shadows are synthesized by scratch-blocks while the
-        // VM listener above is detached. Hydrate only those missing defaults
-        // into the current target without making a user-visible project edit.
-        if (targetId && typeof this.props.vm.hydrateBooleanShadows === 'function') {
-            const booleanShadowRecords = this.workspace.getAllBlocks(false)
-                .filter(block => block.type === 'operator_boolean' && block.isShadow() &&
-                    block.getFieldValue('VALUE') === 'FALSE' && block.getParent())
-                .map(block => {
-                    const parent = block.getParent();
-                    const input = parent.inputList.find(candidate =>
-                        candidate.connection && candidate.connection.targetBlock() === block
-                    );
-                    return input ? {
-                        parentId: parent.id,
-                        inputName: input.name,
-                        shadowId: block.id
-                    } : null;
-                })
-                .filter(record => record);
-            this.props.vm.hydrateBooleanShadows(targetId, booleanShadowRecords);
-        }
-        this.workspace.addChangeListener(this.props.vm.blockListener);
 
         if (this.props.vm.editingTarget && this.props.workspaceMetrics.targets[this.props.vm.editingTarget.id]) {
             const {scrollX, scrollY, scale} = this.props.workspaceMetrics.targets[this.props.vm.editingTarget.id];

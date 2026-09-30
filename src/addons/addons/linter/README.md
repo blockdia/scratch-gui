@@ -84,3 +84,23 @@ Resource findings open the owning target's costume/sound editor and select the
 asset using a transient `EDITOR_SELECT_RESOURCE` UI request. This does not change
 the sprite's running costume. Resource identity includes its kind, name and asset
 ID; deletion or renaming makes old locations unavailable.
+
+## Debug diagnostics
+
+Debug results remain in the analyzer/model snapshot but are hidden by default in
+Code checks. Enable **Show debug information** in Filters and rules, or select
+Debug as the severity. Hidden debug results do not contribute to the displayed
+counts or empty-state filtering. Closing the window resets this view preference.
+
+Debug covers unreferenced non-top-level blocks, residual shadow blocks,
+inconsistent parent metadata, extra procedure defaults and unregistered bundled
+debugger logging blocks. Missing forward references, graph cycles, malformed
+signatures, unknown procedures and unregistered debugger breakpoints remain
+warnings. A debug parent diagnostic does not suppress semantic checks on blocks
+with incoming references. Valid covered shadows are excluded as before.
+
+Block diagnostics include a detached technical snapshot in Details: target and
+block IDs, opcode, connections, fields and mutation. Graph diagnostics also show
+incoming slots, the recorded parent and missing references; redundant defaults
+show parsed arrays and expected/actual counts; logging diagnostics identify the
+required addon and registration state. Related blocks remain navigable.

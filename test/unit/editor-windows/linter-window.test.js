@@ -199,3 +199,68 @@ test('unknown blocks show coverage notes alongside usable known-reference result
     expect(issues(root)[0].props['aria-disabled']).toBe(false);
     renderer.act(() => root.unmount());
 });
+
+test('debug is hidden from default rows and totals, can be shown and has technical details', async () => {
+    const {root, vm, model} = fixture();
+    vm.runtime.targets[0].blocks._blocks = {
+        orphan: {id: 'orphan',
+            opcode: 'motion_movesteps',
+            parent: null,
+            topLevel: false,
+            next: null,
+            inputs: {},
+            fields: {}},
+        warning: {id: 'warning',
+            opcode: 'motion_movesteps',
+            topLevel: true,
+            next: 'missing',
+            inputs: {},
+            fields: {}}
+    };
+    renderer.act(() => model.refresh());
+    renderer.act(() => jest.runAllTimers());
+    expect(model.snapshot().results).toHaveLength(3);
+    expect(issues(root)).toHaveLength(2);
+    expect(root.root.findByProps({className: 'sa-linter-status'}).children.join('')).toBe('2 of 2 results');
+    renderer.act(() => button(root, 'Filters and rules').props.onClick());
+    const toggle = () => root.root.findByProps({name: 'show-debug'});
+    expect(toggle().props.checked).toBe(false);
+    renderer.act(() => toggle().props.onChange({target: {checked: true}}));
+    expect(issues(root)).toHaveLength(3);
+    expect(root.root.findByProps({className: 'sa-linter-status'}).children.join('')).toBe('3 of 3 results');
+    const debug = issues(root).find(row => row.props['aria-label'].startsWith('Debug:'));
+    await renderer.act(async () => debug.props.onClick());
+    renderer.act(() => root.root.findByProps({className: 'sa-linter-details-toggle'}).props.onClick());
+    const technical = JSON.parse(root.root.findByType('pre').children.join(''));
+    expect(technical).toMatchObject({blockId: 'orphan',
+        opcode: 'motion_movesteps',
+        parent: null,
+        topLevel: false,
+        incoming: []});
+    const severity = () => root.root.findAllByType('select')[0];
+    renderer.act(() => severity().props.onChange({target: {value: 'debug'}}));
+    expect(issues(root)).toHaveLength(1);
+    renderer.act(() => toggle().props.onChange({target: {checked: false}}));
+    expect(severity().props.value).toBe('all');
+    expect(issues(root)).toHaveLength(2);
+    expect(root.root.findAllByType('pre')).toHaveLength(0);
+    renderer.act(() => severity().props.onChange({target: {value: 'debug'}}));
+    expect(toggle().props.checked).toBe(true);
+    expect(issues(root)).toHaveLength(1);
+    renderer.act(() => root.unmount());
+});
+
+test('a project with only hidden debug diagnostics shows an empty default result', () => {
+    const {root, vm, model} = fixture();
+    vm.runtime.targets[0].variables = {};
+    vm.runtime.targets[0].blocks._blocks = {orphan: {id: 'orphan',
+        opcode: 'motion_movesteps',
+        parent: null,
+        topLevel: false}};
+    renderer.act(() => model.refresh());
+    renderer.act(() => jest.runAllTimers());
+    expect(issues(root)).toHaveLength(0);
+    expect(root.root.findByProps({className: 'sa-linter-status'}).children.join('')).toBe('0 of 0 results');
+    expect(JSON.stringify(root.toJSON())).not.toContain('No results match these filters.');
+    renderer.act(() => root.unmount());
+});

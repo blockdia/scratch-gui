@@ -22,15 +22,18 @@ positive case and a legal counterexample for new diagnostics.
 
 ## Audited behavior families
 
-- Structure: missing connections, connection cycles, and blocks explicitly marked
-  non-top-level with no parent (orphan blocks). Legal loose top-level blocks and
-  attached input/shadow blocks are allowed.
+- Structure: missing forward connections and connection cycles remain warnings.
+  Unreferenced non-top-level blocks, residual shadows and inconsistent parent
+  metadata are debug diagnostics, hidden by default. Legal loose top-level blocks
+  and attached input/shadow blocks are allowed. Incoming links include hidden shadows.
 - References: all seven core target inputs and their distinct sentinels; component
   targets/capabilities; costume/backdrop/sound selectors and backdrop event hats;
   scoped scalar/list IDs; `sensing_of` built-ins and target-local scalar names.
 - Procedures: target-local definition/call signatures, argument IDs and VM default
   inputs, return-valued calls, parameter scope, legacy TurboWarp argument reporters,
-  cyclic call graphs and registered VM addon callbacks.
+  cyclic call graphs and registered VM addon callbacks. Extra default values and
+  unregistered bundled debugger logging blocks are debug diagnostics; malformed
+  signatures, missing ordinary definitions and unregistered breakpoints remain warnings.
 - Waiting: core explicit waits and async operations, `miscLimits`-conditional sound
   effects/volume, music timed operations, translation reporters, text-to-speech,
   speech recognition, and asynchronous micro:bit/EV3/WeDo/Boost commands. Hardware

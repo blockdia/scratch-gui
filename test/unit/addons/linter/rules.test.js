@@ -142,7 +142,7 @@ test('non-top-level blocks without parents are reported even outside script root
     const rows = analyze([terminal], ['invalid-graph']);
     expect(rows).toHaveLength(1);
     expect(rows[0]).toMatchObject({rule: 'invalid-graph',
-        severity: 'warning',
+        severity: 'debug',
         reason: 'reason-invalid-graph-orphan',
         targetName: 'Terminal',
         location: {targetId: 'a', blockId: 'orphan'}});
@@ -334,4 +334,75 @@ test('specific causes have distinct titles without requiring the details panel',
     expect(rows.map(row => row.message)).toEqual(expect.arrayContaining([
         'invalid-procedure-missing', 'invalid-argument-outside', 'constant-control-repeat', 'broadcast-flow-sender'
     ]));
+});
+
+test('debug metadata does not hide missing forward blocks, cycles or semantic problems', () => {
+    const blocks = [
+        block('root', 'control_if', {topLevel: true, inputs: {CONDITION: {block: 'child'}}}),
+        block('child', 'procedures_call', {parent: null,
+            topLevel: false,
+            mutation: {proccode: 'missing'}}),
+        block('residual', 'operator_boolean', {shadow: true, parent: 'root', topLevel: false}),
+        block('dangling', 'motion_movesteps', {parent: 'absent', next: 'missing'}),
+        block('cycle', 'control_if', {parent: 'absent', next: 'cycle'})
+    ];
+    const rows = analyze([target(blocks)], ['invalid-graph', 'invalid-procedure']);
+    expect(rows).toEqual(expect.arrayContaining([
+        expect.objectContaining({severity: 'debug',
+            reason: 'reason-invalid-graph-parent',
+            technical: expect.objectContaining({incoming: [{blockId: 'root', slot: 'inputs.CONDITION.block'}]}),
+            related: [{kind: 'block', targetId: 'a', blockId: 'root'}]}),
+        expect.objectContaining({severity: 'debug', reason: 'reason-invalid-graph-shadow'}),
+        expect.objectContaining({severity: 'warning', reason: 'reason-invalid-procedure-missing'}),
+        expect.objectContaining({severity: 'warning',
+            reason: 'reason-invalid-graph-connection',
+            technical: expect.objectContaining({missingReferences: ['missing']})}),
+        expect.objectContaining({severity: 'warning', reason: 'reason-invalid-graph-cycle'})
+    ]));
+    expect(rows.filter(row => row.severity === 'warning')).toHaveLength(3);
+});
+
+test('only extra defaults are debug and calls to those definitions still validate their inputs', () => {
+    const blocks = [...procedure('p %s', null, {argumentids: '["arg"]',
+        argumentnames: '["value"]',
+        argumentdefaults: '["", "leftover"]'}),
+    call('call', 'p %s', {mutation: {proccode: 'p %s', argumentids: '["wrong"]'}})];
+    const rows = analyze([target(blocks)], ['invalid-procedure']);
+    expect(rows).toEqual(expect.arrayContaining([
+        expect.objectContaining({severity: 'debug',
+            reason: 'reason-invalid-procedure-defaults',
+            technical: expect.objectContaining({extraDefaults: ['leftover'], expected: {defaults: 1}})}),
+        expect.objectContaining({severity: 'warning', reason: 'reason-invalid-procedure-parameters'})
+    ]));
+    blocks[1].mutation.argumentdefaults = '[]';
+    expect(analyze([target(blocks)], ['invalid-procedure'])).toEqual([
+        expect.objectContaining({severity: 'warning', reason: 'reason-invalid-procedure-signature'})
+    ]);
+    blocks[1].mutation.argumentdefaults = '["", "extra"]';
+    blocks[1].mutation.argumentnames = '[]';
+    expect(analyze([target(blocks)], ['invalid-procedure'])[0].severity).toBe('warning');
+});
+
+test('only exact unregistered debugger logging signatures are debug; registration removes the diagnostic', () => {
+    const code = '\u200B\u200Blog\u200B\u200B %s';
+    const blocks = [call('log', code), call('other', 'log %s'),
+        call('pause', '\u200B\u200Bbreakpoint\u200B\u200B')];
+    const rows = analyze([target(blocks)], ['invalid-procedure']);
+    expect(rows.filter(row => row.severity === 'debug')).toEqual([
+        expect.objectContaining({reason: 'reason-invalid-procedure-addon',
+            technical: expect.objectContaining({addon: 'debugger', registered: false})})
+    ]);
+    expect(rows.filter(row => row.severity === 'warning')).toHaveLength(2);
+    expect(analyze([target([blocks[0]])], ['invalid-procedure'], {addonBlocks: {[code]: {}}})).toEqual([]);
+});
+
+test('technical details are stable snapshots and valid covered shadows are not residuals', () => {
+    const root = block('root', 'control_if', {inputs: {CONDITION: {block: 'actual', shadow: 'default'}}});
+    const actual = block('actual', 'operator_not', {parent: 'root'});
+    const shadow = block('default', 'operator_boolean', {parent: 'root', shadow: true});
+    expect(analyze([target([root, actual, shadow])], ['invalid-graph'])).toEqual([]);
+    root.inputs.CONDITION.block = 'missing';
+    const rows = analyze([target([root, shadow])], ['invalid-graph']);
+    root.inputs.CONDITION.block = null;
+    expect(rows[0].technical.inputs.CONDITION.block).toBe('missing');
 });

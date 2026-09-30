@@ -110,7 +110,7 @@
     "linter/reason-invalid-argument-return-type": "The call and definition disagree on whether the custom block returns a value.",
     "linter/reason-invalid-argument-parameter": "This custom block has no input with this name. Drag the input you need from its definition block.",
     "linter/reason-invalid-argument-outside": "This return block is not inside a custom block definition. Here it stops the current script.",
-    "linter/reason-invalid-graph-orphan": "This block has no parent but is not marked as a top-level block, so it cannot form a valid script. Try undoing the recent edit or adding the block again.",
+    "linter/reason-invalid-graph-orphan": "This block has no parent, is not a top-level block and has no incoming references. It may be leftover project data.",
     "linter/reason-invalid-graph-connection": "A block connected here is missing. Try undoing the recent edit or reconnecting the blocks.",
     "linter/reason-invalid-graph-cycle": "Block connections lead back to themselves, forming a damaged connection. Try undoing or reconnecting them. A custom block calling itself is allowed.",
     "linter/reason-broadcast-flow-sender": "No block broadcasting \"{name}\" was found. Plugins or messages determined during a run may still trigger this event.",
@@ -162,5 +162,17 @@
     "hide-stage/action-toggle": "Show or hide stage and sprite pane",
     "hide-flyout/action-toggle-lock": "Lock or unlock block palette",
     "editor-devtools/action-previousCostume": "Switch to previous costume",
-    "editor-devtools/action-nextCostume": "Switch to next costume"
+    "editor-devtools/action-nextCostume": "Switch to next costume",
+    "linter/debug": "Debug",
+    "linter/show-debug": "Show debug information",
+    "linter/technical-details": "Technical details",
+    "linter/invalid-graph-orphan": "Unreferenced non-top-level block",
+    "linter/invalid-graph-shadow": "Unreferenced shadow block",
+    "linter/reason-invalid-graph-shadow": "No next connection or input references this shadow block. It may be an obsolete default or parameter shadow.",
+    "linter/invalid-graph-parent": "Block parent metadata is inconsistent",
+    "linter/reason-invalid-graph-parent": "The recorded parent does not match the incoming connections. See the actual references in the technical details. Forward connections are checked separately.",
+    "linter/invalid-procedure-defaults": "Custom block contains extra default values",
+    "linter/reason-invalid-procedure-defaults": "The default-value array is longer than the parameter array. The VM ignores the extra entries; the parameter IDs and names are valid.",
+    "linter/invalid-procedure-addon": "Debugger logging block is not registered",
+    "linter/reason-invalid-procedure-addon": "This is a known debugger log, warn or error block, but its callback is not registered. Enable the debugger addon to produce its output."
 }

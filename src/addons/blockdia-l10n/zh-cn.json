@@ -110,7 +110,7 @@
     "linter/reason-invalid-argument-return-type": "调用与定义对是否返回值的声明不一致。",
     "linter/reason-invalid-argument-parameter": "当前自制积木没有这个输入项。请从它的“定义”积木中重新拖出需要的输入项。",
     "linter/reason-invalid-argument-outside": "“返回”积木没有放在自制积木的定义下面。放在这里会停止当前脚本。",
-    "linter/reason-invalid-graph-orphan": "此积木没有父积木，却未标记为顶层积木，无法构成有效的脚本。请尝试撤销最近的编辑，或重新拖入此积木。",
+    "linter/reason-invalid-graph-orphan": "此积木没有父积木，不是顶层积木，也没有其他积木引用它，可能是作品中的残留数据。",
     "linter/reason-invalid-graph-connection": "此处连接的另一个积木已不存在。请尝试撤销最近的编辑，或重新连接积木。",
     "linter/reason-invalid-graph-cycle": "积木连接绕回了自身，形成了损坏的连接。请尝试撤销或重新连接；自制积木调用自身是允许的。",
     "linter/reason-broadcast-flow-sender": "未找到发送“{name}”的广播积木。插件或运行时才确定的消息仍可能触发此事件。",
@@ -162,5 +162,17 @@
     "hide-stage/action-toggle": "显示／隐藏舞台和角色栏",
     "hide-flyout/action-toggle-lock": "锁定／解锁积木栏",
     "editor-devtools/action-previousCostume": "切换到上一个造型",
-    "editor-devtools/action-nextCostume": "切换到下一个造型"
+    "editor-devtools/action-nextCostume": "切换到下一个造型",
+    "linter/debug": "调试",
+    "linter/show-debug": "显示调试信息",
+    "linter/technical-details": "技术细节",
+    "linter/invalid-graph-orphan": "未被引用的非顶层积木",
+    "linter/invalid-graph-shadow": "未被引用的影子块",
+    "linter/reason-invalid-graph-shadow": "没有后续连接或输入槽引用此影子块，可能是已被替换的默认值或参数影子。",
+    "linter/invalid-graph-parent": "积木父子关系元数据不一致",
+    "linter/reason-invalid-graph-parent": "记录的父积木与实际引用关系不一致。技术细节中列出了实际引用来源；指向不存在积木的正向连接会另外报告为警告。",
+    "linter/invalid-procedure-defaults": "自制积木包含多余的默认值",
+    "linter/reason-invalid-procedure-defaults": "默认值数组比参数数组长。参数 ID 与名称格式正常，VM 会忽略多出的默认值。",
+    "linter/invalid-procedure-addon": "调试器日志积木尚未注册",
+    "linter/reason-invalid-procedure-addon": "这是已知的调试器 log、warn 或 error 积木，但当前没有注册对应回调。启用调试器插件后才会输出日志。"
 }

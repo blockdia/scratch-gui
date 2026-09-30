@@ -87,3 +87,9 @@
 .sa-linter-empty { margin: 12px; font-size: 12px; line-height: 1.6; }
 
 .sa-linter-detail-meta { font-size: 11px; opacity: .75; margin-bottom: 4px; }
+
+.sa-linter-debug { color: var(--text-primary); opacity: .65; }
+.sa-linter-icon-debug { --linter-icon: url('./icons/info.svg'); }
+.sa-linter-debug-toggle { display: flex; align-items: center; gap: 4px; margin: 8px 0; }
+.sa-linter-technical pre { white-space: pre-wrap; overflow-wrap: anywhere; user-select: text;
+    font-size: 11px; line-height: 1.5; text-align: left; }

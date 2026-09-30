@@ -55,18 +55,35 @@ export const analyzeProject = function* (targets, monitors = [], enabled = DEFAU
         'invalid-procedure-missing', 'invalid-procedure-definition', 'invalid-procedure-signature',
         'invalid-procedure-parameters', 'invalid-argument-outside', 'invalid-argument-parameter',
         'invalid-argument-return-type', 'broadcast-flow-sender', 'broadcast-flow-receiver',
-        'constant-control-condition', 'constant-control-repeat', 'constant-control-empty'
+        'constant-control-condition', 'constant-control-repeat', 'constant-control-empty',
+        'invalid-graph-orphan', 'invalid-graph-shadow', 'invalid-graph-parent',
+        'invalid-procedure-defaults', 'invalid-procedure-addon'
     ]);
-    const add = (rule, target, location, values = {}, detail = '', related = []) => {
+    const add = (rule, target, location, values = {}, detail = '', related = [], diagnostic = {}) => {
         if (!rules.has(rule)) return;
         const definition = RULE_BY_ID.get(rule);
         const id = JSON.stringify([rule, target.id, location.blockId || location.variableId ||
             location.resourceId, detail]);
         const partial = partialReferences &&
             ['unused-data', 'write-only-data', 'unused-procedure', 'unused-resource'].includes(rule);
+        const block = location.blockId && target.blocks && target.blocks._blocks[location.blockId];
+        const technical = block ? JSON.parse(JSON.stringify({
+            targetId: target.id,
+            targetName: target.getName(),
+            blockId: block.id,
+            opcode: block.opcode,
+            parent: block.parent || null,
+            next: block.next || null,
+            topLevel: block.topLevel,
+            shadow: block.shadow,
+            inputs: block.inputs,
+            fields: block.fields,
+            mutation: block.mutation,
+            ...diagnostic.technical
+        })) : null;
         results.set(id, {id,
             rule,
-            severity: definition.severity,
+            severity: diagnostic.severity || definition.severity,
             type: definition.type,
             message: partial ? `${rule}-partial` :
                 rule === 'invalid-procedure' && detail === 'duplicate' ? 'duplicate-procedure' :
@@ -76,7 +93,8 @@ export const analyzeProject = function* (targets, monitors = [], enabled = DEFAU
             targetName: target.getName(),
             isStage: target.isStage,
             location,
-            related});
+            related,
+            ...(technical ? {technical} : {})});
     };
     const useResource = (target, kind, resolved) => {
         if (!target) return;
@@ -128,8 +146,23 @@ export const analyzeProject = function* (targets, monitors = [], enabled = DEFAU
             const extension = own(context.extensions, op);
             if (!Object.prototype.hasOwnProperty.call(opcodeCoverage, op) && !extension) unknownOpcodes.add(op);
             if (index.broken.has(block.id)) {
-                add('invalid-graph', target, location, {}, index.broken.get(block.id));
-                continue;
+                const reason = index.broken.get(block.id);
+                const debug = ['orphan', 'shadow', 'parent'].includes(reason);
+                const references = index.incoming.get(block.id) || [];
+                const related = [...new Set([block.parent, ...references.map(ref => ref.blockId)])]
+                    .filter(id => id && id !== block.id && index.blocks[id])
+                    .map(id => blockLocation(target, index.blocks[id]));
+                add('invalid-graph', target, location, {}, reason, related, {
+                    severity: debug ? 'debug' : 'warning',
+                    technical: {incoming: references,
+                        declaredParent: index.blocks[block.parent] || null,
+                        missingReferences: [block.next, ...Object.values(block.inputs || {}).map(input =>
+                            input && input.block)].filter(id => id && !index.blocks[id]),
+                        expected: {parent: 'Matches the block that references this block',
+                            references: 'Every next/input block ID exists'}}
+                });
+                // Valid forward connections still need semantic checks despite stale parent metadata.
+                if (!debug || reason === 'orphan' || reason === 'shadow' || !references.length) continue;
             }
             const reference = own(TARGET_INPUTS, op) || (extension && extension.targetInput);
             if (reference) {
@@ -198,6 +231,20 @@ export const analyzeProject = function* (targets, monitors = [], enabled = DEFAU
                     dynamicBroadcast = true; limitations.add('dynamic-broadcast');
                 } else broadcasts.push({name, target, block, receiver: op === 'event_whenbroadcastreceived'});
             }
+            if (index.redundantDefaults.has(block.id)) {
+                const procedure = index.redundantDefaults.get(block.id);
+                add('invalid-procedure', target, location, {}, 'defaults',
+                    [blockLocation(target, procedure.proto)], {severity: 'debug',
+                        technical: {
+                            proccode: procedure.code,
+                            argumentids: procedure.ids,
+                            argumentnames: procedure.names,
+                            argumentdefaults: procedure.defaults,
+                            extraDefaults: procedure.defaults.slice(procedure.ids.length),
+                            actual: {parameters: procedure.ids.length, defaults: procedure.defaults.length},
+                            expected: {defaults: procedure.ids.length}
+                        }});
+            }
             if (index.malformed.has(block.id)) {
                 add('invalid-procedure', target, location, {}, index.malformed.get(block.id));
             }
@@ -207,8 +254,15 @@ export const analyzeProject = function* (targets, monitors = [], enabled = DEFAU
                 const addon = own(context.addonBlocks, code);
                 if (addon && !KNOWN_ADDON_BLOCKS.has(code)) limitations.add('addon-block');
                 if (!definitions.length && !addon) {
+                    const debug = KNOWN_ADDON_BLOCKS.has(code) && code !== '\u200B\u200Bbreakpoint\u200B\u200B';
                     add('invalid-procedure', target, location,
-                        {name: String(code || '')}, 'missing');
+                        {name: String(code || '')}, debug ? 'addon' : 'missing', [], debug ? {
+                            severity: 'debug',
+                            technical: {addon: 'debugger',
+                                registered: false,
+                                proccode: code,
+                                expected: {registered: true}}
+                        } : {});
                 }
                 if (definitions.length === 1 && !index.malformed.has(definitions[0].block.id) && !addon) {
                     const definition = definitions[0];
@@ -409,7 +463,8 @@ export const analyzeProject = function* (targets, monitors = [], enabled = DEFAU
     if (unknownOpcodes.size) limitations.add('unknown-opcode');
     if (context.onCoverage) context.onCoverage({limitations: [...limitations], unknownOpcodes: [...unknownOpcodes]});
     const order = new Map(targets.map((target, i) => [target.id, i]));
-    return [...results.values()].sort((a, b) => Number(a.severity === 'info') - Number(b.severity === 'info') ||
+    const severityOrder = ['warning', 'info', 'debug'];
+    return [...results.values()].sort((a, b) => severityOrder.indexOf(a.severity) - severityOrder.indexOf(b.severity) ||
         order.get(a.location.targetId) - order.get(b.location.targetId) ||
         RULES.indexOf(a.rule) - RULES.indexOf(b.rule) || a.id.localeCompare(b.id));
 };

@@ -19,6 +19,7 @@ export default function createWindow ({addon, model, navigator, getRules, setRul
         const [snapshot, setSnapshot] = React.useState(model.snapshot);
         const [rules, updateRules] = React.useState(getRules);
         const [severity, setSeverity] = React.useState('all');
+        const [showDebug, setShowDebug] = React.useState(false);
         const [targetId, setTarget] = React.useState('all');
         const [query, setQuery] = React.useState('');
         const [filtersOpen, setFiltersOpen] = React.useState(false);
@@ -76,7 +77,8 @@ export default function createWindow ({addon, model, navigator, getRules, setRul
         const words = query.trim().toLowerCase()
             .split(/\s+/)
             .filter(Boolean);
-        const rows = snapshot.results.filter(row => {
+        const visibleResults = snapshot.results.filter(row => showDebug || row.severity !== 'debug');
+        const rows = visibleResults.filter(row => {
             if ((severity !== 'all' && row.severity !== severity) ||
                 (targetId !== 'all' && row.location.targetId !== targetId)) return false;
             const text = [targetName(row), message(row.message, row.values), message(`rule-${row.rule}`),
@@ -171,7 +173,7 @@ export default function createWindow ({addon, model, navigator, getRules, setRul
                     <span
                         className="sa-linter-count"
                         title={message('result-count', {
-                            count: rows.length, total: snapshot.results.length
+                            count: rows.length, total: visibleResults.length
                         })}
                     >{rows.length}</span>
                 </span>
@@ -237,9 +239,12 @@ export default function createWindow ({addon, model, navigator, getRules, setRul
                 <div className="sa-linter-filter-selects">
                     <label>{message('level')}<select
                         value={severity}
-                        onChange={event => setSeverity(event.target.value)}
+                        onChange={event => {
+                            setSeverity(event.target.value);
+                            if (event.target.value === 'debug') setShowDebug(true);
+                        }}
                     >
-                        {['all', 'warning', 'info'].map(value => (<option
+                        {['all', 'warning', 'info', 'debug'].map(value => (<option
                             key={value}
                             value={value}
                         >
@@ -257,6 +262,15 @@ export default function createWindow ({addon, model, navigator, getRules, setRul
                             {target.isStage ? message('stage') : target.name}</option>))}
                     </select></label>
                 </div>
+                <label className="sa-linter-debug-toggle"><input
+                    type="checkbox"
+                    name="show-debug"
+                    checked={showDebug}
+                    onChange={event => {
+                        setShowDebug(event.target.checked);
+                        if (!event.target.checked && severity === 'debug') setSeverity('all');
+                    }}
+                />{message('show-debug')}</label>
                 {['reference', 'execution', 'cleanup'].map(category => (<fieldset key={category}>
                     <legend>{message(category)}</legend>
                     {RULE_DEFINITIONS.filter(rule => rule.type === category).map(({id: rule}) => (
@@ -286,7 +300,7 @@ export default function createWindow ({addon, model, navigator, getRules, setRul
                 aria-busy={snapshot.status === 'scanning'}
             >
                 {ready && !rows.length ? <p className="sa-linter-empty">
-                    {message(rules.length === 0 ? 'no-rules' : snapshot.results.length ? 'filtered-empty' : 'empty')}
+                    {message(rules.length === 0 ? 'no-rules' : visibleResults.length ? 'filtered-empty' : 'empty')}
                 </p> : null}
                 <ul
                     role="tree"
@@ -350,6 +364,10 @@ export default function createWindow ({addon, model, navigator, getRules, setRul
                 </div>
                 <strong>{message(selected.message, selected.values)}</strong>
                 <p>{message(selected.reason || `reason-${selected.rule}`, selected.values)}</p>
+                {selected.technical ? <div className="sa-linter-technical">
+                    <strong>{message('technical-details')}</strong>
+                    <pre dir="ltr">{JSON.stringify(selected.technical, null, 2)}</pre>
+                </div> : null}
                 {selected.related.length ? <div className="sa-linter-related">
                     <span>{message('related', {count: selected.related.length})}</span>
                     {selected.related.map((location, index) => (<button
@@ -367,7 +385,7 @@ export default function createWindow ({addon, model, navigator, getRules, setRul
                     aria-live="polite"
                 >
                     {notice ? message(notice) : snapshot.status === 'ready' ?
-                        message('result-count', {count: rows.length, total: snapshot.results.length}) :
+                        message('result-count', {count: rows.length, total: visibleResults.length}) :
                         message(snapshot.status)}
                 </span>
                 <button

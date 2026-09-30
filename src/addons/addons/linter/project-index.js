@@ -24,10 +24,24 @@ export const indexTarget = function* (target, context, limit) {
     const definitions = [];
     const owners = new Map();
     const malformed = new Map();
+    const redundantDefaults = new Map();
+    const incoming = new Map();
     const evaluator = createEvaluator(blocks, limit);
     for (const block of Object.values(blocks)) {
         yield;
         if (!block) continue;
+        const link = (id, slot) => {
+            if (!id) return;
+            const references = incoming.get(id) || [];
+            references.push({blockId: block.id, slot});
+            incoming.set(id, references);
+        };
+        link(block.next, 'next');
+        for (const [name, input] of Object.entries(block.inputs || {})) {
+            if (!input) continue;
+            link(input.block, `inputs.${name}.block`);
+            if (input.shadow !== input.block) link(input.shadow, `inputs.${name}.shadow`);
+        }
         for (const input of Object.values(block.inputs || {})) {
             if (input && input.shadow && input.block !== input.shadow) inactive.add(input.shadow);
         }
@@ -75,9 +89,10 @@ export const indexTarget = function* (target, context, limit) {
         procedures.set(procedure.code, same);
         if (['argumentids', 'argumentnames', 'argumentdefaults'].some(name =>
             typeof mutation[name] !== 'string') || !ids || !names || !defaults ||
-                ids.length !== names.length || ids.length !== defaults.length ||
+                ids.length !== names.length || defaults.length < ids.length ||
             new Set(ids).size !== ids.length || ids.some(id => typeof id !== 'string') ||
             names.some(name => typeof name !== 'string')) malformed.set(block.id, 'signature');
+        else if (defaults.length > ids.length) redundantDefaults.set(block.id, procedure);
     }
     for (const procedure of definitions) {
         for (const block of walk(blocks, procedure.block.next)) {
@@ -97,12 +112,15 @@ export const indexTarget = function* (target, context, limit) {
     const colors = new Map();
     const broken = new Map();
     for (const root of list) {
-        if (!root.parent && root.topLevel === false) {
-            broken.set(root.id, 'orphan');
-        }
-        if (root.parent && (!blocks[root.parent] || !edges(blocks[root.parent]).includes(root.id))) {
-            broken.set(root.id, 'connection');
-        }
+        yield;
+        const references = incoming.get(root.id) || [];
+        if (root.shadow && !references.length) broken.set(root.id, 'shadow');
+        else if (!root.parent && root.topLevel === false && !references.length) broken.set(root.id, 'orphan');
+        else if ((root.parent && !references.some(ref => ref.blockId === root.parent)) ||
+            (!root.parent && root.topLevel === false && references.length)) broken.set(root.id, 'parent');
+    }
+    // Forward-edge failures override metadata-only diagnostics, regardless of block order.
+    for (const root of list) {
         if (colors.has(root.id)) continue;
         const pending = [{block: root, links: null, index: 0}];
         while (pending.length) {
@@ -123,7 +141,17 @@ export const indexTarget = function* (target, context, limit) {
             else if (!colors.has(child)) pending.push({block: blocks[child], links: null, index: 0});
         }
     }
-    return {target, blocks, list, procedures, definitions, owners, malformed, broken, ...evaluator};
+    return {target,
+        blocks,
+        list,
+        procedures,
+        definitions,
+        owners,
+        malformed,
+        redundantDefaults,
+        incoming,
+        broken,
+        ...evaluator};
 };
 export const procedureCode = block => block.mutation && block.mutation.proccode;
 export const broadcastName = (index, block) => {

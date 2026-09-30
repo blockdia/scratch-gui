@@ -110,6 +110,7 @@
     "linter/reason-invalid-argument-return-type": "调用与定义对是否返回值的声明不一致。",
     "linter/reason-invalid-argument-parameter": "当前自制积木没有这个输入项。请从它的“定义”积木中重新拖出需要的输入项。",
     "linter/reason-invalid-argument-outside": "“返回”积木没有放在自制积木的定义下面。放在这里会停止当前脚本。",
+    "linter/reason-invalid-graph-orphan": "此积木没有父积木，却未标记为顶层积木，无法构成有效的脚本。请尝试撤销最近的编辑，或重新拖入此积木。",
     "linter/reason-invalid-graph-connection": "此处连接的另一个积木已不存在。请尝试撤销最近的编辑，或重新连接积木。",
     "linter/reason-invalid-graph-cycle": "积木连接绕回了自身，形成了损坏的连接。请尝试撤销或重新连接；自制积木调用自身是允许的。",
     "linter/reason-broadcast-flow-sender": "未找到发送“{name}”的广播积木。插件或运行时才确定的消息仍可能触发此事件。",

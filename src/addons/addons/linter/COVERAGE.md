@@ -22,6 +22,9 @@ positive case and a legal counterexample for new diagnostics.
 
 ## Audited behavior families
 
+- Structure: missing connections, connection cycles, and blocks explicitly marked
+  non-top-level with no parent (orphan blocks). Legal loose top-level blocks and
+  attached input/shadow blocks are allowed.
 - References: all seven core target inputs and their distinct sentinels; component
   targets/capabilities; costume/backdrop/sound selectors and backdrop event hats;
   scoped scalar/list IDs; `sensing_of` built-ins and target-local scalar names.

@@ -136,6 +136,33 @@ test('duplicate procedures, malformed mutations and graph cycles terminate with 
         'reason-invalid-graph-cycle', 'reason-invalid-procedure-duplicate', 'reason-invalid-procedure-signature'
     ]));
 });
+test('non-top-level blocks without parents are reported even outside script roots', () => {
+    const orphan = block('orphan', 'motion_movesteps', {parent: null, topLevel: false});
+    const terminal = target([orphan], {getName: () => 'Terminal'});
+    const rows = analyze([terminal], ['invalid-graph']);
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toMatchObject({rule: 'invalid-graph',
+        severity: 'warning',
+        reason: 'reason-invalid-graph-orphan',
+        targetName: 'Terminal',
+        location: {targetId: 'a', blockId: 'orphan'}});
+    expect(analyze([terminal], [])).toEqual([]);
+    orphan.topLevel = true;
+    expect(analyze([terminal], ['invalid-graph'])).toEqual([]);
+});
+test('legal top-level, attached and obscured shadow blocks are not orphan diagnostics', () => {
+    const a = target([
+        block('root', 'motion_movesteps', {parent: null,
+            topLevel: true,
+            next: 'next',
+            inputs: {STEPS: {block: 'value', shadow: 'shadow'}}}),
+        block('next', 'motion_turnright', {parent: 'root', topLevel: false}),
+        block('value', 'operator_random', {parent: 'root', topLevel: false}),
+        block('shadow', 'math_number', {parent: 'root', topLevel: false, shadow: true}),
+        block('loose', 'operator_random', {parent: null, topLevel: true})
+    ]);
+    expect(analyze([a], ['invalid-graph'])).toEqual([]);
+});
 test('duplicate definitions retain both locations without calls and are scoped to their target', () => {
     const first = procedure('p', null);
     const second = [block('second-definition', 'procedures_definition', {

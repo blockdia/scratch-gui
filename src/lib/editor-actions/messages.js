@@ -1,4 +1,12 @@
 export default {
+    createVariable: {id: 'gui.actions.createVariable', defaultMessage: 'Create variable'},
+    createList: {id: 'gui.actions.createList', defaultMessage: 'Create list'},
+    createProcedure: {id: 'gui.actions.createProcedure', defaultMessage: 'Create custom block'},
+    cleanupBlocks: {id: 'gui.actions.cleanupBlocks', defaultMessage: 'Clean up blocks / Clean up blocks+'},
+    zoomIn: {id: 'gui.actions.zoomIn', defaultMessage: 'Zoom in on code workspace'},
+    zoomOut: {id: 'gui.actions.zoomOut', defaultMessage: 'Zoom out of code workspace'},
+    zoomReset: {id: 'gui.actions.zoomReset', defaultMessage: 'Reset code workspace zoom'},
+    zoomFit: {id: 'gui.actions.zoomFit', defaultMessage: 'Fit all scripts in code workspace'},
     addonSource: {id: 'gui.actions.addonSource', defaultMessage: 'Addon: {name}'},
     tabBlocks: {id: 'gui.actions.tabBlocks', defaultMessage: 'Switch to Code tab'},
     tabCostumes: {id: 'gui.actions.tabCostumes', defaultMessage: 'Switch to Costumes tab'},

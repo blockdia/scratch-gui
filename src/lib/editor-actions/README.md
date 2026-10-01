@@ -143,6 +143,20 @@ the previous non-small size, or full size if the fixed large size is unavailable
 The keyboard-editing mode toggle stays registered while its addon is disabled so
 the shortcut can enable it again. The Variables tab has its own shortcut context.
 
+The Code workspace registers creation commands for variables, lists and custom
+blocks, cleanup, zoom in/out, reset zoom and fit all scripts. They have no default
+bindings and are available in `blocks` and `keyboard` contexts while the workspace
+is visible, editable, not dragging and no modal is open. Cleanup and fit require
+at least one script. Cleanup follows the current Developer tools clean-up-plus
+setting, including its existing orphan-block confirmation and undo behavior.
+Reset uses the workspace's current start scale, including custom-zoom settings.
+Creation reuses the toolbox's native dialogs and validation.
+The custom-block dialog supports Command/Ctrl+Enter to commit the active field
+and confirm. Tab/Shift+Tab traverse declaration fields and reach the existing add
+controls. Enter commits a field and focuses
+the preview (Enter there reopens editing). Escape cancels the active field first,
+then cancels the dialog. Composition input and repeated confirmation keys are ignored.
+
 Sound editing, paint editing, Blockly editing and local input/navigation handlers
 are intentionally not migrated in this release. Existing save/open, Alt+X,
 Ctrl/Cmd+F, Ctrl/Cmd+Space and Ctrl/Cmd+Left/Right remain the defaults in their

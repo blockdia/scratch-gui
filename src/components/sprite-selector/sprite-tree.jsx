@@ -109,13 +109,29 @@ FolderRow.propTypes = {
     spriteCount: PropTypes.number.isRequired
 };
 
-const SpriteTree = function ({tree, selectedId, renderSprite}) {
+const SpriteTree = function ({grid, tree, selectedId, renderSprite}) {
     const [openState, setOpenState] = React.useState(() => collectOpenState(tree));
 
     const toggle = React.useCallback(id => setOpenState(prev => ({...prev, [id]: !prev[id]})), []);
 
     const renderNodes = (nodes, depth) => nodes.map(node => {
         if (node.type === 'sprite') {
+            if (grid) {
+                return (
+                    <div
+                        className={styles.gridCell}
+                        key={node.sprite.id}
+                        role="treeitem"
+                    >
+                        {node.sprite.fake ? (
+                            <div className={styles.fakeCard}>
+                                <span className={styles.fakeThumb} />
+                                <span className={styles.fakeCardName}>{node.sprite.name}</span>
+                            </div>
+                        ) : renderSprite(node.sprite, depth)}
+                    </div>
+                );
+            }
             return node.sprite.fake ? (
                 <div
                     className={classNames(styles.row, styles.fakeRow)}
@@ -138,11 +154,12 @@ const SpriteTree = function ({tree, selectedId, renderSprite}) {
         const hasSelection = !open && containsSprite(node.children, selectedId);
         return (
             <div
+                className={classNames({[styles.folderBlock]: grid})}
                 key={node.id}
                 role="none"
             >
                 <FolderRow
-                    depth={depth}
+                    depth={grid ? 0 : depth}
                     hasSelection={hasSelection}
                     id={node.id}
                     name={node.name}
@@ -151,10 +168,14 @@ const SpriteTree = function ({tree, selectedId, renderSprite}) {
                     onToggle={toggle}
                 />
                 {open ? (
-                    <div role="group">
+                    <div
+                        className={classNames({[styles.gridGroup]: grid, [styles.nestedGroup]: grid})}
+                        role="group"
+                        style={grid ? {'--group-indent': `${(depth + 1) * 16}px`} : null}
+                    >
                         {node.children.length === 0 ? (
                             <div className={classNames(styles.row, styles.emptyRow)}>
-                                <Guides depth={depth + 1} />
+                                <Guides depth={grid ? 0 : depth + 1} />
                                 <span className={styles.chevronSlot} />
                                 <span className={styles.name}>{'(空)'}</span>
                             </div>
@@ -167,7 +188,7 @@ const SpriteTree = function ({tree, selectedId, renderSprite}) {
 
     return (
         <div
-            className={styles.tree}
+            className={classNames(styles.tree, {[styles.gridGroup]: grid})}
             role="tree"
         >
             {renderNodes(tree, 0)}
@@ -176,6 +197,7 @@ const SpriteTree = function ({tree, selectedId, renderSprite}) {
 };
 
 SpriteTree.propTypes = {
+    grid: PropTypes.bool,
     renderSprite: PropTypes.func.isRequired,
     selectedId: PropTypes.string,
     tree: PropTypes.arrayOf(PropTypes.object).isRequired // eslint-disable-line react/forbid-prop-types

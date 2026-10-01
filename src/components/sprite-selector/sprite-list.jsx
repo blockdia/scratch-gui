@@ -33,6 +33,7 @@ const SpriteList = function (props) {
         raised,
         selectedId,
         items,
+        gridLayout,
         treeView
     } = props;
 
@@ -69,6 +70,7 @@ const SpriteList = function (props) {
             <ThrottledSpriteSelectorItem
                 asset={sprite.costume && sprite.costume.asset}
                 className={classNames({
+                    [styles.sprite]: gridLayout,
                     [styles.raised]: isRaised,
                     [styles.receivedBlocks]: receivedBlocks
                 })}
@@ -78,7 +80,7 @@ const SpriteList = function (props) {
                 index={items.indexOf(sprite)}
                 name={sprite.name}
                 selected={sprite.id === selectedId}
-                treeDepth={depth}
+                treeDepth={gridLayout ? null : depth}
                 onClick={onSelectSprite}
                 onDeleteButtonClick={onDeleteSprite}
                 onDuplicateButtonClick={onDuplicateSprite}
@@ -96,6 +98,7 @@ const SpriteList = function (props) {
                 componentRef={containerRef}
             >
                 <SpriteTree
+                    grid={gridLayout}
                     renderSprite={renderTreeSprite} // eslint-disable-line react/jsx-no-bind
                     selectedId={selectedId}
                     tree={buildMockSpriteTree(items)}
@@ -182,6 +185,7 @@ SpriteList.propTypes = {
     ordering: PropTypes.arrayOf(PropTypes.number),
     raised: PropTypes.bool,
     selectedId: PropTypes.string,
+    gridLayout: PropTypes.bool,
     treeView: PropTypes.bool
 };
 

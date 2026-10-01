@@ -139,3 +139,67 @@
     color: $text-primary-transparent;
     font-style: italic;
 }
+
+/* Grid layout: folders are full-width headers, sprites are cards sized like the original list */
+.grid-group {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: stretch;
+}
+
+.folder-block {
+    width: 100%;
+}
+
+/* Indented like the list view; --group-indent is the total indent so cards keep their size */
+.nested-group {
+    display: flex;
+    flex-flow: row wrap;
+    padding-left: 16px;
+    margin-bottom: calc($space / 2);
+    background: linear-gradient($ui-black-transparent, $ui-black-transparent) no-repeat 8px 0 / 1px 100%;
+}
+
+[dir="rtl"] .nested-group {
+    padding-left: 0;
+    padding-right: 16px;
+    background-position: calc(100% - 8px) 0;
+}
+
+.grid-cell {
+    box-sizing: border-box;
+    width: calc(((100% + var(--group-indent, 0px)) / $sprites-per-row) - $space);
+    min-width: 4rem;
+    max-width: 6rem;
+    min-height: 4rem;
+    margin: calc($space / 2);
+}
+
+.fake-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    height: 100%;
+    padding: 0.25rem;
+    border: 2px dashed $ui-black-transparent;
+    border-radius: $space;
+    opacity: 0.45;
+}
+
+.fake-card .fake-thumb {
+    margin: 0 0 0.25rem;
+}
+
+.fake-card-name {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 0.625rem;
+}
+
+.grid-group > .empty-row {
+    width: 100%;
+}

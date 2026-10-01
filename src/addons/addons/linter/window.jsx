@@ -160,7 +160,8 @@ export default function createWindow ({addon, model, navigator, getRules, setRul
             onKeyDown: event => keyDown(event, node)
         });
         const allCollapsed = groups.length > 0 && groups.every(group => collapsed.has(group.id));
-        const filtered = Boolean(query.trim()) || severity !== 'all' || targetId !== 'all';
+        const filtered = Boolean(query.trim()) || severity !== 'all' || targetId !== 'all' || showDebug ||
+            rules.length !== DEFAULT_RULES.length || DEFAULT_RULES.some(rule => !rules.includes(rule));
         const issueText = row => `${message(row.severity)}: ${message(row.message, row.values)}`;
         return (<div
             className="sa-linter"
@@ -202,10 +203,15 @@ export default function createWindow ({addon, model, navigator, getRules, setRul
                     aria-label={message('filters')}
                     title={message('filters')}
                     aria-expanded={filtersOpen}
-                    aria-pressed={filtered || rules.length !== DEFAULT_RULES.length ||
-                        DEFAULT_RULES.some(rule => !rules.includes(rule))}
+                    aria-pressed={filtered}
                     onClick={() => setFiltersOpen(value => !value)}
-                ><Icon name="filter" /></button>
+                >
+                    <Icon name="filter" />
+                    {filtered && <span
+                        className="sa-linter-filter-active"
+                        aria-hidden="true"
+                    />}
+                </button>
                 <button
                     type="button"
                     className="sa-linter-tool"
@@ -352,6 +358,19 @@ export default function createWindow ({addon, model, navigator, getRules, setRul
                                     {label(row.location) ? <span className="sa-linter-row-location">
                                         {label(row.location)}
                                     </span> : null}
+                                    <button
+                                        type="button"
+                                        className="sa-linter-row-details"
+                                        disabled={!ready}
+                                        aria-label={`${message('details')}: ${message(row.message, row.values)}`}
+                                        aria-expanded={selectedId === row.id && detailsOpen}
+                                        onClick={event => {
+                                            event.stopPropagation();
+                                            setSelected(row.id);
+                                            setFocused(row.id);
+                                            setDetailsOpen(selectedId !== row.id || !detailsOpen);
+                                        }}
+                                    >{message('details')}</button>
                                 </li>))}
                             </ul> : null}
                         </li>);

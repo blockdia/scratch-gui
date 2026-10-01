@@ -109,12 +109,17 @@ FolderRow.propTypes = {
     spriteCount: PropTypes.number.isRequired
 };
 
-const SpriteTree = function ({grid, tree, selectedId, renderSprite}) {
+const matchesQuery = (node, query) => (node.type === 'folder' ?
+    node.name.toLowerCase().includes(query) || node.children.some(child => matchesQuery(child, query)) :
+    node.sprite.name.toLowerCase().includes(query));
+
+const SpriteTree = function ({grid, tree, selectedId, renderSprite, query = ''}) {
     const [openState, setOpenState] = React.useState(() => collectOpenState(tree));
 
     const toggle = React.useCallback(id => setOpenState(prev => ({...prev, [id]: !prev[id]})), []);
 
-    const renderNodes = (nodes, depth) => nodes.map(node => {
+    const renderNodes = (nodes, depth, filter = query) => nodes.map(node => {
+        if (filter && !matchesQuery(node, filter)) return null;
         if (node.type === 'sprite') {
             if (grid) {
                 return (
@@ -150,7 +155,7 @@ const SpriteTree = function ({grid, tree, selectedId, renderSprite}) {
             );
         }
 
-        const open = Boolean(openState[node.id]);
+        const open = Boolean(query) || Boolean(openState[node.id]);
         const hasSelection = !open && containsSprite(node.children, selectedId);
         return (
             <div
@@ -179,7 +184,8 @@ const SpriteTree = function ({grid, tree, selectedId, renderSprite}) {
                                 <span className={styles.chevronSlot} />
                                 <span className={styles.name}>{'(空)'}</span>
                             </div>
-                        ) : renderNodes(node.children, depth + 1)}
+                        ) : renderNodes(node.children, depth + 1,
+                            node.name.toLowerCase().includes(filter) ? '' : filter)}
                     </div>
                 ) : null}
             </div>
@@ -198,6 +204,7 @@ const SpriteTree = function ({grid, tree, selectedId, renderSprite}) {
 
 SpriteTree.propTypes = {
     grid: PropTypes.bool,
+    query: PropTypes.string,
     renderSprite: PropTypes.func.isRequired,
     selectedId: PropTypes.string,
     tree: PropTypes.arrayOf(PropTypes.object).isRequired // eslint-disable-line react/forbid-prop-types

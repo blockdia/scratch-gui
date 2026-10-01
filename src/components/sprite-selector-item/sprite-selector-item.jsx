@@ -14,15 +14,16 @@ let contextMenuId = 0;
 const SpriteSelectorItem = props => (
     <ContextMenuTrigger
         attributes={{
-            className: classNames(props.className, styles.spriteSelectorItem, {
+            'className': classNames(props.className, styles.spriteSelectorItem, {
                 [styles.isSelected]: props.selected,
                 [styles.treeRow]: typeof props.treeDepth === 'number'
             }),
-            onClick: props.onClick,
-            onMouseEnter: props.onMouseEnter,
-            onMouseLeave: props.onMouseLeave,
-            onMouseDown: props.onMouseDown,
-            onTouchStart: props.onMouseDown
+            'data-sprite-id': props.spriteId,
+            'onClick': props.onClick,
+            'onMouseEnter': props.onMouseEnter,
+            'onMouseLeave': props.onMouseLeave,
+            'onMouseDown': props.onMouseDown,
+            'onTouchStart': props.onMouseDown
         }}
         disable={props.preventContextMenu}
         id={`${props.name}-${contextMenuId}`}
@@ -156,6 +157,7 @@ SpriteSelectorItem.propTypes = {
     onMouseLeave: PropTypes.func,
     preventContextMenu: PropTypes.bool,
     selected: PropTypes.bool.isRequired,
+    spriteId: PropTypes.string,
     treeDepth: PropTypes.number
 };
 

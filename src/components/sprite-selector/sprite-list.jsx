@@ -37,6 +37,19 @@ const SpriteList = function (props) {
         treeView
     } = props;
 
+    const [searchQuery, setSearchQuery] = React.useState('');
+    const listRef = React.useRef(null);
+    const setListRef = React.useCallback(node => {
+        listRef.current = node;
+        if (containerRef) containerRef(node);
+    }, [containerRef]);
+    React.useEffect(() => {
+        const node = listRef.current;
+        const onSearch = event => setSearchQuery(String(event.detail || '').toLowerCase());
+        node.addEventListener('blockdia:sprite-search', onSearch);
+        return () => node.removeEventListener('blockdia:sprite-search', onSearch);
+    }, []);
+
     const isSpriteDrag = draggingType === DragConstants.SPRITE;
 
     const getHighlightState = sprite => {
@@ -95,12 +108,14 @@ const SpriteList = function (props) {
                 className={classNames(styles.scrollWrapper, {
                     [styles.scrollWrapperDragging]: draggingType === DragConstants.BACKPACK_SPRITE
                 })}
-                componentRef={containerRef}
+                componentRef={setListRef}
+                data-sprite-list="true"
             >
                 <SpriteTree
                     grid={gridLayout}
                     renderSprite={renderTreeSprite} // eslint-disable-line react/jsx-no-bind
                     selectedId={selectedId}
+                    query={searchQuery}
                     tree={buildMockSpriteTree(items)}
                 />
             </Box>
@@ -112,7 +127,8 @@ const SpriteList = function (props) {
             className={classNames(styles.scrollWrapper, {
                 [styles.scrollWrapperDragging]: draggingType === DragConstants.BACKPACK_SPRITE
             })}
-            componentRef={containerRef}
+            componentRef={setListRef}
+            data-sprite-list="true"
         >
             <Box
                 className={styles.itemsWrapper}

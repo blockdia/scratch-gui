@@ -1,4 +1,5 @@
 [class^="sprite-info_sprite-info_"] {
+  flex-shrink: 0;
   height: 0;
   padding: 0 0.75rem;
   overflow: hidden;
@@ -8,14 +9,6 @@
 
 .sa-hide-sprite-properties [class^="sprite-info_sprite-info_"] {
   border: none;
-}
-
-[class^="sprite-selector_scroll-wrapper_"],
-/* Also take full height if `sprite-properties` is hiding the properties (specificity) */
-.sa-hide-sprite-properties [class^="sprite-selector_scroll-wrapper_"] {
-  height: 100%;
-  transition-property: height;
-  transition-duration: var(--spriteProperties-transitionDuration);
 }
 
 .sa-show-sprite-properties [class^="sprite-info_sprite-info_"] {
@@ -43,12 +36,11 @@
   line-height: 1.2;
 }
 
-/* see heights in above selectors */
-.sa-show-sprite-properties [class^="sprite-selector_scroll-wrapper_"] {
-  height: calc(100% - 6.5rem - 5px);
-}
-.sa-sprite-properties-wide-locale.sa-show-sprite-properties [class^="sprite-selector_scroll-wrapper_"] {
-  height: calc(100% - 6.5rem - 5px - 2rem);
+/* The list shares remaining space with the stage and component panels. */
+[data-sprite-list] {
+  height: auto;
+  min-height: 0;
+  flex: 1;
 }
 
 .sa-sprite-properties-info-btn {
@@ -105,4 +97,11 @@
 /* Prevent double clicking from highlighting the "Choose a sprite" button */
 [class*="action-menu_main-button_"] {
   user-select: none;
+}
+
+/* Keep the properties affordance inside a small-stage row. */
+[data-sprite-list] [class*="sprite-selector-item_tree-row"] .sa-sprite-properties-info-btn {
+  position: static;
+  flex: none;
+  margin-inline-start: auto;
 }

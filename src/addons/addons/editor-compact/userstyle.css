@@ -105,10 +105,6 @@
 [class*="sprite-info_column_"]:last-child {
   margin-inline-end: 0;
 }
-/* Keep the small-stage properties from widening the entire stage column. */
-[class*="sprite-info_small_"] [class*="sprite-info_row-primary_"] [class*="sprite-info_group_"]:not(:last-child) {
-  margin-inline-end: 0.25rem;
-}
 [class*="sprite-info_column_"],
 [class*="label_input-group-column_"] {
   flex-direction: row;
@@ -280,7 +276,6 @@ button[class*="action-menu_more-button"] {
 }
 
 /* Toggle buttons */
-[class*="sprite-info_small_"] [class*="sprite-info_row-secondary_"] [class*="toggle-buttons_button_"],
 [class*="toggle-buttons_button_"] {
   width: 1.5rem;
   height: 1.5rem;
@@ -545,4 +540,11 @@ body:not(.sa-columns-enabled) [class*="gui_tab-panel"] [class*="gui_extension-bu
 }
 [class*="custom-procedures_body"] [role="button"] {
   padding: 0.5rem;
+}
+
+/* Keep the small-stage action row at the same height as compact inputs. */
+[class*="sprite-info_small_"] [class*="sprite-info_properties-button_"],
+[class*="sprite-info_small_"] [class*="sprite-info_visibility-toggle_"] button {
+  width: 1.5rem;
+  height: 1.5rem;
 }

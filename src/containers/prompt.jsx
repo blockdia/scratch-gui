@@ -14,6 +14,7 @@ class Prompt extends React.Component {
             'handleCancel',
             'handleChange',
             'handleKeyPress',
+            'handleKeyDown',
             'handleCloudVariableOptionChange'
         ]);
         this.state = {
@@ -29,6 +30,14 @@ class Prompt extends React.Component {
     }
     handleKeyPress (event) {
         if (event.key === 'Enter') this.handleOk();
+    }
+    handleKeyDown (event) {
+        // React 16 synthetic events have no `code`.
+        if (event.nativeEvent.code !== 'Digit0' || !event.altKey || event.metaKey || event.ctrlKey ||
+            event.shiftKey) return;
+        event.preventDefault();
+        if (event.repeat || !this.props.showVariableOptions || this.props.isStage || this.state.cloudSelected) return;
+        this.setState(state => ({globalSelected: !state.globalSelected}));
     }
     handleFocus (event) {
         event.target.select();
@@ -75,6 +84,7 @@ class Prompt extends React.Component {
                 onChange={this.handleChange}
                 onCloudVarOptionChange={this.handleCloudVariableOptionChange}
                 onFocus={this.handleFocus}
+                onKeyDown={this.handleKeyDown}
                 onKeyPress={this.handleKeyPress}
                 onOk={this.handleOk}
                 onScopeOptionSelection={this.handleScopeOptionSelection}

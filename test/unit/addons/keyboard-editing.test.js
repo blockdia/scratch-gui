@@ -1,6 +1,21 @@
 import {positionsForBlock, navigate, resolvePosition, firstPosition, editableField, insertionPlan}
     from '../../../src/addons/addons/keyboard-editing/keyboard-navigation';
 import SettingsStore from '../../../src/addons/settings-store';
+import KeyboardEditor from '../../../src/addons/addons/keyboard-editing/keyboard-editor';
+
+test('custom procedure dialogs suspend keyboard workspace ownership', () => {
+    const state = {editorTab: {activeTabIndex: 0}, customProcedures: {active: false}};
+    const editor = {
+        enabled: true,
+        addon: {tab: {editorMode: 'editor', redux: {state: {scratchGui: state}}}},
+        Blockly: {getMainWorkspace: () => ({options: {}, isVisible: () => true})}
+    };
+    expect(KeyboardEditor.prototype.available.call(editor)).toBe(true);
+    state.customProcedures.active = true;
+    expect(KeyboardEditor.prototype.available.call(editor)).toBe(false);
+    state.customProcedures.active = false;
+    expect(KeyboardEditor.prototype.available.call(editor)).toBe(true);
+});
 
 const Blockly = {NEXT_STATEMENT: 3, Connection: {CAN_CONNECT: 0}};
 const connection = (target = null, compatible = true) => ({

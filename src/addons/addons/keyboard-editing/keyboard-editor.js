@@ -124,6 +124,7 @@ export default class KeyboardEditor {
     const workspace = this.Blockly.getMainWorkspace();
     return this.enabled && this.addon.tab.editorMode === 'editor' && state.editorTab.activeTabIndex === 0 &&
       workspace && !workspace.options.readOnly && workspace.isVisible() &&
+      !state.customProcedures?.active &&
       !Object.values(state.modals || {}).some(Boolean) && !Object.values(state.menus || {}).some(Boolean);
   }
 

@@ -75,7 +75,7 @@ const ShortcutSettings = ({intl}) => {
         actions.settingsOpen = false;
         actions.emit();
     };
-    const list = actions.listActions();
+    const list = actions.listShortcuts();
     const sources = [...new Set(list.map(action => action.source || 'builtin'))].sort();
     const conflicts = draft ? actions.conflicts(draft.id, draft.bindings) : null;
     const save = replace => {

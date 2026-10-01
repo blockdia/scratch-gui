@@ -1,5 +1,5 @@
 import {availableIn, reservations, scopesOverlap} from './context';
-import {normalizeBinding, resolveBinding} from './keys';
+import {ariaBinding, dialogEventBinding, normalizeBinding, resolveBinding} from './keys';
 
 export const STORAGE_KEY = 'blockdia:shortcuts';
 export const RECENT_STORAGE_KEY = 'blockdia:recent-palette-actions';
@@ -8,6 +8,8 @@ export class ActionRegistry {
         this.mac = mac;
         this.storage = storage;
         this.definitions = new Map();
+        // Dialog shortcuts are matched by their dialogs, never by the global controller or palette.
+        this.dialogShortcuts = new Map();
         this.listeners = new Set();
         this.overrides = {};
         this.context = {area: 'blocks'};
@@ -127,9 +129,49 @@ export class ActionRegistry {
                 bindings: this.bindings(definition.id),
                 available: this.enabled(definition, context)}));
     }
+    defineDialogShortcuts (definitions) {
+        definitions.forEach(definition => {
+            if (!definition.id || this.definitions.has(definition.id) || this.dialogShortcuts.has(definition.id)) {
+                throw new Error(`Duplicate or invalid shortcut: ${definition.id}`);
+            }
+            this.dialogShortcuts.set(definition.id, {source: 'builtin',
+                title: definition.id,
+                ...definition,
+                defaultBindings: ((this.mac && definition.macBindings) || definition.defaultBindings || [])
+                    .map(normalizeBinding)});
+        });
+        this.emit();
+    }
+    listShortcuts () {
+        return this.listActions().concat(Array.from(this.dialogShortcuts.values()).map(definition => ({
+            ...definition,
+            bindings: this.bindings(definition.id),
+            available: true
+        })));
+    }
+    matchDialogShortcut (scope, event) {
+        const binding = dialogEventBinding(event, this.mac);
+        if (!binding) return null;
+        const resolved = resolveBinding(binding, this.mac);
+        const matches = Array.from(this.dialogShortcuts.values()).filter(definition =>
+            definition.scopes.includes(scope) && this.bindings(definition.id).some(key =>
+                resolveBinding(key, this.mac) === resolved));
+        if (matches.length > 1) {
+            // Consume ambiguous shortcuts so they cannot fall through to field editing.
+            event.preventDefault();
+            event.stopImmediatePropagation();
+            if (!event.repeat) this.report('conflict', matches.map(match => match.id));
+            return null;
+        }
+        return matches.length ? matches[0].id : null;
+    }
+    ariaShortcuts (id) {
+        const keys = this.bindings(id).map(binding => ariaBinding(binding, this.mac));
+        return keys.length ? keys.join(' ') : null;
+    }
     bindings (id) {
         const bindings = Object.prototype.hasOwnProperty.call(this.overrides, id) ? this.overrides[id] :
-            ((this.definitions.get(id) || {}).defaultBindings || []);
+            ((this.definitions.get(id) || this.dialogShortcuts.get(id) || {}).defaultBindings || []);
         return bindings.slice();
     }
     recordUsage (id, result) {
@@ -167,15 +209,19 @@ export class ActionRegistry {
         }
     }
     conflicts (id, bindings) {
-        const definition = this.definitions.get(id);
+        const dialog = this.dialogShortcuts.get(id);
+        const definition = this.definitions.get(id) || dialog;
         if (!definition) return {actions: [], reserved: []};
         const keys = bindings.map(binding => resolveBinding(binding, this.mac));
+        const reserved = reservations.filter(item => scopesOverlap(definition.scopes, item.scopes) &&
+            item.keys.some(binding => keys.includes(resolveBinding(binding, this.mac))));
+        // Unmodified keys in a dialog would block typing in its text fields.
+        if (dialog && keys.some(key => !/(Ctrl|Meta|Alt)\+/.test(key))) reserved.push({name: 'input'});
         return {
-            actions: this.listActions().filter(other => other.id !== id &&
+            actions: this.listShortcuts().filter(other => other.id !== id &&
                 scopesOverlap(definition.scopes, other.scopes) &&
                 other.bindings.some(binding => keys.includes(resolveBinding(binding, this.mac)))),
-            reserved: reservations.filter(item => scopesOverlap(definition.scopes, item.scopes) &&
-                item.keys.some(binding => keys.includes(resolveBinding(binding, this.mac))))
+            reserved
         };
     }
     setBindings (id, bindings, replace = false) {

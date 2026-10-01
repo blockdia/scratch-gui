@@ -98,6 +98,34 @@ export default {
         id: 'gui.actions.stage',
         defaultMessage: 'Stage'
     },
+    customBlockDialog: {
+        id: 'gui.actions.customBlockDialog',
+        defaultMessage: 'Make a Block dialog'
+    },
+    variableDialog: {
+        id: 'gui.actions.variableDialog',
+        defaultMessage: 'New variable/list dialog'
+    },
+    dialogAddTextNumber: {
+        id: 'gui.actions.dialogAddTextNumber',
+        defaultMessage: 'Add a number or text input'
+    },
+    dialogAddBoolean: {
+        id: 'gui.actions.dialogAddBoolean',
+        defaultMessage: 'Add a boolean input'
+    },
+    dialogAddLabel: {
+        id: 'gui.actions.dialogAddLabel',
+        defaultMessage: 'Add a label'
+    },
+    dialogToggleWarp: {
+        id: 'gui.actions.dialogToggleWarp',
+        defaultMessage: 'Toggle run without screen refresh'
+    },
+    dialogToggleScope: {
+        id: 'gui.actions.dialogToggleScope',
+        defaultMessage: 'Toggle for all sprites / this sprite only'
+    },
     add: {
         id: 'gui.actions.add',
         defaultMessage: 'Add shortcut'

@@ -4,6 +4,8 @@ import bindAll from 'lodash.bindall';
 import PromptComponent from '../components/prompt/prompt.jsx';
 import VM from 'scratch-vm';
 import {SCRATCH_MAX_CLOUD_VARIABLES} from '../lib/tw-cloud-limits.js';
+import actions from '../lib/editor-actions';
+import {VARIABLE_DIALOG, variableShortcuts} from '../lib/editor-actions/dialogs';
 
 class Prompt extends React.Component {
     constructor (props) {
@@ -14,6 +16,7 @@ class Prompt extends React.Component {
             'handleCancel',
             'handleChange',
             'handleKeyPress',
+            'handleKeyDown',
             'handleCloudVariableOptionChange'
         ]);
         this.state = {
@@ -29,6 +32,13 @@ class Prompt extends React.Component {
     }
     handleKeyPress (event) {
         if (event.key === 'Enter') this.handleOk();
+    }
+    handleKeyDown (event) {
+        // React 16 synthetic events have no `code`.
+        if (actions.matchDialogShortcut(VARIABLE_DIALOG, event.nativeEvent) !== variableShortcuts.toggleScope) return;
+        event.preventDefault();
+        if (event.repeat || !this.props.showVariableOptions || this.props.isStage || this.state.cloudSelected) return;
+        this.setState(state => ({globalSelected: !state.globalSelected}));
     }
     handleFocus (event) {
         event.target.select();
@@ -71,10 +81,12 @@ class Prompt extends React.Component {
                 showCloudOption={this.props.showCloudOption}
                 showVariableOptions={this.props.showVariableOptions}
                 title={this.props.title}
+                toggleScopeShortcut={actions.ariaShortcuts(variableShortcuts.toggleScope)}
                 onCancel={this.handleCancel}
                 onChange={this.handleChange}
                 onCloudVarOptionChange={this.handleCloudVariableOptionChange}
                 onFocus={this.handleFocus}
+                onKeyDown={this.handleKeyDown}
                 onKeyPress={this.handleKeyPress}
                 onOk={this.handleOk}
                 onScopeOptionSelection={this.handleScopeOptionSelection}

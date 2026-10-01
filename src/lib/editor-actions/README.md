@@ -105,6 +105,22 @@ remain stored. Invalid storage falls back to defaults; failed writes retain the
 session's changes and show a notice. Settings are device-local, not synchronized
 with addon settings or exported with the project.
 
+## Dialog shortcuts
+
+The custom-block and variable/list dialogs have configurable shortcuts that are not
+actions: they are declared in `dialogs.js` through `defineDialogShortcuts`, so they
+are listed, recorded, reset and persisted by Settings like actions, but never reach
+the global controller or the command palette. Each dialog matches its own scope
+with `matchDialogShortcut(scope, event)` (pass the native event, not React's), and
+scopes only conflict within the same dialog. Escape, Tab, Enter and the custom-block
+Command/Ctrl+Enter confirm key are reserved, as is any key without Ctrl/Meta/Alt,
+which would otherwise block typing. Defaults are `Alt+digit`, or `Ctrl+Alt+digit` on
+macOS (`macBindings`) because Option+digit types symbols there; users can rebind freely.
+Dialog matching also accepts macOS Control+Option+digit events reported as keyCode
+229 outside active composition (Safari with a Chinese input method). This exception
+uses the physical digit code and does not apply to global actions, plain typing,
+active composition, or Enter/Escape/Tab handling.
+
 ## Initial commands and verification
 
 Built-in commands: save/open, run/stop/turbo, editor tabs, toggle fullscreen,

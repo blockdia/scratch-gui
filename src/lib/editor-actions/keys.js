@@ -41,6 +41,22 @@ export const eventBinding = (event, mac) => {
         return null;
     }
 };
+export const dialogEventBinding = (event, mac) => {
+    // Safari's Chinese input method can mark Control+Option+digit as processed
+    // (229) even outside composition. Recover only this explicit dialog chord;
+    // plain digits and IME confirmation/navigation must keep their usual guards.
+    if (mac && event.keyCode === 229 && !event.isComposing &&
+        event.ctrlKey && event.altKey && !event.metaKey && !event.shiftKey &&
+        /^Digit[0-9]$/.test(event.code || '')) {
+        return `Ctrl+Alt+${event.code.slice(5)}`;
+    }
+    return eventBinding(event, mac);
+};
+export const ariaBinding = (binding, mac) => {
+    const parts = resolveBinding(binding, mac).split('+');
+    return parts.map(part => (part === 'Ctrl' ? 'Control' : (part.length === 1 ? part.toUpperCase() : part)))
+        .join('+');
+};
 export const displayBinding = (binding, mac) => binding.split('+').map(part => ({
     Mod: mac ? '⌘' : 'Ctrl',
     Meta: mac ? '⌘' : 'Win',

@@ -4,9 +4,11 @@ import PropTypes from 'prop-types';
 import React from 'react';
 import CustomProceduresComponent from '../components/custom-procedures/custom-procedures.jsx';
 import LazyScratchBlocks from '../lib/tw-lazy-scratch-blocks';
+import actions from '../lib/editor-actions';
+import {CUSTOM_BLOCK_DIALOG, customBlockShortcuts} from '../lib/editor-actions/dialogs';
 import {connect} from 'react-redux';
 
-class CustomProcedures extends React.Component {
+export class CustomProcedures extends React.Component {
     constructor (props) {
         super(props);
         bindAll(this, [
@@ -16,6 +18,8 @@ class CustomProcedures extends React.Component {
             'handleToggleWarp',
             'handleCancel',
             'handleOk',
+            'handleKeyDown',
+            'handleWorkspaceKeyDown',
             'setBlocks'
         ]);
         this.state = {
@@ -23,7 +27,13 @@ class CustomProcedures extends React.Component {
             warp: false
         };
     }
+    componentDidMount () {
+        // Blockly text editors live outside the React modal in WidgetDiv.
+        document.addEventListener('keydown', this.handleKeyDown, true);
+    }
     componentWillUnmount () {
+        document.removeEventListener('keydown', this.handleKeyDown, true);
+        clearTimeout(this.focusTimeout);
         if (this.workspace) {
             this.workspace.dispose();
         }
@@ -106,14 +116,76 @@ class CustomProcedures extends React.Component {
         this.mutationRoot.render();
         this.setState({warp: this.mutationRoot.getWarp()});
         // Allow the initial events to run to position this block, then focus.
-        setTimeout(() => {
+        this.focusTimeout = setTimeout(() => {
             this.mutationRoot.focusLastEditor_();
         });
+    }
+    handleKeyDown (event) {
+        const handler = CustomProcedures.shortcutHandlers[
+            actions.matchDialogShortcut(CUSTOM_BLOCK_DIALOG, event)];
+        if (handler) {
+            event.preventDefault();
+            event.stopImmediatePropagation();
+            if (!event.repeat) {
+                LazyScratchBlocks.get().WidgetDiv.hide(true);
+                this[handler]();
+            }
+            return;
+        }
+        if (event.isComposing || event.keyCode === 229) return;
+        if (event.key === 'Enter' && (event.metaKey || event.ctrlKey) && !event.altKey && !event.shiftKey) {
+            event.preventDefault();
+            event.stopImmediatePropagation();
+            if (!event.repeat) this.handleOk();
+            return;
+        }
+        const ScratchBlocks = LazyScratchBlocks.get();
+        const htmlInput = ScratchBlocks.FieldTextInput.htmlInput_;
+        if (event.key === 'Escape' || (event.key === 'Enter' && event.target === htmlInput &&
+            !event.metaKey && !event.ctrlKey && !event.altKey && !event.shiftKey)) {
+            event.preventDefault();
+            event.stopImmediatePropagation();
+            if (event.repeat) return;
+            if (event.target === htmlInput) {
+                if (event.key === 'Escape') htmlInput.value = htmlInput.defaultValue;
+                ScratchBlocks.WidgetDiv.hide(true);
+                this.blocks.focus();
+            } else if (event.key === 'Escape') this.handleCancel();
+            return;
+        }
+        if (event.key !== 'Tab' || event.altKey || event.ctrlKey || event.metaKey ||
+            event.target !== ScratchBlocks.FieldTextInput.htmlInput_) return;
+        const fields = [];
+        const visit = block => block.inputList.forEach(input => {
+            input.fieldRow.forEach(field => {
+                if (field instanceof ScratchBlocks.FieldTextInput) fields.push(field);
+            });
+            const child = input.connection && input.connection.targetBlock();
+            if (child) visit(child);
+        });
+        visit(this.mutationRoot);
+        const index = fields.indexOf(ScratchBlocks.WidgetDiv.owner_);
+        if (index < 0) return;
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        ScratchBlocks.WidgetDiv.hide(true);
+        const next = fields[index + (event.shiftKey ? -1 : 1)];
+        if (next) next.showEditor_();
+        else if (event.shiftKey) this.blocks.focus();
+        else this.blocks.parentElement.querySelector('[data-procedure-add-input]').focus();
+    }
+    handleWorkspaceKeyDown (event) {
+        if (event.target === this.blocks && event.key === 'Enter' && !event.isComposing) {
+            event.preventDefault();
+            this.mutationRoot.tab(null, true);
+        }
     }
     handleCancel () {
         this.props.onRequestClose();
     }
     handleOk () {
+        // Commit the active name/parameter before serializing the declaration.
+        LazyScratchBlocks.get().WidgetDiv.hide(true);
         const newMutation = this.mutationRoot ? this.mutationRoot.mutationToDom(true) : null;
         this.props.onRequestClose(newMutation);
     }
@@ -143,6 +215,10 @@ class CustomProcedures extends React.Component {
         return (
             <CustomProceduresComponent
                 componentRef={this.setBlocks}
+                shortcutKeys={Object.keys(customBlockShortcuts).reduce((keys, name) => ({
+                    ...keys,
+                    [name]: actions.ariaShortcuts(customBlockShortcuts[name])
+                }), {})}
                 warp={this.state.warp}
                 onAddBoolean={this.handleAddBoolean}
                 onAddLabel={this.handleAddLabel}
@@ -150,10 +226,18 @@ class CustomProcedures extends React.Component {
                 onCancel={this.handleCancel}
                 onOk={this.handleOk}
                 onToggleWarp={this.handleToggleWarp}
+                onWorkspaceKeyDown={this.handleWorkspaceKeyDown}
             />
         );
     }
 }
+
+CustomProcedures.shortcutHandlers = {
+    [customBlockShortcuts.addTextNumber]: 'handleAddTextNumber',
+    [customBlockShortcuts.addBoolean]: 'handleAddBoolean',
+    [customBlockShortcuts.addLabel]: 'handleAddLabel',
+    [customBlockShortcuts.toggleWarp]: 'handleToggleWarp'
+};
 
 CustomProcedures.propTypes = {
     isRtl: PropTypes.bool,

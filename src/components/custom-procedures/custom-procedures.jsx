@@ -28,6 +28,8 @@ const CustomProcedures = props => (
         <Box
             className={styles.workspace}
             componentRef={props.componentRef}
+            tabIndex={0}
+            onKeyDown={props.onWorkspaceKeyDown}
         />
         <Box className={styles.body}>
             <div className={styles.optionsRow}>
@@ -35,6 +37,8 @@ const CustomProcedures = props => (
                     className={styles.optionCard}
                     role="button"
                     tabIndex="0"
+                    data-procedure-add-input
+                    aria-keyshortcuts={props.shortcutKeys.addTextNumber}
                     onClick={props.onAddTextNumber}
                 >
                     <img
@@ -61,6 +65,7 @@ const CustomProcedures = props => (
                     className={styles.optionCard}
                     role="button"
                     tabIndex="0"
+                    aria-keyshortcuts={props.shortcutKeys.addBoolean}
                     onClick={props.onAddBoolean}
                 >
                     <img
@@ -87,6 +92,7 @@ const CustomProcedures = props => (
                     className={styles.optionCard}
                     role="button"
                     tabIndex="0"
+                    aria-keyshortcuts={props.shortcutKeys.addLabel}
                     onClick={props.onAddLabel}
                 >
                     <img
@@ -107,6 +113,7 @@ const CustomProcedures = props => (
                 <label>
                     <input
                         checked={props.warp}
+                        aria-keyshortcuts={props.shortcutKeys.toggleWarp}
                         type="checkbox"
                         onChange={props.onToggleWarp}
                     />
@@ -120,6 +127,7 @@ const CustomProcedures = props => (
             <Box className={styles.buttonRow}>
                 <button
                     className={styles.cancelButton}
+                    aria-keyshortcuts="Escape"
                     onClick={props.onCancel}
                 >
                     <FormattedMessage
@@ -130,6 +138,7 @@ const CustomProcedures = props => (
                 </button>
                 <button
                     className={styles.okButton}
+                    aria-keyshortcuts="Meta+Enter Control+Enter"
                     onClick={props.onOk}
                 >
                     <FormattedMessage
@@ -152,6 +161,8 @@ CustomProcedures.propTypes = {
     onCancel: PropTypes.func.isRequired,
     onOk: PropTypes.func.isRequired,
     onToggleWarp: PropTypes.func.isRequired,
+    onWorkspaceKeyDown: PropTypes.func.isRequired,
+    shortcutKeys: PropTypes.objectOf(PropTypes.string).isRequired,
     warp: PropTypes.bool.isRequired
 };
 

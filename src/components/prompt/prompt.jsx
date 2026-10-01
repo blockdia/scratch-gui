@@ -59,7 +59,10 @@ const PromptComponent = props => (
         onRequestClose={props.onCancel}
         id="promptModal"
     >
-        <Box className={styles.body}>
+        <Box
+            className={styles.body}
+            onKeyDown={props.onKeyDown}
+        >
             <Box className={styles.label}>
                 {props.label}
             </Box>
@@ -88,7 +91,10 @@ const PromptComponent = props => (
                                 />
                             )}
                         </div> :
-                        <Box className={styles.optionsRow}>
+                        <Box
+                            className={styles.optionsRow}
+                            aria-keyshortcuts={props.toggleScopeShortcut}
+                        >
                             <label>
                                 <input
                                     checked={props.globalSelected}
@@ -216,12 +222,14 @@ PromptComponent.propTypes = {
     onChange: PropTypes.func.isRequired,
     onCloudVarOptionChange: PropTypes.func,
     onFocus: PropTypes.func.isRequired,
+    onKeyDown: PropTypes.func.isRequired,
     onKeyPress: PropTypes.func.isRequired,
     onOk: PropTypes.func.isRequired,
     onScopeOptionSelection: PropTypes.func.isRequired,
     showCloudOption: PropTypes.bool.isRequired,
     showVariableOptions: PropTypes.bool.isRequired,
-    title: PropTypes.string.isRequired
+    title: PropTypes.string.isRequired,
+    toggleScopeShortcut: PropTypes.string
 };
 
 export default PromptComponent;

@@ -192,6 +192,7 @@ const StageHeaderComponent = function (props) {
         header = (
             <Box
                 className={styles.stageHeaderWrapper}
+                data-editor-stage-header
                 // + 2 px because the stage will have 2 pixels of border around it
                 style={{minWidth: `${Math.max(stageDimensions.width, getMinWidth(stageSize)) + 2}px`}}
             >
@@ -202,6 +203,7 @@ const StageHeaderComponent = function (props) {
                     />
                     <div
                         className={styles.stageSizeRow}
+                        data-editor-stage-sizes
                         key="editor" // addons require the HTML element to be not be re-used by in-editor buttons
                     >
                         {stageControls}

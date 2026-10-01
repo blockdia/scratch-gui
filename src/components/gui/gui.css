@@ -335,6 +335,18 @@ $fade-out-distance: 15px;
     background-color: white;
 }
 
-.tab-row { display: flex; align-items: flex-end; height: $stage-menu-height; flex-shrink: 0; gap: 8px; padding-inline-end: 8px; }
+.tab-row {
+    display: flex;
+    align-items: flex-end;
+    height: $stage-menu-height;
+    flex-shrink: 0;
+    gap: 8px;
+    padding-left: var(--stage-header-inset-left, 0px);
+    padding-right: calc(var(--stage-header-inset-right, 0px) + 8px);
+}
+[dir="rtl"] .tab-row {
+    padding-left: calc(var(--stage-header-inset-left, 0px) + 8px);
+    padding-right: var(--stage-header-inset-right, 0px);
+}
 .tab-row .tab-list { width: auto; flex: 1 1 auto; min-width: 0; }
 .tab-row .tab { flex-grow: 0; flex-shrink: 0; }

@@ -42,7 +42,13 @@
   left: 0;
 }
 
+.sa-stage-hidden [class*="stage-header_stage-header-wrapper_"] {
+  /* The empty header still spans the old stage width. Let editor tools below it receive clicks. */
+  pointer-events: none;
+}
+
 .sa-stage-hidden [class*="stage-header_stage-size-row"] {
+  pointer-events: auto;
   position: absolute;
   top: 0;
   right: 0.5rem;

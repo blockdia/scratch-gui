@@ -100,8 +100,9 @@ const ShortcutSettings = ({intl}) => {
         (bindingFilter === 'all' || (bindingFilter === 'custom' && customized(action)) ||
             (bindingFilter === 'assigned' && action.bindings.length > 0) ||
             (bindingFilter === 'unbound' && !action.bindings.length)) &&
-        `${title(action)} ${action.id} ${sourceName(action.source)} ${action.bindings.map(binding =>
-            displayBinding(binding, actions.mac)).join(' ')}`.toLocaleLowerCase().includes(query.toLocaleLowerCase()));
+        `${title(action)} ${action.id} ${sourceName(action.source)} ${action.bindings.join(' ')} ${
+            action.bindings.map(binding => displayBinding(binding, actions.mac)).join(' ')
+        }`.toLocaleLowerCase().includes(query.toLocaleLowerCase()));
     return (<Modal
         className={styles.modal}
         contentLabel={t('shortcuts')}

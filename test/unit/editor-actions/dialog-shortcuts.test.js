@@ -74,3 +74,33 @@ test('aria shortcuts use ARIA key names', () => {
     expect(ariaBinding('Mod+Alt+k', false)).toBe('Control+Alt+K');
     expect(ariaBinding('Mod+Enter', true)).toBe('Meta+Enter');
 });
+
+test.each([false, true])('reset conflicts do not execute or fall through, including after reload (mac: %s)', mac => {
+    const store = storage();
+    const registry = setup({mac, storage: store});
+    const binding = mac ? 'Ctrl+Alt+1' : 'Alt+1';
+    expect(registry.setBindings(customBlockShortcuts.addLabel, [binding], true)).toBeNull();
+    registry.reset(customBlockShortcuts.addTextNumber);
+
+    for (const current of [registry, setup({mac, storage: store})]) {
+        const event = {...alt('Digit1'), ctrlKey: mac,
+            preventDefault: jest.fn(), stopImmediatePropagation: jest.fn()};
+        const listener = jest.fn();
+        current.subscribe(listener);
+        expect(current.matchDialogShortcut(CUSTOM_BLOCK_DIALOG, event)).toBeNull();
+        expect(event.preventDefault).toHaveBeenCalledTimes(1);
+        expect(event.stopImmediatePropagation).toHaveBeenCalledTimes(1);
+        expect(current.notice).toEqual({type: 'conflict', detail: [
+            customBlockShortcuts.addTextNumber, customBlockShortcuts.addLabel
+        ]});
+        expect(listener).toHaveBeenCalledTimes(1);
+
+        expect(current.matchDialogShortcut(CUSTOM_BLOCK_DIALOG, {...event, repeat: true})).toBeNull();
+        expect(event.preventDefault).toHaveBeenCalledTimes(2);
+        expect(event.stopImmediatePropagation).toHaveBeenCalledTimes(2);
+        expect(listener).toHaveBeenCalledTimes(1);
+
+        expect(current.setBindings(customBlockShortcuts.addLabel, [binding], true)).toBeNull();
+        expect(current.matchDialogShortcut(CUSTOM_BLOCK_DIALOG, event)).toBe(customBlockShortcuts.addLabel);
+    }
+});

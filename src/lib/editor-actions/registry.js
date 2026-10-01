@@ -153,10 +153,17 @@ export class ActionRegistry {
         const binding = eventBinding(event, this.mac);
         if (!binding) return null;
         const resolved = resolveBinding(binding, this.mac);
-        const match = Array.from(this.dialogShortcuts.values()).find(definition =>
+        const matches = Array.from(this.dialogShortcuts.values()).filter(definition =>
             definition.scopes.includes(scope) && this.bindings(definition.id).some(key =>
                 resolveBinding(key, this.mac) === resolved));
-        return match ? match.id : null;
+        if (matches.length > 1) {
+            // Consume ambiguous shortcuts so they cannot fall through to field editing.
+            event.preventDefault();
+            event.stopImmediatePropagation();
+            if (!event.repeat) this.report('conflict', matches.map(match => match.id));
+            return null;
+        }
+        return matches.length ? matches[0].id : null;
     }
     ariaShortcuts (id) {
         const keys = this.bindings(id).map(binding => ariaBinding(binding, this.mac));

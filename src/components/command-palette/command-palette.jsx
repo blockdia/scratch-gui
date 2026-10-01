@@ -15,7 +15,7 @@ import service from '../../lib/command-palette/service';
 import installGestures from '../../lib/command-palette/gestures';
 import messages from '../../lib/command-palette/messages';
 import {parseQuery, filterResults, createSearchAliases, sortCommands} from '../../lib/command-palette/search';
-import {targetResults, commandResults, symbolResults, referencesFor} from '../../lib/command-palette/providers';
+import {targetResults, commandResults, symbolResults, createReferenceIndex} from '../../lib/command-palette/providers';
 import addonManifests from '../../addons/generated/addon-manifests';
 import {loadAddonSettingsMessages} from '../../addons/settings/addon-translations';
 import actionMessages from '../../lib/editor-actions/messages';
@@ -28,6 +28,15 @@ export class CommandPalette extends React.Component {
         super(props);
         this.state = {open: false, query: '', index: 0, symbol: null, reference: null, error: false};
         this.refresh = this.refresh.bind(this);
+        this.projectChanged = () => {
+            this.symbolCache = null;
+            this.refresh();
+        };
+        this.workspaceChanged = event => {
+            // Selecting/scrolling to a search result does not change symbols.
+            if (event && (event.type === 'ui' || event.isUiEvent)) return;
+            this.projectChanged();
+        };
         this.keydown = this.keydown.bind(this);
         this.outside = this.outside.bind(this);
         this.recentTargets = [];
@@ -38,8 +47,28 @@ export class CommandPalette extends React.Component {
         };
         this.workspace = null;
         this.operation = 0;
+        this.navigationRequest = 0;
         this.getSearchAliases = createSearchAliases();
         this.getOcclusion = () => this.panel && this.panel.getBoundingClientRect();
+        this.observeSize = () => {
+            if (!this.resizeObserver) return;
+            this.resizeObserver.disconnect();
+            if (this.panel) {
+                this.resizeObserver.observe(this.panel);
+                if (this.workspace) this.resizeObserver.observe(this.workspace.getParentSvg());
+            }
+        };
+        // A stable ref avoids disconnecting/reobserving on every keypress,
+        // which would trigger another resize callback and Blockly layout read.
+        this.setPanel = element => {
+            if (this.panel === element) return;
+            this.panel = element;
+            this.observeSize();
+            if (element) {
+                element.onkeydown = event => event.stopPropagation();
+                element.onkeypress = event => event.stopPropagation();
+            }
+        };
         this.keepVisible = () => {
             const ref = this.state.reference;
             if (!this.state.open || !ref || !this.workspace || this.navigation.pending ||
@@ -49,9 +78,11 @@ export class CommandPalette extends React.Component {
         };
         this.bindWorkspace = () => {
             if (this.workspace === AddonHooks.blocklyWorkspace) return;
-            if (this.workspace) this.workspace.removeChangeListener(this.refresh);
+            if (this.workspace) this.workspace.removeChangeListener(this.workspaceChanged);
             this.workspace = AddonHooks.blocklyWorkspace;
-            if (this.workspace) this.workspace.addChangeListener(this.refresh);
+            this.symbolCache = null;
+            if (this.workspace) this.workspace.addChangeListener(this.workspaceChanged);
+            this.observeSize();
         };
     }
     componentDidMount () {
@@ -59,7 +90,7 @@ export class CommandPalette extends React.Component {
         this.detach = service.attach(this);
         this.unsubscribe = actions.subscribe(this.refresh);
         this.vm.on('targetsUpdate', this.refresh);
-        this.vm.on('PROJECT_CHANGED', this.refresh);
+        this.vm.on('PROJECT_CHANGED', this.projectChanged);
         this.vm.runtime.on('PROJECT_LOADED', this.projectLoaded);
         window.addEventListener('keydown', this.keydown, true);
         window.addEventListener('pointerdown', this.outside, true);
@@ -104,9 +135,9 @@ export class CommandPalette extends React.Component {
         this.navigation.reset();
         actions.paletteOpen = false;
         if (this.detachGestures) this.detachGestures();
-        if (this.workspace) this.workspace.removeChangeListener(this.refresh);
+        if (this.workspace) this.workspace.removeChangeListener(this.workspaceChanged);
         this.vm.removeListener('targetsUpdate', this.refresh);
-        this.vm.removeListener('PROJECT_CHANGED', this.refresh);
+        this.vm.removeListener('PROJECT_CHANGED', this.projectChanged);
         this.vm.runtime.removeListener('PROJECT_LOADED', this.projectLoaded);
         window.removeEventListener('keydown', this.keydown, true);
         window.removeEventListener('pointerdown', this.outside, true);
@@ -133,7 +164,7 @@ export class CommandPalette extends React.Component {
                     this.navigation.cancel();
                     this.setState({symbol: null, reference: null, error: true});
                 } else if (this.state.symbol && this.state.reference &&
-                    !referencesFor(this.vm, this.state.symbol).some(ref =>
+                    !this.referencesFor(this.state.symbol).some(ref =>
                         ref.targetId === this.state.reference.targetId &&
                         ref.blockId === this.state.reference.blockId)) {
                     this.navigation.cancel();
@@ -158,6 +189,7 @@ export class CommandPalette extends React.Component {
         this.originId = this.vm.editingTarget && this.vm.editingTarget.id;
         this.tab = gui.editorTab.activeTabIndex;
         this.labelCache = new Map();
+        this.symbolCache = null;
         actions.paletteOpen = true;
         this.setState({open: true,
             query: mode === 'commands' ? '>' : mode === 'symbols' ? '@' : '',
@@ -169,7 +201,7 @@ export class CommandPalette extends React.Component {
             if (!blockId) this.selectFirst();
             if (blockId) {
                 const items = this.results();
-                const index = items.findIndex(item => referencesFor(this.vm, item)
+                const index = items.findIndex(item => this.referencesFor(item)
                     .some(ref => ref.targetId === this.originId && ref.blockId === blockId));
                 if (index !== -1) {
                     this.setState({index});
@@ -186,6 +218,7 @@ export class CommandPalette extends React.Component {
     }
     close (restore = true) {
         this.getSearchAliases = createSearchAliases();
+        this.symbolCache = null;
         this.operation++;
         this.navigation.cancel();
         actions.paletteOpen = false;
@@ -195,6 +228,41 @@ export class CommandPalette extends React.Component {
     }
     outside (event) {
         if (this.state.open && this.panel && !this.panel.contains(event.target)) this.close();
+    }
+    symbols () {
+        const {kind} = parseQuery(this.state.query);
+        const tab = kind ? 0 : this.tab;
+        const locale = this.props.intl.locale;
+        const cached = this.symbolCache;
+        if (cached && cached.targetId === this.originId && cached.tab === tab &&
+            cached.workspace === this.workspace && cached.locale === locale) return cached;
+        if (cached && cached.locale !== locale) this.labelCache.clear();
+        let items = symbolResults(this.vm, this.originId, tab, this.workspace, key => this.t(key));
+        const references = createReferenceIndex(this.vm);
+        for (const item of items) {
+            // Blockly labels are localized; keep them during a cross-target reference tour.
+            if (this.vm.editingTarget && this.vm.editingTarget.id === this.originId) {
+                this.labelCache.set(item.id, item.label);
+            } else if (this.labelCache.has(item.id)) item.label = this.labelCache.get(item.id);
+        }
+        if (tab === 0) {
+            const referenced = [];
+            const unused = [];
+            for (const item of items) {
+                // Events, broadcasts and procedures originate from a visible block.
+                // Only variables/lists can have no references in this target.
+                const used = !['variable', 'list'].includes(item.kind) || references(item).length;
+                (used ? referenced : unused).push(item);
+            }
+            items = referenced.concat(unused);
+        }
+        this.symbolCache = {targetId: this.originId, tab, workspace: this.workspace, locale, items, references};
+        return this.symbolCache;
+    }
+    referencesFor (symbol) {
+        if (symbol.kind === 'costume' || symbol.kind === 'sound') return [];
+        const cache = this.symbols();
+        return cache.references(cache.items.find(item => item.id === symbol.id) || symbol);
     }
     results () {
         const {mode, query, kind} = parseQuery(this.state.query);
@@ -219,24 +287,15 @@ export class CommandPalette extends React.Component {
                 source => (source === 'builtin' ? this.props.intl.formatMessage(actionMessages.builtin) :
                     this.sourceNames[`${source}/@name`] || (addonManifests[source] || {}).name || source));
         } else {
-            const tab = kind ? 0 : this.tab;
-            items = symbolResults(this.vm, this.originId, tab, this.workspace, key => this.t(key));
-            if (kind) items = items.filter(item => item.kind === kind);
-            for (const item of items) {
-                // Blockly labels are localized; keep them during a cross-target reference tour.
-                if (this.vm.editingTarget && this.vm.editingTarget.id === this.originId) {
-                    this.labelCache.set(item.id, item.label);
-                } else if (this.labelCache.has(item.id)) item.label = this.labelCache.get(item.id);
-            }
-            if (tab === 0) {
-                const referenced = [];
-                const unused = [];
-                for (const item of items) {
-                    (referencesFor(this.vm, item).length ? referenced : unused).push(item);
-                }
+            const cache = this.symbols();
+            if (!cache.matches || cache.query !== query || cache.kind !== kind) {
+                items = kind ? cache.items.filter(item => item.kind === kind) : cache.items;
                 // Search relevance wins; stable ties keep unused symbols at the bottom.
-                items = referenced.concat(unused);
+                cache.matches = filterResults(items, query, this.getSearchAliases);
+                cache.query = query;
+                cache.kind = kind;
             }
+            return cache.matches;
         }
         const matches = filterResults(items, query, this.getSearchAliases);
         return mode === 'commands' ? sortCommands(matches, actions.recentActions) : matches;
@@ -303,7 +362,8 @@ export class CommandPalette extends React.Component {
         this.props.dispatch(activateTab(0));
     }
     async navigate (symbol, index) {
-        const references = referencesFor(this.vm, symbol);
+        const request = ++this.navigationRequest;
+        const references = this.referencesFor(symbol);
         if (!references.length) {
             this.setState({symbol, reference: null, error: false});
             return;
@@ -313,12 +373,13 @@ export class CommandPalette extends React.Component {
         this.setState({symbol, reference, error: false});
         const success = await this.navigation.locate(reference, {activate: () => this.activateCode(),
             getOcclusion: this.getOcclusion});
-        if (this.detached || !this.state.open || this.state.reference !== reference) return;
+        if (this.detached || !this.state.open || request !== this.navigationRequest ||
+            this.state.reference !== reference) return;
         if (!success) this.setState({error: true});
         else if (this.input) this.input.focus();
     }
     cycle (delta) {
-        const references = referencesFor(this.vm, this.state.symbol);
+        const references = this.referencesFor(this.state.symbol);
         const current = references.findIndex(ref => this.state.reference &&
             ref.targetId === this.state.reference.targetId && ref.blockId === this.state.reference.blockId);
         return this.navigate(this.state.symbol, current + delta);
@@ -351,7 +412,7 @@ export class CommandPalette extends React.Component {
             } else if (!success) this.setState({error: true});
             else if (this.input) this.input.focus();
         } else {
-            const references = referencesFor(this.vm, item);
+            const references = this.referencesFor(item);
             const requested = blockId || (this.state.symbol && this.state.symbol.id === item.id &&
                 this.state.reference && this.state.reference.blockId);
             const index = Math.max(0, references.findIndex(ref => ref.blockId === requested));
@@ -376,7 +437,7 @@ export class CommandPalette extends React.Component {
         const items = this.results();
         const symbols = parseQuery(this.state.query).mode === 'symbols';
         const selected = Math.min(this.state.index, items.length - 1);
-        const references = this.state.symbol ? referencesFor(this.vm, this.state.symbol) : [];
+        const references = this.state.symbol ? this.referencesFor(this.state.symbol) : [];
         const refIndex = references.findIndex(ref => this.state.reference &&
             ref.targetId === this.state.reference.targetId && ref.blockId === this.state.reference.blockId);
         const target = refIndex >= 0 && this.vm.runtime.targets.find(item => item.id === references[refIndex].targetId);
@@ -385,18 +446,7 @@ export class CommandPalette extends React.Component {
                 aria-label={this.t(parseQuery(this.state.query).mode)}
                 className={styles.panel}
                 data-command-palette
-                ref={element => {
-                    if (this.resizeObserver && this.panel !== element) {
-                        this.resizeObserver.disconnect();
-                        if (element) this.resizeObserver.observe(element);
-                        if (element && this.workspace) this.resizeObserver.observe(this.workspace.getParentSvg());
-                    }
-                    this.panel = element;
-                    if (element) {
-                        element.onkeydown = event => event.stopPropagation();
-                        element.onkeypress = event => event.stopPropagation();
-                    }
-                }}
+                ref={this.setPanel}
                 role="dialog"
                 onKeyDown={event => event.stopPropagation()}
                 onKeyPress={event => event.stopPropagation()}

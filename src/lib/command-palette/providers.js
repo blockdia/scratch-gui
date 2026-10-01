@@ -154,27 +154,57 @@ export const symbolResults = (vm, targetId, tab, workspace, t) => {
     return rows;
 };
 
-export const referencesFor = (vm, symbol) => {
-    const targets = originals(vm).filter(target => symbol.kind === 'broadcast' || target.id === symbol.targetId);
-    const results = [];
-    for (const target of targets) {
+// One snapshot per palette session/project edit. Each target is scanned at most
+// once, even when ranking hundreds of symbols or cycling through references.
+// Other targets are indexed lazily, only for a selected broadcast.
+export const createReferenceIndex = vm => {
+    const targets = originals(vm);
+    const indexes = new Map();
+    const cached = new WeakMap();
+    const add = (map, key, ref) => {
+        if (!map.has(key)) map.set(key, []);
+        map.get(key).push(ref);
+    };
+    const indexTarget = target => {
+        if (indexes.has(target.id)) return indexes.get(target.id);
+        const index = {broadcast: new Map(), procedure: new Map(), variable: new Map(), blocks: new Map()};
         const map = blockMap(target);
         for (const block of blocksOf(target)) {
-            let matches = false;
-            if (symbol.kind === 'broadcast') matches = broadcastName(block, map) === symbol.eventName;
-            else if (symbol.kind === 'procedure') {
-                matches =
-                ['procedures_definition', 'procedures_call', 'procedures_call_return'].includes(block.opcode) &&
-                procedureCode(block, map) === symbol.code;
-            } else if (symbol.kind === 'variable' || symbol.kind === 'list') {
-                matches =
-                Object.values(block.fields || {}).some(value => value.id === symbol.variableId);
-            } else if (symbol.kind === 'event') matches = symbol.blockIds.includes(block.id);
-            if (matches) {
-                results.push({...location(target, block), definition: block.opcode === 'procedures_definition'});
+            const ref = {...location(target, block), definition: block.opcode === 'procedures_definition'};
+            index.blocks.set(block.id, ref);
+            const eventName = broadcastName(block, map);
+            if (typeof eventName !== 'undefined') add(index.broadcast, eventName, ref);
+            if (['procedures_definition', 'procedures_call', 'procedures_call_return'].includes(block.opcode)) {
+                add(index.procedure, procedureCode(block, map), ref);
+            }
+            // A block mentioning the same variable twice is still one reference.
+            const ids = new Set(Object.values(block.fields || {}).map(value => value.id));
+            for (const id of ids) {
+                if (typeof id !== 'undefined') add(index.variable, id, ref);
             }
         }
-    }
-    return results.sort((a, b) => Number(b.definition) - Number(a.definition) ||
-        Number(b.targetId === symbol.targetId) - Number(a.targetId === symbol.targetId));
+        indexes.set(target.id, index);
+        return index;
+    };
+    return symbol => {
+        if (cached.has(symbol)) return cached.get(symbol);
+        const results = [];
+        for (const target of targets) {
+            if (symbol.kind !== 'broadcast' && target.id !== symbol.targetId) continue;
+            const index = indexTarget(target);
+            let refs;
+            if (symbol.kind === 'broadcast') refs = index.broadcast.get(symbol.eventName);
+            else if (symbol.kind === 'procedure') refs = index.procedure.get(symbol.code);
+            else if (symbol.kind === 'variable' || symbol.kind === 'list') {
+                refs = index.variable.get(symbol.variableId);
+            } else if (symbol.kind === 'event') refs = symbol.blockIds.map(id => index.blocks.get(id)).filter(Boolean);
+            if (refs) results.push(...refs);
+        }
+        results.sort((a, b) => Number(b.definition) - Number(a.definition) ||
+            Number(b.targetId === symbol.targetId) - Number(a.targetId === symbol.targetId));
+        cached.set(symbol, results);
+        return results;
+    };
 };
+
+export const referencesFor = (vm, symbol) => createReferenceIndex(vm)(symbol);

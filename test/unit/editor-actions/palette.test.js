@@ -1,5 +1,6 @@
 import {parseQuery, filterResults, sortCommands} from '../../../src/lib/command-palette/search';
-import {targetResults, symbolResults, referencesFor, commandResults} from '../../../src/lib/command-palette/providers';
+import {targetResults, symbolResults, referencesFor, commandResults,
+    createReferenceIndex} from '../../../src/lib/command-palette/providers';
 import {ActionRegistry, STORAGE_KEY} from '../../../src/lib/editor-actions/registry';
 import AddonActions from '../../../src/addons/action-registry';
 import {loadAddonMessages, namespaceAddonMessages} from '../../../src/addons/translations';
@@ -87,6 +88,29 @@ test('broadcasts span originals, ignore clones, retain the query target after sw
     expect(referencesFor(vm, row).map(ref => ref.targetId)).toEqual(['a', 'b']);
     vm.runtime.targets.splice(1, 1);
     expect(referencesFor(vm, row)).toHaveLength(1);
+});
+
+test('reference index scans each target once and only visits other targets for broadcasts', () => {
+    const receive = id => block(id, 'event_whenbroadcastreceived', {BROADCAST_OPTION: {value: 'hello'}});
+    const a = target('a', {a1: receive('a1'), v1: block('v1', 'data_variable',
+        {VARIABLE: {id: 'v'}, AGAIN: {id: 'v'}})}, {v: {id: 'v', name: 'value', type: ''}});
+    const b = target('b', {b1: receive('b1')});
+    a.blocks.getScripts = jest.fn(() => ['a1', 'v1']);
+    b.blocks.getScripts = jest.fn(() => ['b1']);
+    const vm = vmFor([b, a]);
+    const rows = symbolResults(vm, 'a', 0, null, t);
+    a.blocks.getScripts.mockClear();
+    const references = createReferenceIndex(vm);
+    const variable = rows.find(row => row.kind === 'variable');
+    const broadcast = rows.find(row => row.kind === 'broadcast');
+    expect(references(variable).map(ref => ref.blockId)).toEqual(['v1']);
+    expect(b.blocks.getScripts).not.toHaveBeenCalled();
+    expect(references(broadcast).map(ref => ref.targetId)).toEqual(['a', 'b']);
+    vm.editingTarget = b;
+    expect(references(variable)).toBe(references(variable));
+    expect(references(broadcast)).toHaveLength(2);
+    expect(a.blocks.getScripts).toHaveBeenCalledTimes(1);
+    expect(b.blocks.getScripts).toHaveBeenCalledTimes(1);
 });
 
 test('event labels use the localized green flag name instead of the image alt text', async () => {

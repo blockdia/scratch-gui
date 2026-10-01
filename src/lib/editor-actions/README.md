@@ -116,6 +116,10 @@ scopes only conflict within the same dialog. Escape, Tab, Enter and the custom-b
 Command/Ctrl+Enter confirm key are reserved, as is any key without Ctrl/Meta/Alt,
 which would otherwise block typing. Defaults are `Alt+digit`, or `Ctrl+Alt+digit` on
 macOS (`macBindings`) because Option+digit types symbols there; users can rebind freely.
+Dialog matching also accepts macOS Control+Option+digit events reported as keyCode
+229 outside active composition (Safari with a Chinese input method). This exception
+uses the physical digit code and does not apply to global actions, plain typing,
+active composition, or Enter/Escape/Tab handling.
 
 ## Initial commands and verification
 

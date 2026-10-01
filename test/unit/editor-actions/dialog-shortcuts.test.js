@@ -42,6 +42,24 @@ test('macOS defaults add Control so Option-digit symbols stay typeable', () => {
         .toBe(variableShortcuts.toggleScope);
 });
 
+test('Safari Chinese input method processed digits match only explicit macOS dialog chords', () => {
+    const registry = setup({mac: true});
+    const event = {key: '1', code: 'Digit1', keyCode: 229, ctrlKey: true, altKey: true};
+    for (const key of ['1', 'Process', 'Unidentified']) {
+        expect(registry.matchDialogShortcut(CUSTOM_BLOCK_DIALOG, {...event, key}))
+            .toBe(customBlockShortcuts.addTextNumber);
+    }
+    expect(registry.matchDialogShortcut(VARIABLE_DIALOG, {...event, key: '0', code: 'Digit0'}))
+        .toBe(variableShortcuts.toggleScope);
+    for (const extra of [{isComposing: true}, {ctrlKey: false}, {altKey: false},
+        {metaKey: true}, {shiftKey: true}, {code: ''}, {key: 'Enter', code: 'Enter'}]) {
+        expect(registry.matchDialogShortcut(CUSTOM_BLOCK_DIALOG, {...event, ...extra})).toBeNull();
+    }
+    expect(setup().matchDialogShortcut(CUSTOM_BLOCK_DIALOG, event)).toBeNull();
+    registry.setBindings(customBlockShortcuts.addTextNumber, []);
+    expect(registry.matchDialogShortcut(CUSTOM_BLOCK_DIALOG, event)).toBeNull();
+});
+
 test('rebinding persists, applies immediately and reflects in aria-keyshortcuts', () => {
     const store = storage();
     const registry = setup({storage: store});

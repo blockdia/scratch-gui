@@ -1,5 +1,7 @@
 import LazyScratchBlocks from '../../../src/lib/tw-lazy-scratch-blocks';
 
+jest.mock('bowser', () => ({mac: true}));
+
 jest.mock('../../../src/components/custom-procedures/custom-procedures.jsx', () => () => null);
 jest.mock('../../../src/lib/tw-lazy-scratch-blocks', () => ({get: jest.fn()}));
 
@@ -10,6 +12,34 @@ global.Element = originalElement;
 
 const key = extra => ({target: {}, key: 'Enter', metaKey: true, preventDefault: jest.fn(),
     stopImmediatePropagation: jest.fn(), ...extra});
+
+test('Safari processed Control+Option+digit commits the input and adds one parameter', () => {
+    const input = {};
+    const widget = {hide: jest.fn()};
+    LazyScratchBlocks.get.mockReturnValue({FieldTextInput: {htmlInput_: input}, WidgetDiv: widget});
+    const editor = new CustomProcedures({onRequestClose: jest.fn()});
+    editor.mutationRoot = {addStringNumberExternal: jest.fn(() => {
+        expect(widget.hide).toHaveBeenCalledWith(true);
+    })};
+    const event = key({
+        target: input,
+        key: '1',
+        code: 'Digit1',
+        keyCode: 229,
+        metaKey: false,
+        ctrlKey: true,
+        altKey: true
+    });
+    editor.handleKeyDown({...event, isComposing: true});
+    expect(widget.hide).not.toHaveBeenCalled();
+    editor.handleKeyDown(event);
+    editor.handleKeyDown({...event, repeat: true});
+    expect(event.preventDefault).toHaveBeenCalledTimes(2);
+    expect(event.stopImmediatePropagation).toHaveBeenCalledTimes(2);
+    expect(widget.hide).toHaveBeenCalledTimes(1);
+    expect(editor.mutationRoot.addStringNumberExternal).toHaveBeenCalledTimes(1);
+    expect(editor.props.onRequestClose).not.toHaveBeenCalled();
+});
 
 test('Command/Ctrl Enter commits the active field before serializing and ignores composition/repeat', () => {
     let name = 'old';

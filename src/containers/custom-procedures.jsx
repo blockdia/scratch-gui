@@ -121,13 +121,6 @@ export class CustomProcedures extends React.Component {
         });
     }
     handleKeyDown (event) {
-        if (event.isComposing || event.keyCode === 229) return;
-        if (event.key === 'Enter' && (event.metaKey || event.ctrlKey) && !event.altKey && !event.shiftKey) {
-            event.preventDefault();
-            event.stopImmediatePropagation();
-            if (!event.repeat) this.handleOk();
-            return;
-        }
         const handler = CustomProcedures.shortcutHandlers[
             actions.matchDialogShortcut(CUSTOM_BLOCK_DIALOG, event)];
         if (handler) {
@@ -137,6 +130,13 @@ export class CustomProcedures extends React.Component {
                 LazyScratchBlocks.get().WidgetDiv.hide(true);
                 this[handler]();
             }
+            return;
+        }
+        if (event.isComposing || event.keyCode === 229) return;
+        if (event.key === 'Enter' && (event.metaKey || event.ctrlKey) && !event.altKey && !event.shiftKey) {
+            event.preventDefault();
+            event.stopImmediatePropagation();
+            if (!event.repeat) this.handleOk();
             return;
         }
         const ScratchBlocks = LazyScratchBlocks.get();

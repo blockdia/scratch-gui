@@ -1,5 +1,5 @@
 import {availableIn, reservations, scopesOverlap} from './context';
-import {ariaBinding, eventBinding, normalizeBinding, resolveBinding} from './keys';
+import {ariaBinding, dialogEventBinding, normalizeBinding, resolveBinding} from './keys';
 
 export const STORAGE_KEY = 'blockdia:shortcuts';
 export const RECENT_STORAGE_KEY = 'blockdia:recent-palette-actions';
@@ -150,7 +150,7 @@ export class ActionRegistry {
         })));
     }
     matchDialogShortcut (scope, event) {
-        const binding = eventBinding(event, this.mac);
+        const binding = dialogEventBinding(event, this.mac);
         if (!binding) return null;
         const resolved = resolveBinding(binding, this.mac);
         const matches = Array.from(this.dialogShortcuts.values()).filter(definition =>

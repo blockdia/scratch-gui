@@ -26,6 +26,9 @@ beforeEach(() => {
     instance = new CommandPalette({intl, dispatch: jest.fn(), getContext: () => ({area: 'blocks'}),
         editorState: {scratchGui: {vm, mode: {}, editorTab: {activeTabIndex: 0}}}});
     instance.navigation = navigationFor(vm);
+    vm.on('PROJECT_CHANGED', instance.projectChanged);
+    vm.on('workspaceUpdate', instance.workspaceUpdated);
+    instance.forceUpdate = jest.fn();
     instance.input = {focus: () => { document.activeElement = instance.input; }};
     instance.setState = (patch, callback) => {
         instance.state = {...instance.state, ...patch};
@@ -36,6 +39,7 @@ beforeEach(() => {
 });
 afterEach(() => {
     instance.navigation.reset();
+    cancelAnimationFrame(instance.refreshFrame);
     actions.paletteOpen = false;
 });
 
@@ -128,6 +132,98 @@ test('localized event searches survive a broadcast preview in another target', a
     instance.setState({query: '@e 绿旗'});
     expect(instance.results()).toEqual([before]);
     expect(instance.results()[0].blockIds).toEqual(['flag', 'flag2']);
+});
+
+test.each([1, 2])('event labels refresh after activating a relocalized workspace from tab %s', async tab => {
+    const originalRaf = global.requestAnimationFrame;
+    let scheduled;
+    global.requestAnimationFrame = callback => { scheduled = callback; return 1; };
+    let label = 'when space key pressed';
+    instance.props.intl = new IntlProvider({locale: 'zh-CN', messages: {
+        'gui.palette.event': '事件'
+    }}, {}).getChildContext().intl;
+    instance.props.editorState.scratchGui.editorTab.activeTabIndex = tab;
+    const target = vm.editingTarget;
+    target.blocks._blocks.key = {id: 'key', opcode: 'event_whenkeypressed', topLevel: true,
+        fields: {KEY_OPTION: {value: 'space'}}};
+    target.blocks.getScripts = jest.fn(() => ['key']);
+    instance.workspace = {isDragging: () => false, getBlockById: () => ({
+        inputList: [{fieldRow: [{getText: () => label}]}]
+    })};
+    instance.bindWorkspace = jest.fn();
+    vm.on('targetsUpdate', instance.refresh);
+    instance.navigation.locate = jest.fn(async (location, options) => {
+        options.activate();
+        await Promise.resolve();
+        // Locale application reloads the same workspace with Blockly events disabled.
+        // Emit before replacing its fields to cover either VM listener order.
+        vm.emit('workspaceUpdate', {xml: '<xml/>'});
+        label = '当按下 空格 键';
+        vm.emit('targetsUpdate');
+        return true;
+    });
+    try {
+        instance.open({mode: 'symbols'});
+        instance.setState({query: '@e '});
+        const symbol = instance.results()[0];
+        const references = instance.referencesFor(symbol);
+        const scans = target.blocks.getScripts.mock.calls.length;
+        await instance.choose(symbol);
+        instance.setState({query: '@e 空格'});
+        expect(instance.results()).toHaveLength(0);
+        scheduled();
+        expect(instance.results()).toHaveLength(1);
+        expect(instance.results()[0].label).toBe(label);
+        expect(instance.referencesFor(symbol)).toBe(references);
+        expect(target.blocks.getScripts).toHaveBeenCalledTimes(scans);
+    } finally {
+        global.requestAnimationFrame = originalRaf;
+    }
+});
+
+test('workspace reloads during broadcast tours preserve origin labels and the reference index', async () => {
+    const originalRaf = global.requestAnimationFrame;
+    let scheduled;
+    global.requestAnimationFrame = callback => { scheduled = callback; return 1; };
+    const original = vm.editingTarget;
+    const receive = id => ({id, opcode: 'event_whenbroadcastreceived',
+        fields: {BROADCAST_OPTION: {value: 'hello'}}});
+    original.blocks._blocks = {
+        flag: {id: 'flag', opcode: 'event_whenflagclicked', topLevel: true},
+        a: receive('a')
+    };
+    original.blocks.getScripts = jest.fn(() => ['flag', 'a']);
+    const other = {...original, id: 'other', blocks: {_blocks: {b: receive('b')},
+        getScripts: jest.fn(() => ['b'])}};
+    vm.runtime.targets.push(other);
+    instance.workspace = {isDragging: () => false, getBlockById: id => (
+        vm.editingTarget === original && id === 'flag' ? {inputList: [
+            {fieldRow: [{getText: () => '当绿旗被点击'}]}
+        ]} : null
+    )};
+    instance.bindWorkspace = jest.fn();
+    instance.navigation.locate = jest.fn(async ref => {
+        vm.editingTarget = vm.runtime.targets.find(target => target.id === ref.targetId);
+        vm.emit('workspaceUpdate', {xml: '<xml/>'});
+        return true;
+    });
+    try {
+        instance.open({mode: 'symbols'});
+        const broadcast = instance.results().find(item => item.kind === 'broadcast');
+        const references = instance.referencesFor(broadcast);
+        await instance.navigate(broadcast, 1);
+        scheduled();
+        expect(instance.results().find(item => item.kind === 'event').label).toBe('当绿旗被点击');
+        await instance.navigate(broadcast, 0);
+        scheduled();
+        instance.setState({query: '@e 绿旗'});
+        expect(instance.results()).toHaveLength(1);
+        expect(instance.referencesFor(broadcast)).toBe(references);
+        expect(original.blocks.getScripts).toHaveBeenCalledTimes(2);
+        expect(other.blocks.getScripts).toHaveBeenCalledTimes(1);
+    } finally {
+        global.requestAnimationFrame = originalRaf;
+    }
 });
 
 test('symbol Escape clears the query before closing, retaining the symbol prefix', () => {
@@ -250,7 +346,7 @@ test('deleting an active reference clears its stale navigation state', () => {
     let refresh;
     const original = global.requestAnimationFrame;
     global.requestAnimationFrame = callback => { refresh = callback; return 1; };
-    instance.refresh();
+    vm.emit('PROJECT_CHANGED');
     refresh();
     global.requestAnimationFrame = original;
     expect(instance.state.reference).toBeNull();
@@ -349,5 +445,66 @@ test('zero-reference symbols sort last but stronger search matches still win', (
     instance.setState({query: '@v '});
     expect(names()).toEqual(['Score used', 'Score']);
     delete vm.editingTarget.blocks._blocks.use;
+    vm.emit('PROJECT_CHANGED');
     expect(names()).toEqual(['Score', 'Score used']);
+});
+
+test('typing and reference navigation reuse one index in a large workspace', async () => {
+    const target = vm.editingTarget;
+    for (let i = 0; i < 100; i++) target.variables[i] = {id: `${i}`, name: `value ${i}`, type: ''};
+    for (let i = 0; i < 2000; i++) {
+        target.blocks._blocks[i] = {id: `${i}`, opcode: 'data_variable', fields: {VARIABLE: {id: `${i % 100}`}}};
+    }
+    target.blocks.getScripts = jest.fn(() => Object.keys(target.blocks._blocks));
+    instance.navigation.locate = jest.fn(async () => true);
+    instance.open({mode: 'symbols'});
+    const scans = target.blocks.getScripts.mock.calls.length;
+    expect(scans).toBeLessThanOrEqual(2);
+    for (const query of ['@v v', '@v va', '@v value', '@v value 1']) {
+        instance.setState({query});
+        const items = instance.results();
+        expect(items.length).toBeGreaterThan(0);
+        expect(instance.results()).toBe(items);
+        await instance.choose(items[0]);
+        await instance.cycle(1);
+        instance.workspaceChanged({type: 'ui', element: 'stackclick'});
+    }
+    expect(target.blocks.getScripts).toHaveBeenCalledTimes(scans);
+
+    target.variables['1'].name = 'renamed';
+    vm.emit('PROJECT_CHANGED');
+    instance.setState({query: '@v renamed'});
+    expect(instance.results().map(item => item.label)).toEqual(['renamed']);
+    expect(instance.referencesFor(instance.results()[0])).toHaveLength(20);
+    expect(target.blocks.getScripts).toHaveBeenCalledTimes(scans + 2);
+});
+
+test('grouped event references update after edits and reopening discards the snapshot', () => {
+    const target = vm.editingTarget;
+    target.blocks._blocks.a = {id: 'a', opcode: 'event_whenflagclicked', topLevel: true};
+    instance.navigation.locate = jest.fn(async () => true);
+    instance.open({mode: 'symbols'});
+    const symbol = instance.state.symbol;
+    target.blocks._blocks.b = {id: 'b', opcode: 'event_whenflagclicked', topLevel: true};
+    vm.emit('PROJECT_CHANGED');
+    expect(instance.referencesFor(symbol).map(ref => ref.blockId)).toEqual(['a', 'b']);
+    instance.close();
+    delete target.blocks._blocks.a;
+    instance.open({mode: 'symbols'});
+    expect(instance.referencesFor(instance.state.symbol).map(ref => ref.blockId)).toEqual(['b']);
+});
+
+test('cancelled navigation cannot overwrite a later visit to the same cached reference', async () => {
+    vm.editingTarget.variables.v = {id: 'v', name: 'value', type: ''};
+    vm.editingTarget.blocks._blocks.a = {id: 'a', opcode: 'data_variable', fields: {VARIABLE: {id: 'v'}}};
+    const finish = [];
+    instance.navigation.locate = jest.fn(() => new Promise(resolve => finish.push(resolve)));
+    instance.open({mode: 'symbols'});
+    const latest = instance.cycle(1);
+    finish[0](false);
+    await Promise.resolve();
+    expect(instance.state.error).toBe(false);
+    finish[1](true);
+    await latest;
+    expect(instance.state.error).toBe(false);
 });

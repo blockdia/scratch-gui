@@ -11,6 +11,12 @@
   border: none;
 }
 
+/* Component properties and their portal belong to the same collapsible section. */
+.sa-hide-sprite-properties [class*="component-panel_panel_"],
+.sa-hide-sprite-properties [class*="component-panel_popover_"] {
+  display: none;
+}
+
 .sa-show-sprite-properties [class^="sprite-info_sprite-info_"] {
   /* The height needs to be known for the animation to work.
      6.5rem + 5px is the exact height of sprite info when

@@ -18,7 +18,9 @@
 
     outline: none;
     cursor: text;
-    transition: 0.25s ease-out; /* @todo: standardize with var */
+    /* Stage-size changes must resize inputs immediately, without animating layout. */
+    transition: border-color 0.25s ease-out, box-shadow 0.25s ease-out,
+        background-color 0.25s ease-out, color 0.25s ease-out;
     box-shadow: none;
 
     /*

@@ -5,6 +5,7 @@ import React from 'react';
 import CustomProceduresComponent from '../components/custom-procedures/custom-procedures.jsx';
 import LazyScratchBlocks from '../lib/tw-lazy-scratch-blocks';
 import actions from '../lib/editor-actions';
+import {displayBinding} from '../lib/editor-actions/keys';
 import {CUSTOM_BLOCK_DIALOG, customBlockShortcuts} from '../lib/editor-actions/dialogs';
 import {connect} from 'react-redux';
 
@@ -219,6 +220,12 @@ export class CustomProcedures extends React.Component {
                     ...keys,
                     [name]: actions.ariaShortcuts(customBlockShortcuts[name])
                 }), {})}
+                shortcutHints={Object.keys(customBlockShortcuts).reduce((hints, name) => ({
+                    ...hints,
+                    [name]: actions.bindings(customBlockShortcuts[name])
+                        .map(binding => displayBinding(binding, actions.mac))
+                        .join(', ')
+                }), {confirm: displayBinding('Mod+Enter', actions.mac), cancel: displayBinding('Escape', actions.mac)})}
                 warp={this.state.warp}
                 onAddBoolean={this.handleAddBoolean}
                 onAddLabel={this.handleAddLabel}

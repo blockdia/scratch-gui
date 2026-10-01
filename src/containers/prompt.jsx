@@ -5,6 +5,7 @@ import PromptComponent from '../components/prompt/prompt.jsx';
 import VM from 'scratch-vm';
 import {SCRATCH_MAX_CLOUD_VARIABLES} from '../lib/tw-cloud-limits.js';
 import actions from '../lib/editor-actions';
+import {displayBinding} from '../lib/editor-actions/keys';
 import {VARIABLE_DIALOG, variableShortcuts} from '../lib/editor-actions/dialogs';
 
 class Prompt extends React.Component {
@@ -81,6 +82,9 @@ class Prompt extends React.Component {
                 showCloudOption={this.props.showCloudOption}
                 showVariableOptions={this.props.showVariableOptions}
                 title={this.props.title}
+                toggleScopeHint={actions.bindings(variableShortcuts.toggleScope)
+                    .map(binding => displayBinding(binding, actions.mac))
+                    .join(', ')}
                 toggleScopeShortcut={actions.ariaShortcuts(variableShortcuts.toggleScope)}
                 onCancel={this.handleCancel}
                 onChange={this.handleChange}

@@ -39,6 +39,7 @@ const CustomProcedures = props => (
                     tabIndex="0"
                     data-procedure-add-input
                     aria-keyshortcuts={props.shortcutKeys.addTextNumber}
+                    title={props.shortcutHints.addTextNumber}
                     onClick={props.onAddTextNumber}
                 >
                     <img
@@ -66,6 +67,7 @@ const CustomProcedures = props => (
                     role="button"
                     tabIndex="0"
                     aria-keyshortcuts={props.shortcutKeys.addBoolean}
+                    title={props.shortcutHints.addBoolean}
                     onClick={props.onAddBoolean}
                 >
                     <img
@@ -93,6 +95,7 @@ const CustomProcedures = props => (
                     role="button"
                     tabIndex="0"
                     aria-keyshortcuts={props.shortcutKeys.addLabel}
+                    title={props.shortcutHints.addLabel}
                     onClick={props.onAddLabel}
                 >
                     <img
@@ -114,6 +117,7 @@ const CustomProcedures = props => (
                     <input
                         checked={props.warp}
                         aria-keyshortcuts={props.shortcutKeys.toggleWarp}
+                        title={props.shortcutHints.toggleWarp}
                         type="checkbox"
                         onChange={props.onToggleWarp}
                     />
@@ -128,6 +132,7 @@ const CustomProcedures = props => (
                 <button
                     className={styles.cancelButton}
                     aria-keyshortcuts="Escape"
+                    title={props.shortcutHints.cancel}
                     onClick={props.onCancel}
                 >
                     <FormattedMessage
@@ -139,6 +144,7 @@ const CustomProcedures = props => (
                 <button
                     className={styles.okButton}
                     aria-keyshortcuts="Meta+Enter Control+Enter"
+                    title={props.shortcutHints.confirm}
                     onClick={props.onOk}
                 >
                     <FormattedMessage
@@ -162,6 +168,7 @@ CustomProcedures.propTypes = {
     onOk: PropTypes.func.isRequired,
     onToggleWarp: PropTypes.func.isRequired,
     onWorkspaceKeyDown: PropTypes.func.isRequired,
+    shortcutHints: PropTypes.objectOf(PropTypes.string).isRequired,
     shortcutKeys: PropTypes.objectOf(PropTypes.string).isRequired,
     warp: PropTypes.bool.isRequired
 };

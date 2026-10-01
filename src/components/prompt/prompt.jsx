@@ -94,6 +94,7 @@ const PromptComponent = props => (
                         <Box
                             className={styles.optionsRow}
                             aria-keyshortcuts={props.toggleScopeShortcut}
+                            title={props.toggleScopeHint}
                         >
                             <label>
                                 <input
@@ -229,6 +230,7 @@ PromptComponent.propTypes = {
     showCloudOption: PropTypes.bool.isRequired,
     showVariableOptions: PropTypes.bool.isRequired,
     title: PropTypes.string.isRequired,
+    toggleScopeHint: PropTypes.string,
     toggleScopeShortcut: PropTypes.string
 };
 

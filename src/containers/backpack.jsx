@@ -24,7 +24,7 @@ import {connect} from 'react-redux';
 import storage from '../lib/storage';
 import VM from 'scratch-vm';
 
-const dragTypes = [DragConstants.COSTUME, DragConstants.SOUND, DragConstants.SPRITE];
+const dragTypes = [DragConstants.COSTUME, DragConstants.SOUND, DragConstants.SPRITE, DragConstants.FOLDER];
 const DroppableBackpack = DropAreaHOC(dragTypes)(BackpackComponent);
 
 const messages = defineMessages({

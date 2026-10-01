@@ -523,3 +523,10 @@ body:not(.sa-columns-enabled) [class*="gui_tab-panel"] [class*="gui_extension-bu
 [class*="custom-procedures_body"] [role="button"] {
   padding: 0.5rem;
 }
+
+/* Keep the small-stage action row at the same height as compact inputs. */
+[class*="sprite-info_small_"] [class*="sprite-info_properties-button_"],
+[class*="sprite-info_small_"] [class*="sprite-info_visibility-toggle_"] button {
+  width: 1.5rem;
+  height: 1.5rem;
+}

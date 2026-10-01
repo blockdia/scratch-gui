@@ -36,7 +36,9 @@ export default async function ({ addon, console, msg }) {
     }
   }
   const isDirectionPopoverOpen = () =>
-    document.querySelector("body > div.Popover > div > div > [class*=direction-picker_button-row_]");
+    document.querySelector(
+      "body > div.Popover [class*=direction-picker_button-row_], body > div.Popover [class*=sprite-info_properties-popup_]"
+    );
   // Close properties panel when mouse leaves the entire sprite panel
   document.body.addEventListener(
     "mouseleave",

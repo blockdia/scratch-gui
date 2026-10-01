@@ -1,5 +1,6 @@
 {
     "zh-cn": {
+        "blockdia.spriteInfo.moreProperties": "更多角色属性",
         "blockdia.backpack.pin": "固定到积木栏",
         "blockdia.backpack.unpin": "取消固定到积木栏",
         "blockdia.backpack.category": "已固定",
@@ -166,6 +167,7 @@
         "gui.actions.zoomFit": "缩放以显示全部脚本"
     },
     "zh-tw": {
+        "blockdia.spriteInfo.moreProperties": "更多角色屬性",
         "blockdia.backpack.pin": "固定到積木欄",
         "blockdia.backpack.unpin": "取消固定到積木欄",
         "blockdia.backpack.category": "已固定",

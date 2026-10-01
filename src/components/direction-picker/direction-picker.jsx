@@ -49,66 +49,83 @@ const messages = defineMessages({
     }
 });
 
-const DirectionPicker = props => (
-    <Label
-        secondary
-        above={props.labelAbove}
-        text={directionLabel}
-    >
-        <Popover
-            body={
-                <div>
-                    <Dial
-                        direction={props.direction}
-                        onChange={props.onChangeDirection}
-                    />
-                    <ToggleButtons
-                        className={styles.buttonRow}
-                        buttons={[
-                            {
-                                handleClick: props.onClickAllAround,
-                                icon: allAroundIcon,
-                                isSelected: props.rotationStyle === RotationStyles.ALL_AROUND,
-                                title: props.intl.formatMessage(messages.allAround)
-                            },
-                            {
-                                handleClick: props.onClickLeftRight,
-                                icon: leftRightIcon,
-                                isSelected: props.rotationStyle === RotationStyles.LEFT_RIGHT,
-                                title: props.intl.formatMessage(messages.leftRight)
-                            },
-                            {
-                                handleClick: props.onClickDontRotate,
-                                icon: dontRotateIcon,
-                                isSelected: props.rotationStyle === RotationStyles.DONT_ROTATE,
-                                title: props.intl.formatMessage(messages.dontRotate)
-                            }
-                        ]}
-                    />
-                </div>
-            }
-            isOpen={props.popoverOpen}
-            preferPlace="above"
-            onOuterAction={props.onClosePopover}
-        >
-            <BufferedInput
-                small
-                disabled={props.disabled}
-                label={directionLabel}
-                tabIndex="0"
-                type="number"
-                value={props.disabled ? '' : props.direction}
-                onFocus={props.onOpenPopover}
-                onSubmit={props.onChangeDirection}
+const DirectionPicker = props => {
+    const controls = (
+        <div className={styles.controls}>
+            <Dial
+                direction={props.direction}
+                onChange={props.onChangeDirection}
             />
-        </Popover>
-    </Label>
-
-);
+            <ToggleButtons
+                className={styles.buttonRow}
+                buttons={[
+                    {
+                        handleClick: props.onClickAllAround,
+                        icon: allAroundIcon,
+                        isSelected: props.rotationStyle === RotationStyles.ALL_AROUND,
+                        title: props.intl.formatMessage(messages.allAround)
+                    },
+                    {
+                        handleClick: props.onClickLeftRight,
+                        icon: leftRightIcon,
+                        isSelected: props.rotationStyle === RotationStyles.LEFT_RIGHT,
+                        title: props.intl.formatMessage(messages.leftRight)
+                    },
+                    {
+                        handleClick: props.onClickDontRotate,
+                        icon: dontRotateIcon,
+                        isSelected: props.rotationStyle === RotationStyles.DONT_ROTATE,
+                        title: props.intl.formatMessage(messages.dontRotate)
+                    }
+                ]}
+            />
+        </div>
+    );
+    const input = (
+        <BufferedInput
+            small
+            disabled={props.disabled}
+            label={directionLabel}
+            tabIndex="0"
+            type="number"
+            value={props.disabled ? '' : props.direction}
+            onFocus={props.inline ? null : props.onOpenPopover}
+            onSubmit={props.onChangeDirection}
+        />
+    );
+    if (props.inline) {
+        return (
+            <div className={styles.inlinePicker}>
+                <Label
+                    secondary
+                    text={directionLabel}
+                >{input}</Label>
+                {controls}
+            </div>
+        );
+    }
+    return (
+        <Label
+            secondary
+            above={props.labelAbove}
+            text={directionLabel}
+        >
+            <Popover
+                body={controls}
+                isOpen={props.popoverOpen}
+                preferPlace="above"
+                onOuterAction={props.onClosePopover}
+            >
+                {input}
+            </Popover>
+        </Label>
+    );
+};
 
 DirectionPicker.propTypes = {
     direction: PropTypes.number,
     disabled: PropTypes.bool.isRequired,
+    inline: PropTypes.bool,
     intl: intlShape,
     labelAbove: PropTypes.bool,
     onChangeDirection: PropTypes.func.isRequired,

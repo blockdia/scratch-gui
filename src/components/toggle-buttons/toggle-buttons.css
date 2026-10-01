@@ -64,6 +64,14 @@
     border-radius: 0 $form-radius $form-radius 0;
 }
 
+/* A standalone toggle has four rounded corners, including its focus border. */
+.button:only-child,
+[dir="rtl"] .button:only-child,
+.button:only-child:focus::before,
+[dir="rtl"] .button:only-child:focus::before {
+    border-radius: $form-radius;
+}
+
 /* selected button styling */
 
 .button[aria-pressed='true'] {

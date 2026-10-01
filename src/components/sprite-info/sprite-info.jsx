@@ -1,6 +1,9 @@
 import classNames from 'classnames';
 import PropTypes from 'prop-types';
 import React from 'react';
+import bindAll from 'lodash.bindall';
+import Popover from 'react-popover';
+import {isRtl} from '@turbowarp/scratch-l10n';
 
 import Box from '../box/box.jsx';
 import Label from '../forms/label.jsx';
@@ -20,10 +23,16 @@ import yIcon from './icon--y.svg';
 import showIcon from '!../../lib/tw-recolor/build!./icon--show.svg';
 import hideIcon from '!../../lib/tw-recolor/build!./icon--hide.svg';
 import ToggleButtons from '../toggle-buttons/toggle-buttons.jsx';
+import settingsIcon from '../stage-header/icon--settings.svg';
 
 const BufferedInput = BufferedInputHOC(Input);
 
 const messages = defineMessages({
+    moreProperties: {
+        id: 'blockdia.spriteInfo.moreProperties',
+        defaultMessage: 'More sprite properties',
+        description: 'Open size, direction and rotation style controls'
+    },
     spritePlaceholder: {
         id: 'gui.SpriteInfo.spritePlaceholder',
         defaultMessage: 'Name',
@@ -42,8 +51,17 @@ const messages = defineMessages({
 });
 
 class SpriteInfo extends React.Component {
-    shouldComponentUpdate (nextProps) {
+    constructor (props) {
+        super(props);
+        this.state = {propertiesOpen: false};
+        this.propertiesButton = React.createRef();
+        bindAll(this, ['handleToggleProperties', 'handleCloseProperties', 'handlePropertiesKeyDown']);
+    }
+    shouldComponentUpdate (nextProps, nextState) {
         return (
+            this.state.propertiesOpen !== nextState.propertiesOpen ||
+            this.props.targetId !== nextProps.targetId ||
+            this.props.intl !== nextProps.intl ||
             this.props.rotationStyle !== nextProps.rotationStyle ||
             this.props.disabled !== nextProps.disabled ||
             this.props.name !== nextProps.name ||
@@ -55,6 +73,25 @@ class SpriteInfo extends React.Component {
             Math.round(this.props.x) !== Math.round(nextProps.x) ||
             Math.round(this.props.y) !== Math.round(nextProps.y)
         );
+    }
+    componentDidUpdate (prevProps) {
+        if (this.state.propertiesOpen && (prevProps.targetId !== this.props.targetId ||
+            prevProps.stageSize !== this.props.stageSize || this.props.disabled)) {
+            this.handleCloseProperties();
+        }
+    }
+    handleToggleProperties () {
+        this.setState(state => ({propertiesOpen: !state.propertiesOpen}));
+    }
+    handleCloseProperties () {
+        this.setState({propertiesOpen: false});
+    }
+    handlePropertiesKeyDown (event) {
+        if (event.key === 'Escape') {
+            event.stopPropagation();
+            this.handleCloseProperties();
+            this.propertiesButton.current.focus();
+        }
     }
     render () {
         const {
@@ -94,6 +131,8 @@ class SpriteInfo extends React.Component {
                     }
                 )}
                 disabled={this.props.disabled}
+                autoComplete="off"
+                data-1p-ignore="true"
                 placeholder={this.props.intl.formatMessage(messages.spritePlaceholder)}
                 tabIndex="0"
                 type="text"
@@ -159,61 +198,85 @@ class SpriteInfo extends React.Component {
         );
 
         if (stageSize === STAGE_DISPLAY_SIZES.small) {
+            const moreProperties = this.props.intl.formatMessage(messages.moreProperties);
+            const visibilityAction = this.props.intl.formatMessage(
+                this.props.visible ? messages.hideSpriteAction : messages.showSpriteAction
+            );
             return (
                 <Box className={classNames(styles.spriteInfo, styles.small)}>
                     <div className={classNames(styles.row, styles.rowPrimary)}>
-                        <div className={styles.group}>
-                            {spriteNameInput}
-                        </div>
+                        {spriteNameInput}
+                        <ToggleButtons
+                            className={styles.visibilityToggle}
+                            buttons={[{
+                                handleClick: this.props.visible ?
+                                    this.props.onClickNotVisible : this.props.onClickVisible,
+                                icon: this.props.visible ? showIcon : hideIcon,
+                                isSelected: this.props.visible && !this.props.disabled,
+                                title: visibilityAction
+                            }]}
+                            disabled={this.props.disabled}
+                        />
+                    </div>
+                    <div className={classNames(styles.row, styles.coordinates)}>
                         {xPosition}
                         {yPosition}
-                    </div>
-                    <div className={classNames(styles.row, styles.rowSecondary)}>
-                        <div className={styles.group}>
-                            <ToggleButtons
-                                buttons={[
-                                    {
-                                        handleClick: this.props.onClickVisible,
-                                        icon: showIcon,
-                                        isSelected: this.props.visible && !this.props.disabled,
-                                        title: this.props.intl.formatMessage(messages.showSpriteAction)
-                                    },
-                                    {
-                                        handleClick: this.props.onClickNotVisible,
-                                        icon: hideIcon,
-                                        isSelected: !this.props.visible && !this.props.disabled,
-                                        title: this.props.intl.formatMessage(messages.hideSpriteAction)
-                                    }
-                                ]}
+                        <Popover
+                            body={
+                                <div
+                                    aria-label={moreProperties}
+                                    className={styles.propertiesPopup}
+                                    dir={isRtl(this.props.intl.locale) ? 'rtl' : 'ltr'}
+                                    role="dialog"
+                                    onKeyDown={this.handlePropertiesKeyDown}
+                                >
+                                    <Label
+                                        secondary
+                                        text={sizeLabel}
+                                    >
+                                        <BufferedInput
+                                            autoFocus
+                                            small
+                                            disabled={this.props.disabled}
+                                            type="number"
+                                            value={Math.round(this.props.size)}
+                                            onSubmit={this.props.onChangeSize}
+                                        />
+                                    </Label>
+                                    <DirectionPicker
+                                        inline
+                                        direction={Math.round(this.props.direction)}
+                                        disabled={this.props.disabled}
+                                        rotationStyle={this.props.rotationStyle}
+                                        onChangeDirection={this.props.onChangeDirection}
+                                        onChangeRotationStyle={this.props.onChangeRotationStyle}
+                                    />
+                                </div>
+                            }
+                            className={styles.propertiesPopover}
+                            isOpen={this.state.propertiesOpen && !this.props.disabled}
+                            preferPlace="above"
+                            onOuterAction={this.handleCloseProperties}
+                        >
+                            <button
+                                ref={this.propertiesButton}
+                                aria-label={moreProperties}
+                                aria-expanded={this.state.propertiesOpen}
+                                aria-haspopup="dialog"
+                                className={styles.propertiesButton}
                                 disabled={this.props.disabled}
-                            />
-                        </div>
-                        <div className={classNames(styles.group, styles.largerInput)}>
-                            <Label
-                                secondary
-                                text={sizeLabel}
+                                title={moreProperties}
+                                type="button"
+                                onClick={this.handleToggleProperties}
+                                onKeyDown={this.handlePropertiesKeyDown}
                             >
-                                <BufferedInput
-                                    small
-                                    disabled={this.props.disabled}
-                                    label={sizeLabel}
-                                    tabIndex="0"
-                                    type="number"
-                                    value={this.props.disabled ? '' : Math.round(this.props.size)}
-                                    onSubmit={this.props.onChangeSize}
+                                <img
+                                    alt=""
+                                    draggable={false}
+                                    src={settingsIcon}
                                 />
-                            </Label>
-                        </div>
-                        <div className={classNames(styles.group, styles.largerInput)}>
-                            <DirectionPicker
-                                direction={Math.round(this.props.direction)}
-                                disabled={this.props.disabled}
-                                labelAbove={false}
-                                rotationStyle={this.props.rotationStyle}
-                                onChangeDirection={this.props.onChangeDirection}
-                                onChangeRotationStyle={this.props.onChangeRotationStyle}
-                            />
-                        </div>
+                            </button>
+                        </Popover>
                     </div>
                 </Box>
             );
@@ -316,6 +379,7 @@ SpriteInfo.propTypes = {
         PropTypes.number
     ]),
     stageSize: PropTypes.oneOf(Object.keys(STAGE_DISPLAY_SIZES)).isRequired,
+    targetId: PropTypes.string,
     visible: PropTypes.bool,
     x: PropTypes.oneOfType([
         PropTypes.string,

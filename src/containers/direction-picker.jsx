@@ -36,6 +36,7 @@ class DirectionPicker extends React.Component {
     render () {
         return (
             <DirectionComponent
+                inline={this.props.inline}
                 direction={this.props.direction}
                 disabled={this.props.disabled}
                 labelAbove={this.props.labelAbove}
@@ -55,6 +56,7 @@ class DirectionPicker extends React.Component {
 DirectionPicker.propTypes = {
     direction: PropTypes.number,
     disabled: PropTypes.bool,
+    inline: PropTypes.bool,
     labelAbove: PropTypes.bool,
     onChangeDirection: PropTypes.func,
     onChangeRotationStyle: PropTypes.func,

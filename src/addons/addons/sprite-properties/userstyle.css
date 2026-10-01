@@ -106,3 +106,20 @@
 [class*="action-menu_main-button_"] {
   user-select: none;
 }
+
+/* Small-stage properties use two rows, with collapse beside the other actions. */
+.sa-show-sprite-properties [class*="sprite-info_sprite-info_"][class*="sprite-info_small_"] {
+  height: calc(6rem + 1px);
+  padding-bottom: 0.75rem;
+}
+[class*="sprite-info_small_"] [class*="sprite-info_coordinates_"] {
+  padding-inline-end: 1.75rem;
+}
+[class*="sprite-info_small_"] .sa-sprite-properties-close-btn {
+  position: absolute;
+  inset-inline-end: 0.75rem;
+  top: 3.25rem;
+  width: 1.5rem;
+  height: 2rem;
+  padding: 0;
+}

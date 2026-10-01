@@ -217,6 +217,12 @@
     flex-basis: 0;
 }
 
+/* The canvas sets small-stage width; translated target controls must fit inside it. */
+.stage-and-target-wrapper.small .target-wrapper {
+    min-width: 0;
+    contain: inline-size;
+}
+
 .target-wrapper {
     display: flex;
     flex-grow: 1;

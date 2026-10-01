@@ -4,7 +4,7 @@ const manifest = {
   "editorOnly": true,
   "dynamicDisable": true,
   "name": "Insert blocks by name",
-  "description": "Middle or shift-click the code area, or press Ctrl+Space to bring up a block search window. Type block names (or parts of them) and drag them into the code area to add them to your project. The menu can be navigated with the arrow keys and Enter and supports autocompleting with Tab. To prevent the menu from closing, hold Shift while dragging blocks out of it.",
+  "description": "Middle or shift-click the code area, or press Ctrl+Space to bring up a block search window. Type block names (or parts of them) and drag them into the code area to add them to your project. The menu can be navigated with the arrow keys and Enter and supports autocompleting with Tab. To prevent the menu from closing, hold Shift while dragging blocks out of it. Shift-click an input to search for compatible blocks, then click a result or press Enter to insert it directly into that input.",
   "credits": [
     {
       "name": "Tacodiva",

@@ -47,6 +47,13 @@ their own addon directory (for example `addons/debugger/window.jsx`).
 and addon settings. `middle-click-popup` owns the legacy mouse and Ctrl/Command+Space
 entry points. Neither addon enables the other.
 
+Shift-clicking an input opens search for blocks that fit it. Clicking a result or
+pressing Enter inserts it there without dragging; creation and connection share one
+undo step. Inputs already holding a non-shadow block, non-input fields, and flyout
+blocks retain their usual click behavior. This works independently of
+keyboard editing. Closing search clears the target, and insertion revalidates it
+against the current workspace and sprite.
+
 Both use the singleton in `libraries/block-search/popup.js` for indexing, preview,
 search and block creation. The keyboard addon supplies structural insertion planning;
 the search library does not import keyboard navigation. Shared CSS uses the existing

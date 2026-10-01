@@ -6,6 +6,7 @@ import WorkspaceQuerier, { QueryResult } from "./WorkspaceQuerier.js";
 import renderBlock, { BlockComponent, getBlockHeight } from "./BlockRenderer.js";
 import { BlockInstance, BlockShape, BlockTypeInfo } from "./BlockTypeInfo.js";
 import { onClearTextWidthCache } from "./module.js";
+import { acceptsInputBlock, resolveInputTarget } from "./input-target.js";
 
 // Both entry points share one popup, index, gesture hook and creation transaction.
 let servicePromise;
@@ -110,6 +111,8 @@ async function createBlockSearch({ addon, msg, console }) {
   let popupKeyboard = false;
   let popupPosition = null;
   let popupOrigin = null;
+  let popupInputTarget = null;
+  let popupTargetId = null;
 
   let previewWidth = 0;
   let previewHeight = 0;
@@ -119,13 +122,15 @@ async function createBlockSearch({ addon, msg, console }) {
   let previewMinHeight = 0;
   let previewMaxHeight = 0;
 
-  function openPopup({initialValue = "", keyboard = false, settings} = {}) {
+  function openPopup({initialValue = "", keyboard = false, settings, inputTarget = null} = {}) {
     popupKeyboard = keyboard;
 
     // Don't show the menu if we're not in the code editor
     if (addon.tab.editorMode !== "editor") return;
     if (addon.tab.redux.state.scratchGui.editorTab.activeTabIndex !== 0) return;
 
+    popupInputTarget = inputTarget;
+    popupTargetId = vm.editingTarget?.id;
     blockTypes = BlockTypeInfo.getBlocks(Blockly, vm, Blockly.getMainWorkspace(), msg);
     querier.indexWorkspace([...blockTypes]);
     blockTypes.sort((a, b) => {
@@ -150,6 +155,8 @@ async function createBlockSearch({ addon, msg, console }) {
     if (allowMenuClose) {
       popupOrigin = null;
       popupPosition = null;
+      popupInputTarget = null;
+      popupTargetId = null;
       popupRoot.style.display = "none";
       blockTypes = null;
       querier.clearWorkspaceIndex();
@@ -168,11 +175,14 @@ async function createBlockSearch({ addon, msg, console }) {
      */
     /** @type {MenuItem[]} */
     const blockList = [];
+    const connection = popupInputTarget && resolveInputTarget(Blockly, Blockly.getMainWorkspace(), popupInputTarget);
+    const accepts = blockType => !popupInputTarget || (connection && acceptsInputBlock(connection, blockType));
 
     if (popupInput.value.trim().length === 0) {
       queryIllegalResult = null;
       if (blockTypes)
         for (const blockType of blockTypes) {
+          if (!accepts(blockType)) continue;
           blockList.push({
             block: blockType.createBlock(),
           });
@@ -181,8 +191,9 @@ async function createBlockSearch({ addon, msg, console }) {
     } else {
       // Get the list of blocks to display using the input content
       const queryResultObj = querier.queryWorkspace(popupInput.value);
-      const queryResults = queryResultObj.results;
-      queryIllegalResult = queryResultObj.illegalResult;
+      const queryResults = queryResultObj.results.filter(result => accepts(result.getBlock().typeInfo));
+      queryIllegalResult = queryResultObj.illegalResult && accepts(queryResultObj.illegalResult.token.type.block) ?
+        queryResultObj.illegalResult : null;
       limited = queryResultObj.limited;
 
       if (queryResults.length > PREVIEW_LIMIT) queryResults.length = PREVIEW_LIMIT;
@@ -212,10 +223,11 @@ async function createBlockSearch({ addon, msg, console }) {
         e.stopPropagation();
         e.preventDefault();
         updateSelection(resultIdx);
-        allowMenuClose = !e.shiftKey;
-        selectBlock();
+        allowMenuClose = popupInputTarget ? true : !e.shiftKey;
+        const placed = selectBlock();
+        if (placed === true) closePopup(true);
         allowMenuClose = true;
-        if (e.shiftKey) popupInput.focus();
+        if (e.shiftKey && placed !== true) popupInput.focus();
       };
 
       const svgBackground = popupPreviewBlocks.appendChild(
@@ -360,6 +372,11 @@ async function createBlockSearch({ addon, msg, console }) {
     const selectedPreview = queryPreviews[selectedPreviewIdx];
     if (!selectedPreview) return null;
     const workspace = Blockly.getMainWorkspace();
+    const inputConnection = popupInputTarget && resolveInputTarget(Blockly, workspace, popupInputTarget);
+    if (popupInputTarget && (!inputConnection || popupTargetId !== vm.editingTarget?.id)) {
+      closePopup();
+      return null;
+    }
     const automatic = keyboard && keyboardEditor.enabled && !forceDrag;
     const point = keyboard && keyboardEditor.enabled ? keyboardEditor.placementPoint() : mousePosition;
     const previousGroup = Blockly.Events.getGroup();
@@ -379,6 +396,10 @@ async function createBlockSearch({ addon, msg, console }) {
         newBlock = selectedPreview.block.createWorkspaceForm();
         Blockly.scratchBlocksUtils.changeObscuredShadowIds(newBlock);
         if (!newBlock.getSvgRoot()) throw new Error("newBlock is not rendered.");
+        if (inputConnection && !forceDrag &&
+            inputConnection.canConnectWithReason_(newBlock.outputConnection) !== Blockly.Connection.CAN_CONNECT) {
+          throw new Error("The block does not fit the selected input.");
+        }
         const bounds = newBlock.svgPath_.getBoundingClientRect();
         newBlock.moveBy(Math.floor((point.x - (bounds.left + bounds.right) / 2) / workspace.scale),
           Math.floor((point.y - (bounds.top + bounds.bottom) / 2) / workspace.scale));
@@ -393,7 +414,8 @@ async function createBlockSearch({ addon, msg, console }) {
       }
       Blockly.Events.fire(new Blockly.Events.BlockCreate(newBlock));
       created = true;
-      plan = automatic ? keyboardEditor.planInsertion(workspace, newBlock) : {kind: 'drag'};
+      plan = inputConnection && !forceDrag ? {kind: 'connect', parent: inputConnection, child: newBlock.outputConnection} :
+        automatic ? keyboardEditor.planInsertion(workspace, newBlock) : {kind: 'drag'};
       drag = plan.kind === 'drag';
       if (plan.parent) {
         displaced = plan.parent.targetConnection;
@@ -403,7 +425,10 @@ async function createBlockSearch({ addon, msg, console }) {
         }
         plan.parent.connect(plan.child);
       }
-      if (!drag) keyboardEditor.inserted(newBlock);
+      if (!drag) {
+        if (keyboardEditor.enabled) keyboardEditor.inserted(newBlock);
+        else newBlock.select();
+      }
     } catch (error) {
       if (newBlock?.workspace && created) {
         // Detach the old stack before disposing the failed insertion.

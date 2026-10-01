@@ -22,6 +22,7 @@ import StageSelectorComponent from '../components/stage-selector/stage-selector.
 import {getBackdropLibrary} from '../lib/libraries/tw-async-libraries';
 import {handleFileUpload, costumeUpload} from '../lib/file-uploader.js';
 import {placeInViewport} from '../lib/backpack/code-payload.js';
+import {prepareAsset} from '../lib/folders';
 
 const dragTypes = [
     DragConstants.COSTUME,
@@ -84,7 +85,8 @@ class StageSelector extends React.Component {
     handleNewBackdrop (backdrops_, shouldActivateTab = true) {
         const backdrops = Array.isArray(backdrops_) ? backdrops_ : [backdrops_];
         return Promise.all(backdrops.map(backdrop =>
-            this.props.vm.addBackdrop(backdrop.md5, backdrop)
+            this.props.vm.addBackdrop(backdrop.md5,
+                prepareAsset(this.props.vm, 'COSTUME', backdrop, this.props.id))
         )).then(() => {
             if (shouldActivateTab) {
                 return this.props.onActivateTab(COSTUMES_TAB_INDEX);
@@ -136,14 +138,14 @@ class StageSelector extends React.Component {
         } else if (dragInfo.dragType === DragConstants.SOUND) {
             this.props.vm.shareSoundToTarget(dragInfo.index, this.props.id);
         } else if (dragInfo.dragType === DragConstants.BACKPACK_COSTUME) {
-            this.props.vm.addCostume(dragInfo.payload.body, {
+            this.props.vm.addCostume(dragInfo.payload.body, prepareAsset(this.props.vm, 'COSTUME', {
                 name: dragInfo.payload.name
-            }, this.props.id);
+            }, this.props.id), this.props.id);
         } else if (dragInfo.dragType === DragConstants.BACKPACK_SOUND) {
-            this.props.vm.addSound({
+            this.props.vm.addSound(prepareAsset(this.props.vm, 'SOUND', {
                 md5: dragInfo.payload.body,
                 name: dragInfo.payload.name
-            }, this.props.id);
+            }, this.props.id), this.props.id);
         } else if (dragInfo.dragType === DragConstants.BACKPACK_CODE) {
             fetchCode(dragInfo.payload.bodyUrl)
                 .then(payload => {

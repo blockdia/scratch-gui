@@ -1,3 +1,5 @@
+import {reorderFolderItems, prepareAsset, joinName, splitName} from '../lib/folders';
+import {FOLDER_ORDER_CHANGED, remapAssetSelection} from '../lib/folders/order';
 import PropTypes from 'prop-types';
 import React from 'react';
 import bindAll from 'lodash.bindall';
@@ -45,6 +47,7 @@ class SoundTab extends React.Component {
     constructor (props) {
         super(props);
         bindAll(this, [
+            'handleFolderOrderChanged',
             'handleResourceSelection',
             'handleSelectSound',
             'handleDeleteSound',
@@ -62,6 +65,7 @@ class SoundTab extends React.Component {
 
     componentDidMount () {
         this.props.vm.on('EDITOR_SELECT_RESOURCE', this.handleResourceSelection);
+        this.props.vm.on(FOLDER_ORDER_CHANGED, this.handleFolderOrderChanged);
     }
     componentWillReceiveProps (nextProps) {
         const {
@@ -85,6 +89,13 @@ class SoundTab extends React.Component {
 
     componentWillUnmount () {
         this.props.vm.removeListener('EDITOR_SELECT_RESOURCE', this.handleResourceSelection);
+        this.props.vm.removeListener(FOLDER_ORDER_CHANGED, this.handleFolderOrderChanged);
+    }
+    handleFolderOrderChanged ({targetId, beforeSounds}) {
+        const target = this.props.vm.editingTarget;
+        if (!target || target.id !== targetId) return;
+        this.setState(state => ({selectedSoundIndex:
+            remapAssetSelection(beforeSounds, target.sprite.sounds, state.selectedSoundIndex)}));
     }
     handleResourceSelection (request) {
         if (request.resourceKind !== 'sound' || this.props.editingTarget !== request.targetId) return;
@@ -140,7 +151,7 @@ class SoundTab extends React.Component {
             sampleCount: soundItem.sampleCount,
             name: soundItem.name
         };
-        this.props.vm.addSound(vmSound).then(() => {
+        this.props.vm.addSound(prepareAsset(this.props.vm, 'SOUND', vmSound)).then(() => {
             this.handleNewSound();
         });
     }
@@ -156,7 +167,7 @@ class SoundTab extends React.Component {
         handleFileUpload(e.target, (buffer, fileType, fileName, fileIndex, fileCount) => {
             soundUpload(buffer, fileType, storage, newSound => {
                 newSound.name = fileName;
-                this.props.vm.addSound(newSound, targetId).then(() => {
+                this.props.vm.addSound(prepareAsset(this.props.vm, 'SOUND', newSound, targetId), targetId).then(() => {
                     this.handleNewSound();
                     if (fileIndex === fileCount - 1) {
                         this.props.onCloseImporting();
@@ -171,19 +182,25 @@ class SoundTab extends React.Component {
             const sprite = this.props.vm.editingTarget.sprite;
             const activeSound = sprite.sounds[this.state.selectedSoundIndex];
 
-            this.props.vm.reorderSound(this.props.vm.editingTarget.id,
-                dropInfo.index, dropInfo.newIndex);
+            if (dropInfo.folderOrder) {
+                reorderFolderItems(this.props.vm, 'SOUND', dropInfo.folderOrder);
+            } else {
+                this.props.vm.reorderSound(this.props.vm.editingTarget.id,
+                    dropInfo.index, dropInfo.newIndex);
+            }
 
             this.setState({selectedSoundIndex: sprite.sounds.indexOf(activeSound)});
         } else if (dropInfo.dragType === DragConstants.BACKPACK_COSTUME) {
             this.props.onActivateCostumesTab();
             this.props.vm.addCostume(dropInfo.payload.body, {
-                name: dropInfo.payload.name
+                name: typeof dropInfo.folder === 'undefined' ? dropInfo.payload.name :
+                    joinName(dropInfo.folder, splitName(dropInfo.payload.name, false).basename)
             });
         } else if (dropInfo.dragType === DragConstants.BACKPACK_SOUND) {
             this.props.vm.addSound({
                 md5: dropInfo.payload.body,
-                name: dropInfo.payload.name
+                name: typeof dropInfo.folder === 'undefined' ? dropInfo.payload.name :
+                    joinName(dropInfo.folder, splitName(dropInfo.payload.name, false).basename)
             }).then(this.handleNewSound);
         }
     }

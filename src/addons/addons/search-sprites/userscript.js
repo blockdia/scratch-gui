@@ -29,13 +29,14 @@ export default async function ({ addon, console, msg }) {
     query = query.toLowerCase();
     const containsQuery = (str) => str.toLowerCase().includes(query);
 
-    for (const sprite of spritesContainer.children) {
-      const visible =
-        !query ||
-        containsQuery(sprite.children[0].children[1].innerText) ||
-        (containsQuery(sprite.children[0].children[2].children[0].innerText) &&
-          sprite.children[0].classList.contains("sa-folders-folder"));
-      sprite.style.display = visible ? "" : "none";
+    spriteSelectorContainer.dispatchEvent(new CustomEvent("blockdia:sprite-search", { detail: query }));
+    // The legacy grid is still used by embedded selectors. Do not depend on
+    // thumbnail/number/name child positions (folders and empty names differ).
+    if (spritesContainer.matches('[class*="sprite-selector_items-wrapper"]')) {
+      for (const sprite of spritesContainer.children) {
+        const name = sprite.querySelector('[class*="sprite-selector-item_sprite-name"]');
+        sprite.style.display = !query || (name && containsQuery(name.textContent)) ? "" : "none";
+      }
     }
   };
 
@@ -58,14 +59,13 @@ export default async function ({ addon, console, msg }) {
   container.appendChild(resetButton);
 
   while (true) {
-    await addon.tab.waitForElement("div[class^='sprite-selector_items-wrapper']", {
+    spriteSelectorContainer = await addon.tab.waitForElement("[data-sprite-list]", {
       markAsSeen: true,
       reduxEvents: ["scratch-gui/mode/SET_PLAYER", "fontsLoaded/SET_FONTS_LOADED", "scratch-gui/locales/SELECT_LOCALE"],
       reduxCondition: (state) => !state.scratchGui.mode.isPlayerOnly,
     });
 
-    spritesContainer = document.querySelector('[class^="sprite-selector_items-wrapper"]');
-    spriteSelectorContainer = document.querySelector('[class^="sprite-selector_scroll-wrapper"]');
+    spritesContainer = spriteSelectorContainer.firstElementChild;
     spriteSelectorContainer.insertBefore(container, spritesContainer);
     reset(); // Clear search box after going outside then inside
   }

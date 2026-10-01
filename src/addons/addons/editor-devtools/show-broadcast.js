@@ -68,18 +68,13 @@ export default class ShowBroadcast {
     for (const target of targets) {
       let elem = null;
       if (target.isStage) {
-        elem = document.querySelector('div[class*="stage-selector_header"]');
+        elem = document.querySelector('div[class*="stage-selector_stage-selector"]');
       } else if (target.isOriginal) {
-        // This is one of the most ridiculous code I've ever written.
-        // This essentially compares sprite names to textContent so that we can add CSS.
-        const possibleElements = document.querySelectorAll('div[class*="sprite-selector-item_sprite-name"]');
-        const spriteNameElem = Array.prototype.find.call(
-          possibleElements,
-          (elem) => elem.textContent === target.getName()
-        );
-        if (!spriteNameElem) continue;
-        elem = spriteNameElem.parentElement;
+        elem = Array.from(document.querySelectorAll('[data-sprite-id]'))
+          .find((item) => item.dataset.spriteId === target.id);
       }
+      // A collapsed folder (or a search) can leave the target unmounted.
+      if (!elem) continue;
       elem.dataset.highlighted = "true";
       elemPendingToRemoveHighlights.push(elem);
     }

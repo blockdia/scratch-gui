@@ -14,19 +14,34 @@ let contextMenuId = 0;
 const SpriteSelectorItem = props => (
     <ContextMenuTrigger
         attributes={{
-            className: classNames(props.className, styles.spriteSelectorItem, {
-                [styles.isSelected]: props.selected
+            'className': classNames(props.className, styles.spriteSelectorItem, {
+                [styles.hoverable]: !props.dragging,
+                [styles.isSelected]: props.selected,
+                [styles.treeRow]: typeof props.treeDepth === 'number'
             }),
-            onClick: props.onClick,
-            onMouseEnter: props.onMouseEnter,
-            onMouseLeave: props.onMouseLeave,
-            onMouseDown: props.onMouseDown,
-            onTouchStart: props.onMouseDown
+            'data-sprite-id': props.spriteId,
+            'title': props.fullName,
+            'onClick': props.onClick,
+            'onMouseEnter': props.onMouseEnter,
+            'onMouseLeave': props.onMouseLeave,
+            'onMouseDown': props.onMouseDown,
+            'onTouchStart': props.onMouseDown
         }}
         disable={props.preventContextMenu}
         id={`${props.name}-${contextMenuId}`}
         ref={props.componentRef}
     >
+        {typeof props.treeDepth === 'number' ? (
+            <React.Fragment>
+                {Array.from({length: props.treeDepth}, (_, i) => (
+                    <span
+                        className={styles.treeGuide}
+                        key={i}
+                    />
+                ))}
+                <span className={styles.treeChevronSlot} />
+            </React.Fragment>
+        ) : null}
         {typeof props.number === 'undefined' ? null : (
             <div className={styles.number}>{props.number}</div>
         )}
@@ -58,13 +73,13 @@ const SpriteSelectorItem = props => (
                 <div className={styles.spriteDetails}>{props.details}</div>
             ) : null}
         </div>
-        {(props.selected && props.onDeleteButtonClick) ? (
+        {(props.selected && props.onDeleteButtonClick && typeof props.treeDepth !== 'number') ? (
             <DeleteButton
                 className={styles.deleteButton}
                 onClick={props.onDeleteButtonClick}
             />
         ) : null }
-        {props.onDuplicateButtonClick || props.onDeleteButtonClick || props.onExportButtonClick ? (
+        {props.folderMenu || props.onDuplicateButtonClick || props.onDeleteButtonClick || props.onExportButtonClick ? (
             <ContextMenu id={`${props.name}-${contextMenuId++}`}>
                 {props.onDuplicateButtonClick ? (
                     <MenuItem onClick={props.onDuplicateButtonClick}>
@@ -119,6 +134,7 @@ const SpriteSelectorItem = props => (
                         />
                     </DangerousMenuItem>
                 ) : null }
+                {props.folderMenu}
             </ContextMenu>
         ) : null}
     </ContextMenuTrigger>
@@ -126,9 +142,12 @@ const SpriteSelectorItem = props => (
 
 SpriteSelectorItem.propTypes = {
     className: PropTypes.string,
+    folderMenu: PropTypes.node,
+    fullName: PropTypes.string,
     componentRef: PropTypes.func,
     costumeURL: PropTypes.string,
     details: PropTypes.string,
+    dragging: PropTypes.bool,
     // eslint-disable-next-line react/forbid-prop-types
     name: PropTypes.any,
     number: PropTypes.number,
@@ -143,7 +162,9 @@ SpriteSelectorItem.propTypes = {
     onMouseEnter: PropTypes.func,
     onMouseLeave: PropTypes.func,
     preventContextMenu: PropTypes.bool,
-    selected: PropTypes.bool.isRequired
+    selected: PropTypes.bool.isRequired,
+    spriteId: PropTypes.string,
+    treeDepth: PropTypes.number
 };
 
 export default SpriteSelectorItem;

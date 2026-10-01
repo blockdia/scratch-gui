@@ -29,7 +29,7 @@
     "test": "npm run test:lint && npm run test:unit && npm run build && npm run test:integration",
     "test:integration": "jest --maxWorkers=4 test[\\\\/]integration",
     "test:lint": "eslint . --ext .js,.jsx scripts/*.cjs",
-    "test:unit": "jest test[\\\\/]unit[\\\\/]addons test/unit/lib/pinned-scripts.test.js test/unit/lib/hydrate-workspace-shadows.test.js test/unit/editor-windows test/unit/editor-actions",
+    "test:unit": "jest test[\\\\/]unit[\\\\/]addons test/unit/lib/pinned-scripts.test.js test/unit/lib/backpack-folder-drop.test.js test/unit/lib/folders.test.js test/unit/lib/folder-order.test.js test/unit/lib/hydrate-workspace-shadows.test.js test/unit/editor-windows test/unit/editor-actions",
     "test:smoke": "jest --runInBand test[\\\\/]smoke",
     "watch": "webpack --colors --watch"
   },

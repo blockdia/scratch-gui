@@ -83,6 +83,8 @@ const SpriteSelectorComponent = function (props) {
         selectedSprite = {};
         spriteInfoDisabled = true;
     }
+    // A wide pane fits more cards per row than a single-column list.
+    const gridLayout = stageSize === STAGE_DISPLAY_SIZES.large || stageSize === STAGE_DISPLAY_SIZES.full;
     return (
         <Box
             className={classNames(styles.spriteSelector, {
@@ -118,6 +120,7 @@ const SpriteSelectorComponent = function (props) {
             {stageSelector}
             <SpriteList
                 editingTarget={editingTarget}
+                gridLayout={gridLayout}
                 hoveredTarget={hoveredTarget}
                 items={Object.keys(sprites).map(id => sprites[id])}
                 raised={raised}

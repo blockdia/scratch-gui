@@ -1,3 +1,4 @@
+import {reorderFolderItems, addSpriteInFolder, prepareAsset} from '../lib/folders';
 import bindAll from 'lodash.bindall';
 import React from 'react';
 import PropTypes from 'prop-types';
@@ -113,7 +114,7 @@ class TargetPane extends React.Component {
         );
         const item = surpriseSprites[Math.floor(Math.random() * surpriseSprites.length)];
         randomizeSpritePosition(item);
-        this.props.vm.addSprite(JSON.stringify(item))
+        addSpriteInFolder(this.props.vm, JSON.stringify(item))
             .then(this.handleActivateBlocksTab);
     }
     handlePaintSpriteClick () {
@@ -123,7 +124,7 @@ class TargetPane extends React.Component {
             formatMessage(sharedMessages.pop),
             formatMessage(sharedMessages.costume, {index: 1})
         );
-        this.props.vm.addSprite(JSON.stringify(emptyItem)).then(() => {
+        addSpriteInFolder(this.props.vm, JSON.stringify(emptyItem)).then(() => {
             setTimeout(() => { // Wait for targets update to propagate before tab switching
                 this.props.onActivateTab(COSTUMES_TAB_INDEX);
             });
@@ -133,7 +134,7 @@ class TargetPane extends React.Component {
         this.props.onActivateTab(BLOCKS_TAB_INDEX);
     }
     handleNewSprite (spriteJSONString) {
-        return this.props.vm.addSprite(spriteJSONString)
+        return addSpriteInFolder(this.props.vm, spriteJSONString)
             .then(this.handleActivateBlocksTab)
             .catch(err => {
                 log.error(err);
@@ -175,12 +176,13 @@ class TargetPane extends React.Component {
         const {sprite: targetId} = this.props.hoveredTarget;
         if (dragInfo.dragType === DragConstants.SPRITE) {
             // Add one to both new and target index because we are not counting/moving the stage
-            this.props.vm.reorderTarget(dragInfo.index + 1, dragInfo.newIndex + 1);
+            if (dragInfo.folderOrder) reorderFolderItems(this.props.vm, 'SPRITE', dragInfo.folderOrder);
+            else this.props.vm.reorderTarget(dragInfo.index + 1, dragInfo.newIndex + 1);
         } else if (dragInfo.dragType === DragConstants.BACKPACK_SPRITE) {
             // TODO storage does not have a way of loading zips right now, and may never need it.
             // So for now just grab the zip manually.
             fetchSprite(dragInfo.payload.bodyUrl)
-                .then(sprite3Zip => this.props.vm.addSprite(sprite3Zip));
+                .then(sprite3Zip => addSpriteInFolder(this.props.vm, sprite3Zip, dragInfo.folder, true));
         } else if (targetId) {
             // Something is being dragged over one of the sprite tiles or the backdrop.
             // Dropping assets like sounds and costumes duplicate the asset on the
@@ -196,14 +198,14 @@ class TargetPane extends React.Component {
                 // In scratch 2, this only creates a new sprite from the costume.
                 // We may be able to handle both kinds of drops, depending on where
                 // the drop happens. For now, just add the costume.
-                this.props.vm.addCostume(dragInfo.payload.body, {
+                this.props.vm.addCostume(dragInfo.payload.body, prepareAsset(this.props.vm, 'COSTUME', {
                     name: dragInfo.payload.name
-                }, targetId);
+                }, targetId), targetId);
             } else if (dragInfo.dragType === DragConstants.BACKPACK_SOUND) {
-                this.props.vm.addSound({
+                this.props.vm.addSound(prepareAsset(this.props.vm, 'SOUND', {
                     md5: dragInfo.payload.body,
                     name: dragInfo.payload.name
-                }, targetId);
+                }, targetId), targetId);
             } else if (dragInfo.dragType === DragConstants.BACKPACK_CODE) {
                 fetchCode(dragInfo.payload.bodyUrl)
                     .then(blocks => this.shareBlocks(blocks, targetId))

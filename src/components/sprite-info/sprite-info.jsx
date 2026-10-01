@@ -9,6 +9,7 @@ import Box from '../box/box.jsx';
 import Label from '../forms/label.jsx';
 import Input from '../forms/input.jsx';
 import BufferedInputHOC from '../forms/buffered-input-hoc.jsx';
+import ResourceNameInput from '../forms/resource-name-input.jsx';
 import DirectionPicker from '../../containers/direction-picker.jsx';
 
 import {injectIntl, intlShape, defineMessages, FormattedMessage} from 'react-intl';
@@ -123,7 +124,8 @@ class SpriteInfo extends React.Component {
         const labelAbove = isWideLocale(this.props.intl.locale);
 
         const spriteNameInput = (
-            <BufferedInput
+            <ResourceNameInput
+                kind="SPRITE"
                 className={classNames(
                     styles.spriteInput,
                     {

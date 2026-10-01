@@ -1,0 +1,12 @@
+@import "../../css/colors.css";
+
+.card {
+    background-color: var(--folder-color);
+}
+
+.hoverable:hover,
+.card:focus-visible {
+    background-color: var(--folder-color);
+    border-color: $looks-secondary;
+    outline: none;
+}

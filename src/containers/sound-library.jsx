@@ -1,3 +1,4 @@
+import {prepareAsset} from '../lib/folders';
 import bindAll from 'lodash.bindall';
 import PropTypes from 'prop-types';
 import React from 'react';
@@ -174,7 +175,7 @@ class SoundLibrary extends React.PureComponent {
             sampleCount: soundItem.sampleCount,
             name: soundItem.name
         };
-        this.props.vm.addSound(vmSound).then(() => {
+        this.props.vm.addSound(prepareAsset(this.props.vm, 'SOUND', vmSound)).then(() => {
             this.props.onNewSound();
         });
     }

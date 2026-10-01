@@ -142,6 +142,7 @@ class SpriteSelectorItem extends React.PureComponent {
         } = this.props;
         return (
             <SpriteSelectorItemComponent
+                spriteId={this.props.dragType === 'SPRITE' && typeof id === 'string' ? id : null}
                 componentRef={this.setRef}
                 costumeURL={this.getCostumeData()}
                 preventContextMenu={this.dragRecognizer.gestureInProgress()}

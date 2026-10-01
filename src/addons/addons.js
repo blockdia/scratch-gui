@@ -44,7 +44,6 @@ const addons = [
     'sprite-properties',
     'gamepad',
     'editor-sounds',
-    'folders',
     'block-switching',
     'load-extensions',
     'custom-zoom',

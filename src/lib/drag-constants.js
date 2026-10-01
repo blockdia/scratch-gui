@@ -1,4 +1,5 @@
 export default {
+    FOLDER: 'FOLDER',
     SOUND: 'SOUND',
     COSTUME: 'COSTUME',
     SPRITE: 'SPRITE',

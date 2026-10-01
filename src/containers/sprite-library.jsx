@@ -1,3 +1,4 @@
+import {addSpriteInFolder} from '../lib/folders';
 import bindAll from 'lodash.bindall';
 import PropTypes from 'prop-types';
 import React from 'react';
@@ -38,7 +39,7 @@ class SpriteLibrary extends React.PureComponent {
     handleItemSelect (item) {
         // Randomize position of library sprite
         randomizeSpritePosition(item);
-        this.props.vm.addSprite(JSON.stringify(item)).then(() => {
+        addSpriteInFolder(this.props.vm, JSON.stringify(item)).then(() => {
             this.props.onActivateBlocksTab();
         });
     }

@@ -176,10 +176,12 @@
 [class*="sprite-selector_scroll-wrapper"]::-webkit-scrollbar-thumb {
   background-color: var(--editorDarkMode-selector-compactScrollbar, #c1c8d1);
 }
-[class*="sprite-selector_items-wrapper"] {
+[class*="sprite-selector_items-wrapper"],
+[class*="sprite-tree_tree"] {
   padding: 0.125rem;
 }
-[class*="sprite-selector_sprite-wrapper"] {
+[class*="sprite-selector_sprite-wrapper"],
+[class*="sprite-tree_grid-cell"] {
   margin: 0.125rem;
 }
 [class*="sprite-selector-item_delete-button"] {
@@ -540,6 +542,14 @@ body:not(.sa-columns-enabled) [class*="gui_tab-panel"] [class*="gui_extension-bu
 }
 [class*="custom-procedures_body"] [role="button"] {
   padding: 0.5rem;
+}
+
+/* Compact spacing without turning small-stage rows back into cards. */
+[class*="sprite-tree_tree"] {
+  --tree-row-height: 1.75rem;
+}
+[data-sprite-list] [class*="sprite-selector-item_tree-row"] {
+  min-height: 1.75rem;
 }
 
 /* Keep the small-stage action row at the same height as compact inputs. */

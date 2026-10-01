@@ -15,7 +15,7 @@ export default async function ({ addon, console, msg }) {
 
   // Toggle the properties panel when double clicking in the sprite grid
   document.addEventListener("click", (e) => {
-    if (e.detail === 2 && e.target.closest('[class^="sprite-selector_scroll-wrapper_"]')) {
+    if (!addon.self.disabled && e.detail === 2 && e.target.closest("[data-sprite-id]")) {
       togglePropertiesPanel();
     }
   });
@@ -31,7 +31,7 @@ export default async function ({ addon, console, msg }) {
   }
 
   function autoHidePanel() {
-    if (addon.settings.get("autoCollapse")) {
+    if (!addon.self.disabled && addon.settings.get("autoCollapse")) {
       setPropertiesPanelVisible(false);
     }
   }
@@ -71,7 +71,12 @@ export default async function ({ addon, console, msg }) {
     const button = document.createElement("button");
     button.classList.add(className);
     button.title = tooltip;
-    button.addEventListener("click", () => togglePropertiesPanel());
+    button.addEventListener("mousedown", (event) => event.stopPropagation());
+    button.addEventListener("touchstart", (event) => event.stopPropagation());
+    button.addEventListener("click", (event) => {
+      event.stopPropagation();
+      togglePropertiesPanel();
+    });
     button.appendChild(buttonIcon);
     addon.tab.displayNoneWhileDisabled(button, { display: "flex" });
     return button;
@@ -111,6 +116,7 @@ export default async function ({ addon, console, msg }) {
     // languages.
     // List of languages is here:
     // https://github.com/scratchfoundation/scratch-gui/blob/e15b2dfa3a2e58e80fae8d1586c7f56aa0cc0ede/src/lib/locale-utils.js#L6-L18
+    if (!propertiesPanel) return;
     const isWideLocale = !!propertiesPanel.querySelector("[class^=label_input-group-column_]");
     document.body.classList.toggle("sa-sprite-properties-wide-locale", isWideLocale);
   }
@@ -130,8 +136,11 @@ export default async function ({ addon, console, msg }) {
     });
 
     const spriteSelector = propertiesPanel.parentNode;
-    const itemsWrapper = spriteSelector.querySelector('[class*="sprite-selector_items-wrapper_"]');
+    const itemsWrapper = spriteSelector.querySelector('[data-sprite-list]');
+    observer.disconnect();
     observer.observe(itemsWrapper, {
+      attributes: true,
+      attributeFilter: ["class"],
       childList: true,
       subtree: true,
     });

@@ -1,14 +1,14 @@
 import PropTypes from 'prop-types';
 import React from 'react';
+import {connect} from 'react-redux';
 import classNames from 'classnames';
 
 import DragConstants from '../../lib/drag-constants';
 
 import Box from '../box/box.jsx';
 import SpriteSelectorItem from '../../containers/sprite-selector-item.jsx';
-import SortableHOC from '../../lib/sortable-hoc.jsx';
-import SortableAsset from '../asset-panel/sortable-asset.jsx';
 import ThrottledPropertyHOC from '../../lib/throttled-property-hoc.jsx';
+import FolderList from '../../containers/folder-list.jsx';
 
 import styles from './sprite-selector.css';
 
@@ -18,94 +18,107 @@ const SpriteList = function (props) {
     const {
         containerRef,
         editingTarget,
-        draggingIndex,
         draggingType,
         hoveredTarget,
         onDeleteSprite,
         onDuplicateSprite,
         onExportSprite,
         onSelectSprite,
-        onAddSortable,
-        onRemoveSortable,
-        ordering,
         raised,
         selectedId,
-        items
+        items,
+        gridLayout,
+        onDrop
     } = props;
 
-    const isSpriteDrag = draggingType === DragConstants.SPRITE;
+    const [searchQuery, setSearchQuery] = React.useState('');
+    const listRef = React.useRef(null);
+    const setListRef = React.useCallback(node => {
+        listRef.current = node;
+        if (containerRef) containerRef(node);
+    }, [containerRef]);
+    React.useEffect(() => {
+        const node = listRef.current;
+        const onSearch = event => setSearchQuery(String(event.detail || '').toLowerCase());
+        node.addEventListener('blockdia:sprite-search', onSearch);
+        return () => node.removeEventListener('blockdia:sprite-search', onSearch);
+    }, []);
+
+    const getHighlightState = sprite => {
+        // If the sprite has just received a block drop, used for green highlight
+        const receivedBlocks = (
+            hoveredTarget.sprite === sprite.id &&
+            sprite.id !== editingTarget &&
+            hoveredTarget.receivedBlocks
+        );
+
+        // If the sprite is indicating it can receive block dropping, used for blue highlight
+        let isRaised = !receivedBlocks && raised && sprite.id !== editingTarget;
+
+        // A sprite is also raised if a costume or sound is being dragged.
+        // Note the absence of the self-sharing check: a sprite can share assets with itself.
+        // This is a quirk of 2.0, but seems worth leaving possible, it
+        // allows quick (albeit unusual) duplication of assets.
+        isRaised = isRaised || [
+            DragConstants.COSTUME,
+            DragConstants.SOUND,
+            DragConstants.BACKPACK_COSTUME,
+            DragConstants.BACKPACK_SOUND,
+            DragConstants.BACKPACK_CODE].includes(draggingType);
+
+        return {receivedBlocks, isRaised};
+    };
+
+    const renderTreeSprite = (sprite, index, depth, folderMenu) => {
+        const {receivedBlocks, isRaised} = getHighlightState(sprite);
+        return (
+            <ThrottledSpriteSelectorItem
+                asset={sprite.costume && sprite.costume.asset}
+                className={classNames({
+                    [styles.sprite]: gridLayout,
+                    [styles.raised]: isRaised,
+                    [styles.receivedBlocks]: receivedBlocks
+                })}
+                dragPayload={sprite.id}
+                dragType={DragConstants.SPRITE}
+                id={sprite.id}
+                index={index}
+                folderMenu={folderMenu}
+                name={sprite.name}
+                fullName={sprite.fullName}
+                selected={sprite.id === selectedId}
+                treeDepth={gridLayout ? null : depth}
+                onClick={onSelectSprite}
+                onDeleteButtonClick={onDeleteSprite}
+                onDuplicateButtonClick={onDuplicateSprite}
+                onExportButtonClick={onExportSprite}
+            />
+        );
+    };
 
     return (
         <Box
             className={classNames(styles.scrollWrapper, {
                 [styles.scrollWrapperDragging]: draggingType === DragConstants.BACKPACK_SPRITE
             })}
-            componentRef={containerRef}
+            componentRef={setListRef}
+            data-sprite-list="true"
         >
-            <Box
-                className={styles.itemsWrapper}
-            >
-                {items.map((sprite, index) => {
-
-                    // If the sprite has just received a block drop, used for green highlight
-                    const receivedBlocks = (
-                        hoveredTarget.sprite === sprite.id &&
-                    sprite.id !== editingTarget &&
-                    hoveredTarget.receivedBlocks
-                    );
-
-                    // If the sprite is indicating it can receive block dropping, used for blue highlight
-                    let isRaised = !receivedBlocks && raised && sprite.id !== editingTarget;
-
-                    // A sprite is also raised if a costume or sound is being dragged.
-                    // Note the absence of the self-sharing check: a sprite can share assets with itself.
-                    // This is a quirk of 2.0, but seems worth leaving possible, it
-                    // allows quick (albeit unusual) duplication of assets.
-                    isRaised = isRaised || [
-                        DragConstants.COSTUME,
-                        DragConstants.SOUND,
-                        DragConstants.BACKPACK_COSTUME,
-                        DragConstants.BACKPACK_SOUND,
-                        DragConstants.BACKPACK_CODE].includes(draggingType);
-
-                    return (
-                        <SortableAsset
-                            className={classNames(styles.spriteWrapper, {
-                                [styles.placeholder]: isSpriteDrag && index === draggingIndex})}
-                            index={isSpriteDrag ? ordering.indexOf(index) : index}
-                            key={sprite.name}
-                            onAddSortable={onAddSortable}
-                            onRemoveSortable={onRemoveSortable}
-                        >
-                            <ThrottledSpriteSelectorItem
-                                asset={sprite.costume && sprite.costume.asset}
-                                className={classNames(styles.sprite, {
-                                    [styles.raised]: isRaised,
-                                    [styles.receivedBlocks]: receivedBlocks
-                                })}
-                                dragPayload={sprite.id}
-                                dragType={DragConstants.SPRITE}
-                                id={sprite.id}
-                                index={index}
-                                key={sprite.id}
-                                name={sprite.name}
-                                selected={sprite.id === selectedId}
-                                onClick={onSelectSprite}
-                                onDeleteButtonClick={onDeleteSprite}
-                                onDuplicateButtonClick={onDuplicateSprite}
-                                onExportButtonClick={onExportSprite}
-                            />
-                        </SortableAsset>
-                    );
-                })}
-            </Box>
+            <FolderList
+                kind={DragConstants.SPRITE}
+                grid={gridLayout}
+                items={items}
+                selectedId={selectedId}
+                query={searchQuery}
+                renderItem={renderTreeSprite} // eslint-disable-line react/jsx-no-bind
+                onDrop={onDrop}
+            />
         </Box>
     );
 };
 
 SpriteList.propTypes = {
     containerRef: PropTypes.func,
-    draggingIndex: PropTypes.number,
     draggingType: PropTypes.oneOf(Object.keys(DragConstants)),
     editingTarget: PropTypes.string,
     hoveredTarget: PropTypes.shape({
@@ -121,18 +134,17 @@ SpriteList.propTypes = {
             rotationCenterX: PropTypes.number.isRequired,
             rotationCenterY: PropTypes.number.isRequired
         }),
-        name: PropTypes.any, // modified by folders addon
+        name: PropTypes.string,
         order: PropTypes.number.isRequired
     })),
-    onAddSortable: PropTypes.func,
+    onDrop: PropTypes.func,
     onDeleteSprite: PropTypes.func,
     onDuplicateSprite: PropTypes.func,
     onExportSprite: PropTypes.func,
-    onRemoveSortable: PropTypes.func,
     onSelectSprite: PropTypes.func,
-    ordering: PropTypes.arrayOf(PropTypes.number),
     raised: PropTypes.bool,
-    selectedId: PropTypes.string
+    selectedId: PropTypes.string,
+    gridLayout: PropTypes.bool
 };
 
-export default SortableHOC(SpriteList);
+export default connect(state => ({draggingType: state.scratchGui.assetDrag.dragType}))(SpriteList);

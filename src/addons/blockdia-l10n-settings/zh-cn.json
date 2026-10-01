@@ -1,4 +1,10 @@
 {
+    "short-names/@name": "短名称",
+    "short-names/@description": "在选定的名称输入框中隐藏文件夹路径。编辑短名时，只改短名会保留目录，输入含 // 的完整名称会直接替换路径。列表始终显示短名。",
+    "short-names/@settings-name-spriteName": "角色名称输入框",
+    "short-names/@settings-name-costumeName": "造型和背景名称输入框",
+    "short-names/@settings-name-soundName": "声音名称输入框",
+    "short-names/@settings-name-editShortNames": "编辑名称时也显示短名（应用于已勾选的名称输入框）",
     "middle-click-popup/@description": "鼠标中键或 Shift+左键单击代码区域，或者按 Ctrl+空格键弹出积木搜索窗口。输入积木名称（或部分名称），然后将积木拖入代码区。支持上下键选择和 Tab 自动补全，按住 Shift 拖出积木可保持菜单打开。Shift+点击输入框可搜索兼容的积木，点击结果或按 Enter 即可直接插入该输入框。",
     "layer-manager/@name": "图层管理器",
     "layer-manager/@description": "查看舞台上的角色与克隆体图层，拖动即可调整叠放顺序。",

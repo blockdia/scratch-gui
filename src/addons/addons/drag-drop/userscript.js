@@ -56,14 +56,21 @@ export default async function ({ addon, console }) {
 
     let el;
     let callback;
-    if (
-      (el = e.target.closest('div[class*="sprite-selector_sprite-selector"]')) ||
-      (el = e.target.closest('div[class*="stage-selector_stage-selector"]')) ||
-      (el = e.target.closest('div[class*="selector_wrapper"]'))
-    ) {
+    const assetPaneSelector = 'div[class*="stage-selector_stage-selector"], ' +
+      'div[class*="sprite-selector_sprite-selector"], div[class*="selector_wrapper"]';
+    // The compact stage now lives inside the sprite pane; use the nearest pane.
+    if ((el = e.target.closest(assetPaneSelector))) {
       callback = (files) => {
         const hdFilter = addon.settings.get("use-hd-upload") ? "" : ":not(.sa-better-img-uploads-input)";
-        const fileInput = el.querySelector('input[class*="action-menu_file-input"]' + hdFilter);
+        const findInput = () => Array.from(el.querySelectorAll('input[class*="action-menu_file-input"]' + hdFilter))
+          .find((input) => input.closest(assetPaneSelector) === el);
+        let fileInput = findInput();
+        if (!fileInput && el.matches('div[class*="stage-selector_stage-selector"]')) {
+          // Compact stages mount their upload menu only while selected.
+          el.click();
+          fileInput = findInput();
+        }
+        if (!fileInput) return;
         fileInput.files = files;
         fileInput.dispatchEvent(new Event("change", { bubbles: true }));
       };

@@ -9,6 +9,33 @@ import {openFontsModal} from '../reducers/modals';
 
 import {connect} from 'react-redux';
 import {Theme} from '../lib/themes/index.js';
+import {useNameField} from '../lib/folders/short-names';
+
+// scratch-paint owns its buffered name input. Adapt the native field at the GUI
+// boundary without rewriting its DOM or replacing paint's input handlers.
+const NameAwarePaintEditor = props => {
+    const field = useNameField(props.name, 'COSTUME');
+    const isNameInput = event => event.target.matches('input[class*="fixed-tools_costume-input"]');
+    const handleFocus = event => {
+        if (isNameInput(event)) field.handleFocus();
+    };
+    const handleBlur = event => {
+        if (isNameInput(event)) field.handleBlur();
+    };
+    const handleUpdateName = input => props.onUpdateName(field.resolveName(input));
+    return (<div
+        style={{display: 'contents'}}
+        onFocusCapture={handleFocus} // eslint-disable-line react/jsx-no-bind
+        onBlurCapture={handleBlur} // eslint-disable-line react/jsx-no-bind
+    >
+        <PaintEditor
+            {...props}
+            name={field.name}
+            onUpdateName={handleUpdateName} // eslint-disable-line react/jsx-no-bind
+        />
+    </div>);
+};
+NameAwarePaintEditor.propTypes = {name: PropTypes.string, onUpdateName: PropTypes.func.isRequired};
 
 class PaintEditorWrapper extends React.Component {
     constructor (props) {
@@ -75,7 +102,7 @@ class PaintEditorWrapper extends React.Component {
         } = this.props;
         const costume = vm.getCostume(selectedCostumeIndex);
         return (
-            <PaintEditor
+            <NameAwarePaintEditor
                 {...componentProps}
                 image={this.props.imageFormat === 'svg' ? sanitizeSvg.sanitizeSvgText(costume) : costume}
                 onUpdateImage={this.handleUpdateImage}

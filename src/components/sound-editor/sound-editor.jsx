@@ -5,10 +5,9 @@ import {defineMessages, FormattedMessage, injectIntl, intlShape} from 'react-int
 
 import Waveform from '../waveform/waveform.jsx';
 import Label from '../forms/label.jsx';
-import Input from '../forms/input.jsx';
 import TWRenderRecoloredImage from '../../lib/tw-recolor/render.jsx';
 
-import BufferedInputHOC from '../forms/buffered-input-hoc.jsx';
+import ResourceNameInput from '../forms/resource-name-input.jsx';
 import AudioSelector from '../../containers/audio-selector.jsx';
 import IconButton from '../icon-button/icon-button.jsx';
 import {SOUND_BYTE_LIMIT} from '../../lib/audio/audio-util.js';
@@ -34,8 +33,6 @@ import deleteIcon from '!../../lib/tw-recolor/build!./icon--delete.svg';
 import copyIcon from '!../../lib/tw-recolor/build!./icon--copy.svg';
 import pasteIcon from '!../../lib/tw-recolor/build!./icon--paste.svg';
 import copyToNewIcon from '!../../lib/tw-recolor/build!./icon--copy-to-new.svg';
-
-const BufferedInput = BufferedInputHOC(Input);
 
 const messages = defineMessages({
     sound: {
@@ -185,7 +182,8 @@ const SoundEditor = props => (
         <div className={styles.row}>
             <div className={styles.inputGroup}>
                 <Label text={props.intl.formatMessage(messages.sound)}>
-                    <BufferedInput
+                    <ResourceNameInput
+                        kind="SOUND"
                         tabIndex="1"
                         type="text"
                         value={props.name}

@@ -154,7 +154,15 @@
         "gui.palette.failed": "此位置已不可用",
         "gui.palette.symbolHint": "↑ ↓ 定位 · ← → 引用 · Enter 确认 · Esc 清空／关闭",
         "gui.palette.symbolFilters": "前缀后加空格：@v 变量 · @l 列表 · @c 自制积木 · @e 事件 · @b 广播；@ 名称不筛选",
-        "gui.palette.hint": "↑ ↓ 选择 · Enter 打开 · Esc 关闭"
+        "gui.palette.hint": "↑ ↓ 选择 · Enter 打开 · Esc 关闭",
+        "gui.actions.createVariable": "创建变量",
+        "gui.actions.createList": "创建列表",
+        "gui.actions.createProcedure": "创建自制积木",
+        "gui.actions.cleanupBlocks": "整理积木 / 整理积木+",
+        "gui.actions.zoomIn": "放大代码工作区",
+        "gui.actions.zoomOut": "缩小代码工作区",
+        "gui.actions.zoomReset": "重置代码工作区缩放",
+        "gui.actions.zoomFit": "缩放以显示全部脚本"
     },
     "zh-tw": {
         "blockdia.backpack.pin": "固定到積木欄",
@@ -283,6 +291,14 @@
         "gui.actions.tabCostumes": "Switch to Costumes tab",
         "gui.actions.tabSounds": "Switch to Sounds tab",
         "gui.actions.openShortcuts": "Open keyboard shortcut settings",
-        "gui.actions.toggleWindow": "Toggle {name} window"
+        "gui.actions.toggleWindow": "Toggle {name} window",
+        "gui.actions.createVariable": "Create variable",
+        "gui.actions.createList": "Create list",
+        "gui.actions.createProcedure": "Create custom block",
+        "gui.actions.cleanupBlocks": "Clean up blocks / Clean up blocks+",
+        "gui.actions.zoomIn": "Zoom in on code workspace",
+        "gui.actions.zoomOut": "Zoom out of code workspace",
+        "gui.actions.zoomReset": "Reset code workspace zoom",
+        "gui.actions.zoomFit": "Fit all scripts in code workspace"
     }
 }

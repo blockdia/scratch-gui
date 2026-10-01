@@ -43,6 +43,9 @@ import {
     SOUNDS_TAB_INDEX
 } from '../reducers/editor-tab';
 import AddonHooks from '../addons/hooks.js';
+import actions from '../lib/editor-actions';
+import registerBlockActions from '../lib/editor-actions/blocks';
+import {hasModal} from '../lib/editor-actions/context';
 import LoadScratchBlocksHOC from '../lib/tw-load-scratch-blocks-hoc.jsx';
 import {findTopBlock} from '../lib/backpack/code-payload.js';
 import {gentlyRequestPersistentStorage} from '../lib/tw-persistent-storage.js';
@@ -178,6 +181,13 @@ class Blocks extends React.Component {
         );
         this.workspace = this.ScratchBlocks.inject(this.blocks, workspaceConfig);
         AddonHooks.blocklyWorkspace = this.workspace;
+        this.actionHandles = registerBlockActions(actions, () => ({
+            Blockly: this.ScratchBlocks,
+            workspace: this.workspace,
+            visible: this.props.isVisible,
+            blocked: this.props.anyModalVisible || this.props.customProceduresVisible ||
+                Boolean(this.state.prompt) || hasModal()
+        }));
 
         // Blockly listens for window resize, but changing the stage size can resize
         // this flex child after that event has already been handled.
@@ -312,6 +322,7 @@ class Blocks extends React.Component {
         }
     }
     componentWillUnmount () {
+        this.actionHandles.forEach(handle => handle.unregister());
         this.blocksResizeObserver.disconnect();
         if (this.unsubscribePins) this.unsubscribePins();
         this.detachVM();

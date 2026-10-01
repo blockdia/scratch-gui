@@ -11,7 +11,7 @@
 .sa-linter button, .sa-linter input, .sa-linter select { font: inherit; color: inherit; }
 .sa-linter button { cursor: pointer; }
 .sa-linter button:disabled, .sa-linter [aria-disabled="true"] { opacity: .5; cursor: default; }
-.sa-linter :focus-visible { outline: 1px solid var(--looks-secondary); outline-offset: -1px; }
+.sa-linter :focus-visible { outline: 2px solid var(--looks-secondary); outline-offset: -2px; }
 .sa-linter-icon { display: inline-block; width: 16px; height: 16px; flex: 0 0 16px; background: currentColor;
     mask: var(--linter-icon) center / 16px 16px no-repeat;
     -webkit-mask: var(--linter-icon) center / 16px 16px no-repeat; }
@@ -32,7 +32,7 @@
 .sa-linter-search { display: flex; flex: 1; min-width: 40px; align-items: center; gap: 4px; margin-inline-start: 4px;
     padding-inline: 5px; height: 26px; border: 1px solid var(--ui-black-transparent); border-radius: 3px;
     background: var(--ui-tertiary); }
-.sa-linter-search:focus-within { border-color: var(--looks-secondary); }
+.sa-linter-search:focus-within { outline: 2px solid var(--looks-secondary); outline-offset: 1px; }
 .sa-linter-search > .sa-linter-icon { opacity: .65; width: 14px; flex-basis: 14px; }
 .sa-linter-search input { min-width: 0; width: 100%; border: 0; background: transparent; padding: 0; outline: 0; }
 .sa-linter-search input:focus-visible { outline: 0; }
@@ -61,7 +61,7 @@
 .sa-linter[dir="rtl"] .sa-linter-chevron:not(.is-open) { transform: rotate(180deg); }
 .sa-linter-group-row:hover, .sa-linter-row:hover { background: var(--linter-hover); }
 .sa-linter-group:focus-visible { outline: none; }
-.sa-linter-group:focus-visible > .sa-linter-group-row { outline: 1px solid var(--looks-secondary); outline-offset: -1px; }
+.sa-linter-group:focus-visible > .sa-linter-group-row { outline: 2px solid var(--looks-secondary); outline-offset: -2px; }
 .sa-linter-row { display: flex; gap: 6px; align-items: center; min-height: 28px; box-sizing: border-box;
     padding: 3px 10px; padding-inline-start: 28px; cursor: pointer; user-select: none; }
 .sa-linter-row.is-selected, .sa-linter-row.is-selected:hover { background: var(--linter-selected); }
@@ -93,3 +93,10 @@
 .sa-linter-debug-toggle { display: flex; align-items: center; gap: 4px; margin: 8px 0; }
 .sa-linter-technical pre { white-space: pre-wrap; overflow-wrap: anywhere; user-select: text;
     font-size: 11px; line-height: 1.5; text-align: left; }
+
+.sa-linter-tool { position: relative; }
+.sa-linter-filter-active { position: absolute; inset-inline-end: 1px; top: 1px; width: 6px; height: 6px;
+    background: currentColor; border: 1px solid var(--ui-primary); border-radius: 50%; }
+.sa-linter-row-details { flex: 0 0 auto; border: 0; border-radius: 3px; padding: 3px 5px;
+    background: transparent; text-decoration: underline; }
+.sa-linter-row-details:hover { background: var(--linter-hover); }

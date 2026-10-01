@@ -264,3 +264,29 @@ test('a project with only hidden debug diagnostics shows an empty default result
     expect(JSON.stringify(root.toJSON())).not.toContain('No results match these filters.');
     renderer.act(() => root.unmount());
 });
+
+
+test('inline details toggle without navigation and Enter keeps navigating', () => {
+    const {root, navigator} = fixture();
+    const details = root.root.findByProps({className: 'sa-linter-row-details'});
+    const event = {stopPropagation: jest.fn()};
+    renderer.act(() => details.props.onClick(event));
+    expect(event.stopPropagation).toHaveBeenCalled();
+    expect(navigator.navigate).not.toHaveBeenCalled();
+    expect(root.root.findAllByProps({className: 'sa-linter-detail'})).toHaveLength(1);
+    key(issues(root)[0], 'Enter');
+    expect(navigator.navigate).toHaveBeenCalledTimes(1);
+    renderer.act(() => details.props.onClick(event));
+    expect(root.root.findAllByProps({className: 'sa-linter-detail'})).toHaveLength(0);
+    renderer.act(() => root.unmount());
+});
+
+test('including debug marks filters active even with all severity levels selected', () => {
+    const {root} = fixture();
+    expect(button(root, 'Filters and rules').props['aria-pressed']).toBe(false);
+    renderer.act(() => button(root, 'Filters and rules').props.onClick());
+    renderer.act(() => root.root.findByProps({name: 'show-debug'}).props.onChange({target: {checked: true}}));
+    expect(button(root, 'Filters and rules').props['aria-pressed']).toBe(true);
+    expect(root.root.findAllByProps({className: 'sa-linter-filter-active'})).toHaveLength(1);
+    renderer.act(() => root.unmount());
+});

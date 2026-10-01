@@ -57,17 +57,43 @@ export const ariaBinding = (binding, mac) => {
     return parts.map(part => (part === 'Ctrl' ? 'Control' : (part.length === 1 ? part.toUpperCase() : part)))
         .join('+');
 };
-export const displayBinding = (binding, mac) => binding.split('+').map(part => ({
-    Mod: mac ? '⌘' : 'Ctrl',
-    Meta: mac ? '⌘' : 'Win',
+const macKeyLabels = {
+    Ctrl: '⌃',
+    Alt: '⌥',
+    Shift: '⇧',
+    Meta: '⌘',
+    Escape: '⎋',
+    Tab: '⇥',
+    Enter: '↩',
+    Backspace: '⌫',
+    Delete: '⌦',
+    Space: '␣',
+    Home: '↖',
+    End: '↘',
+    PageUp: '⇞',
+    PageDown: '⇟'
+};
+const keyLabels = {
+    Mod: 'Ctrl',
+    Meta: 'Win',
     Ctrl: 'Ctrl',
-    Alt: mac ? '⌥' : 'Alt',
-    Shift: mac ? '⇧' : 'Shift',
+    Alt: 'Alt',
+    Shift: 'Shift',
     Space: 'Space',
     Plus: '+',
     ArrowLeft: '←',
     ArrowRight: '→',
     ArrowUp: '↑',
     ArrowDown: '↓'
-}[part] || (part.length === 1 ? part.toUpperCase() : part)))
-    .join(mac ? ' ' : '+');
+};
+export const displayBinding = (binding, mac) => {
+    let parts = binding.split('+');
+    if (mac) {
+        parts = resolveBinding(binding, true).split('+');
+        const key = parts.pop();
+        // macOS menus put Command last, immediately before the main key.
+        parts = ['Ctrl', 'Alt', 'Shift', 'Meta'].filter(part => parts.includes(part)).concat(key);
+    }
+    return parts.map(part => (mac && macKeyLabels[part]) || keyLabels[part] ||
+        (part.length === 1 ? part.toUpperCase() : part)).join(mac ? '' : '+');
+};

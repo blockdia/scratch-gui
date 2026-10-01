@@ -200,24 +200,27 @@ export default function createLayerWindow (vm, model) {
                     {'↓ '}{message('backward')}
                 </button>
             </div>
-            <div className="sa-layer-boundary">{message('front')}</div>
+            <div className="sa-layer-boundary"><span>{message('front')}</span></div>
             <div
                 className="sa-layer-list"
                 ref={list}
             >
+                {sprites.length === 0 ? <div className="sa-layer-empty">{message('empty')}</div> : null}
                 {snapshot.rows.map(row => {
                     const before = preview && row.id !== preview.id &&
                         (row.stage ? slot === rest.length : rest.findIndex(item => item.id === row.id) === slot);
                     return (<div
                         key={row.id}
-                        className={`sa-layer-row${selected === row.id ? ' is-selected' : ''}${
+                        className={`sa-layer-row${row.stage ? ' is-stage' : ''}${
+                            !row.stage && !row.visible ? ' is-hidden' : ''}${
+                            selected === row.id ? ' is-selected' : ''}${
                             preview && preview.id === row.id ? ' is-dragging' : ''}${before ? ' insert-before' : ''}`}
                         data-layer-id={row.stage ? null : row.id}
                     >
                         {!row.stage ? <button
                             type="button"
                             className="sa-layer-handle"
-                            aria-label={message('drag', {name: row.name})}
+                            title={message('drag', {name: row.name})}
                             onPointerDown={event => {
                                 if (event.button !== 0 || drag.current) return;
                                 event.currentTarget.setPointerCapture(event.pointerId);
@@ -255,12 +258,13 @@ export default function createLayerWindow (vm, model) {
                                 >{row.stage ? message('stage') : row.name}</span>
                                 {row.clone ? <small>{message('clone', {number: row.clone})}</small> : null}
                             </span>
-                            {!row.stage && !row.visible ? <small>{message('hidden')}</small> : null}
+                            {!row.stage && !row.visible ?
+                                <small className="sa-layer-badge">{message('hidden')}</small> : null}
                         </button>
                     </div>);
                 })}
             </div>
-            <div className="sa-layer-boundary">{message('back')}</div>
+            <div className="sa-layer-boundary"><span>{message('back')}</span></div>
             <div
                 className="sa-layer-notice"
                 role="status"

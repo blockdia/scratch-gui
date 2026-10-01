@@ -2,3 +2,16 @@
     justify-content: center;
     margin-bottom: 1rem;
 }
+
+/* Share the compact properties grid without adding another row of whitespace. */
+.inline-picker {
+    display: contents;
+}
+
+.inline-picker .controls {
+    grid-column: 1 / -1;
+}
+
+.inline-picker .button-row {
+    margin-bottom: 0;
+}

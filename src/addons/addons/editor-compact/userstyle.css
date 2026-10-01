@@ -240,6 +240,9 @@ button[class*="action-menu_more-button"] {
 }
 
 /* Project player */
+.sa-body-editor [class*="stage-wrapper_offset-controls_"] [class*="stage-wrapper_stage-canvas-wrapper_"] {
+  padding-top: 2rem;
+}
 .sa-body-editor [class*="stage-header_stage-menu-wrapper_"]:not([class*="stage-wrapper_full-screen"] *) {
   padding-top: 0.25rem;
   padding-bottom: 0.25rem;
@@ -266,7 +269,7 @@ button[class*="action-menu_more-button"] {
 .sa-body-editor .pause-btn:not([class*="stage-wrapper_full-screen"] *) {
   margin-inline-end: 0.125rem;
 }
-.sa-stage-hidden [class*="stage-header_stage-size-row"] {
+.sa-body-editor .sa-stage-hidden [class*="stage-header_stage-size-row"] {
   height: 2rem;
 }
 
@@ -282,6 +285,7 @@ button[class*="action-menu_more-button"] {
 }
 
 /* Tabs area */
+[class*="gui_tab-row_"],
 [class*="gui_tab-list"] {
   height: 2rem;
 }
@@ -292,6 +296,20 @@ button[class*="action-menu_more-button"] {
 }
 [class*="gui_tab_"] > img {
   display: none;
+}
+
+/* Editor window tools share the compact tab and stage control row. */
+[class*="editor-windows_toolbar_"] {
+  gap: 0.25rem;
+}
+[class*="editor-windows_toolbar_"] button {
+  width: 1.5rem;
+  height: 1.5rem;
+  padding: 0.25rem;
+}
+[class*="editor-windows_toolbar_"] [class*="editor-windows_tool-icon_"] {
+  width: 1rem;
+  height: 1rem;
 }
 
 /* Code tab */
@@ -534,7 +552,9 @@ body:not(.sa-columns-enabled) [class*="gui_tab-panel"] [class*="gui_extension-bu
   min-height: 1.75rem;
 }
 
-[class*="sprite-info_small"] [class*="sprite-info_row-secondary"] button {
+/* Keep the small-stage action row at the same height as compact inputs. */
+[class*="sprite-info_small_"] [class*="sprite-info_properties-button_"],
+[class*="sprite-info_small_"] [class*="sprite-info_visibility-toggle_"] button {
   width: 1.5rem;
   height: 1.5rem;
 }

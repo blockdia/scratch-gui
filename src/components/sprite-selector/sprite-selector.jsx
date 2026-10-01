@@ -102,6 +102,7 @@ const SpriteSelectorComponent = function (props) {
                     rotationStyle={selectedSprite.rotationStyle}
                     size={selectedSprite.size}
                     stageSize={stageSize}
+                    targetId={selectedId}
                     visible={selectedSprite.visible}
                     x={selectedSprite.x}
                     y={selectedSprite.y}

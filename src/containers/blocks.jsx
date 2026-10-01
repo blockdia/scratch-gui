@@ -189,15 +189,6 @@ class Blocks extends React.Component {
                 Boolean(this.state.prompt) || hasModal()
         }));
 
-        // Blockly listens for window resize, but changing the stage size can resize
-        // this flex child after that event has already been handled.
-        this.blocksResizeObserver = new ResizeObserver(() => {
-            if (this.props.isVisible) {
-                this.ScratchBlocks.svgResize(this.workspace);
-            }
-        });
-        this.blocksResizeObserver.observe(this.blocks);
-
         // Register buttons under new callback keys for creating variables,
         // lists, and procedures from extensions.
 
@@ -323,7 +314,6 @@ class Blocks extends React.Component {
     }
     componentWillUnmount () {
         this.actionHandles.forEach(handle => handle.unregister());
-        this.blocksResizeObserver.disconnect();
         if (this.unsubscribePins) this.unsubscribePins();
         this.detachVM();
         this.unmounted = true;

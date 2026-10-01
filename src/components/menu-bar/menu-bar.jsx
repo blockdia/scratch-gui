@@ -1,7 +1,6 @@
 import PaletteMenu from '../command-palette/menu.jsx';
 import actions from '../../lib/editor-actions';
-import actionMessages from '../../lib/editor-actions/messages';
-import registerSaveActions from '../../lib/editor-actions/save';
+import registerMenuActions from '../../lib/editor-actions/menu';
 import classNames from 'classnames';
 import {connect} from 'react-redux';
 import {compose} from 'redux';
@@ -235,23 +234,16 @@ class MenuBar extends React.Component {
         ]);
     }
     componentDidMount () {
-        this.actionHandles = [...registerSaveActions(actions, () => ({
+        this.unregisterActions = registerMenuActions(actions, () => ({
             canSave: this.props.canSave,
             onClickSave: this.props.onClickSave,
-            handleSaveProject: this.props.handleSaveProject
-        })), actions.registerAction({
-            id: 'builtin/open',
-            title: actionMessages.open,
-            source: 'builtin',
-            scopes: ['global'],
-            allowInInput: true,
-            defaultBindings: ['Mod+o'],
-            enabled: () => Boolean(this.props.canManageFiles && this.props.onStartSelectingFileUpload),
-            run: () => this.props.onStartSelectingFileUpload()
-        })];
+            handleSaveProject: this.props.handleSaveProject,
+            canManageFiles: this.props.canManageFiles,
+            onStartSelectingFileUpload: this.props.onStartSelectingFileUpload
+        }));
     }
     componentWillUnmount () {
-        this.actionHandles.forEach(handle => handle.unregister());
+        if (this.unregisterActions) this.unregisterActions();
     }
     handleClickNew () {
         // if the project is dirty, and user owns the project, we will autosave.

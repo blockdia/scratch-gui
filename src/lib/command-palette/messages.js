@@ -28,6 +28,7 @@ export default {
     symbolHint: {id: 'gui.palette.symbolHint',
         defaultMessage: '↑ ↓ jump · ← → references · Enter confirm · Esc clear / close'},
     symbolFilters: {id: 'gui.palette.symbolFilters',
-        defaultMessage: 'Space after code: @v vars · @l lists · @c custom blocks · @e events · @b broadcasts · @ name'},
+        defaultMessage: 'Type @v, @l, @c, @e or @b and a space to filter by ' +
+            'variables, lists, custom blocks, events or broadcasts'},
     hint: {id: 'gui.palette.hint', defaultMessage: '↑ ↓ select · Enter open · Esc close'}
 };

@@ -7,7 +7,7 @@ import {loadAddonSettingsMessages} from '../../addons/settings/addon-translation
 import Modal from '../modal/modal.jsx';
 import actions from '../../lib/editor-actions';
 import messages from '../../lib/editor-actions/messages';
-import {displayBinding, eventBinding} from '../../lib/editor-actions/keys';
+import {accessibleBinding, displayBinding, eventBinding} from '../../lib/editor-actions/keys';
 import styles from './shortcut-settings.css';
 
 const ShortcutSettings = ({intl}) => {
@@ -17,8 +17,8 @@ const ShortcutSettings = ({intl}) => {
     const [source, setSource] = React.useState('');
     const [draft, setDraft] = React.useState(null);
     const [recording, setRecording] = React.useState(false);
-    const [resetPending, setResetPending] = React.useState(false);
     const draftElement = React.useRef(null);
+    const searchInput = React.useRef(null);
     const returnFocus = React.useRef(null);
     React.useEffect(() => {
         if (draft && draftElement.current) {
@@ -26,6 +26,7 @@ const ShortcutSettings = ({intl}) => {
             draftElement.current.scrollIntoView({block: 'nearest'});
         } else if (!draft && returnFocus.current) {
             if (returnFocus.current.isConnected) returnFocus.current.focus();
+            else if (searchInput.current) searchInput.current.focus();
             returnFocus.current = null;
         }
     }, [draft]);
@@ -54,7 +55,11 @@ const ShortcutSettings = ({intl}) => {
             if (event.repeat) return;
             const binding = eventBinding(event, actions.mac);
             if (!binding) return;
-            setDraft(previous => ({...previous, bindings: [...new Set([...previous.bindings, binding])]}));
+            setDraft(previous => ({...previous,
+                changedBinding: binding,
+                bindings: [...new Set(previous.replacing ?
+                    previous.bindings.map(key => (key === previous.replacing ? binding : key)) :
+                    [...previous.bindings, binding])]}));
             setRecording(false);
             actions.recording = false;
         };
@@ -71,7 +76,6 @@ const ShortcutSettings = ({intl}) => {
     };
     const close = () => {
         cancel();
-        setResetPending(false);
         actions.settingsOpen = false;
         actions.emit();
     };
@@ -113,6 +117,7 @@ const ShortcutSettings = ({intl}) => {
             <div className={styles.filters}>
                 <input
                     autoFocus
+                    ref={searchInput}
                     disabled={Boolean(draft)}
                     type="search"
                     value={query}
@@ -132,10 +137,13 @@ const ShortcutSettings = ({intl}) => {
                         value={item}
                     >{sourceName(item)}</option>))}
                 </select>
-                {!resetPending && <button
-                    disabled={Boolean(draft) || resetPending}
-                    onClick={() => setResetPending(true)}
-                >{t('resetAll')}</button>}
+                <button
+                    disabled={Boolean(draft)}
+                    onClick={() => {
+                        // Native confirmation preserves the settings layout and keyboard focus.
+                        if (window.confirm(t('confirmReset'))) actions.reset(); // eslint-disable-line no-alert
+                    }}
+                >{t('resetAll')}</button>
             </div>
             <div className={styles.filterBar}>
                 <div
@@ -157,19 +165,6 @@ const ShortcutSettings = ({intl}) => {
                     {intl.formatMessage(messages.resultCount, {count: filtered.length})}
                 </span>
             </div>
-            {resetPending && <div
-                className={styles.buttons}
-                role="group"
-                aria-label={t('confirmReset')}
-            >
-                <span>{t('confirmReset')}</span>
-                <button
-                    onClick={() => {
-                        actions.reset(); setResetPending(false);
-                    }}
-                >{t('resetAll')}</button>
-                <button onClick={() => setResetPending(false)}>{t('cancel')}</button>
-            </div>}
             <div className={styles.list}>
                 <div
                     className={styles.tableHeader}
@@ -197,9 +192,13 @@ const ShortcutSettings = ({intl}) => {
                                 <span>{title(action)}</span>
                                 {warning && <span
                                     className={styles.warning}
-                                    title={warning}
-                                    aria-label={warning}
-                                >{'!'}</span>}
+                                >
+                                    <span
+                                        className={styles.warningIcon}
+                                        aria-hidden="true"
+                                    />
+                                    <span>{warning}</span>
+                                </span>}
                             </div>
                             <div className={styles.bindings}>
                                 {!action.bindings.length && <span className={styles.muted}>{t('unbound')}</span>}
@@ -207,11 +206,24 @@ const ShortcutSettings = ({intl}) => {
                                     key={binding}
                                     className={styles.binding}
                                 >
-                                    <kbd>{displayBinding(binding, actions.mac)}</kbd>
                                     <button
-                                        disabled={Boolean(draft) || resetPending}
+                                        className={styles.editBinding}
+                                        disabled={Boolean(draft)}
+                                        title={t('edit')}
+                                        aria-label={`${t('edit')}: ${accessibleBinding(binding, actions.mac)}`}
+                                        onClick={event => {
+                                            returnFocus.current = event.currentTarget;
+                                            setDraft({id: action.id,
+                                                bindings: action.bindings.slice(),
+                                                replacing: binding});
+                                            actions.recording = true;
+                                            setRecording(true);
+                                        }}
+                                    ><kbd>{displayBinding(binding, actions.mac)}</kbd></button>
+                                    <button
+                                        disabled={Boolean(draft)}
                                         title={`${t('remove')}: ${displayBinding(binding, actions.mac)}`}
-                                        aria-label={`${t('remove')}: ${displayBinding(binding, actions.mac)}`}
+                                        aria-label={`${t('remove')}: ${accessibleBinding(binding, actions.mac)}`}
                                         onClick={() => actions.setBindings(action.id,
                                             action.bindings.filter(key => key !== binding))}
                                     ><span aria-hidden="true">{'×'}</span></button>
@@ -232,14 +244,14 @@ const ShortcutSettings = ({intl}) => {
                                     className={styles.iconButton}
                                     title={t('reset')}
                                     aria-label={`${t('reset')}: ${title(action)}`}
-                                    disabled={Boolean(draft) || resetPending}
+                                    disabled={Boolean(draft)}
                                     onClick={() => actions.reset(action.id)}
                                 ><span className={styles.resetIcon} /></button> : <span className={styles.toolSpace} />}
                                 <button
                                     className={styles.iconButton}
                                     title={t('add')}
                                     aria-label={`${t('add')}: ${title(action)}`}
-                                    disabled={Boolean(draft) || resetPending}
+                                    disabled={Boolean(draft)}
                                     onClick={event => {
                                         returnFocus.current = event.currentTarget;
                                         setDraft({id: action.id, bindings: action.bindings.slice()});
@@ -254,14 +266,24 @@ const ShortcutSettings = ({intl}) => {
                             ref={draftElement}
                             tabIndex={-1}
                             role="region"
-                            aria-label={t('add')}
+                            aria-label={t(draft.replacing ? 'edit' : 'add')}
                         >
                             <p aria-live="polite">
                                 {recording ? t('recording') :
-                                    draft.bindings.map(binding => displayBinding(binding, actions.mac)).join(', ')}
+                                    draft.bindings.map(binding => (<kbd
+                                        key={binding}
+                                        className={binding === draft.changedBinding ? styles.changedBinding : null}
+                                        aria-label={accessibleBinding(binding, actions.mac)}
+                                    >{displayBinding(binding, actions.mac)}</kbd>))}
                             </p>
-                            {conflicts.reserved.length > 0 && <p role="alert">{t('reserved')}</p>}
-                            {conflicts.actions.length > 0 && <p role="alert">
+                            {conflicts.reserved.length > 0 && <p
+                                className={styles.warning}
+                                role="alert"
+                            >{t('reserved')}</p>}
+                            {conflicts.actions.length > 0 && <p
+                                className={styles.warning}
+                                role="alert"
+                            >
                                 {intl.formatMessage(messages.conflicts, {
                                     names: conflicts.actions.map(title).join(', ')
                                 })}

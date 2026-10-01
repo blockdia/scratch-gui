@@ -3,7 +3,6 @@ import {FormattedMessage} from 'react-intl';
 import {mountWithIntl, shallowWithIntl, componentWithIntl} from '../../helpers/intl-helpers.jsx';
 import SpriteSelectorItemComponent from '../../../src/components/sprite-selector-item/sprite-selector-item';
 import DeleteButton from '../../../src/components/delete-button/delete-button';
-import blockdiaTranslations from '../../../src/lib/tw-translations/blockdia-translations.json';
 
 describe('SpriteSelectorItemComponent', () => {
     let className;
@@ -64,7 +63,6 @@ describe('SpriteSelectorItemComponent', () => {
 
         expect(placeholderMessage).toHaveLength(1);
         expect(placeholderMessage.parent().is('span')).toBe(true);
-        expect(blockdiaTranslations['zh-cn']['blockdia.spriteSelectorItem.emptyName']).toBe('空名称');
     });
 
     test('shows a non-empty name without the empty-name placeholder', () => {

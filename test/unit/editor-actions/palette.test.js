@@ -13,7 +13,7 @@ const block = (id, opcode, fields = {}, extra = {}) => ({id, opcode, fields, ...
 const vmFor = targets => ({runtime: {targets}, editingTarget: targets[0]});
 
 test.each([
-    ['> baocun', '保存项目'], ['> BCXM', '保存项目'], ['> bao cun', '保存项目'],
+    ['> baocun', '保存作品'], ['> BCZP', '保存作品'], ['> bao cun', '保存作品'],
     ['xiaomao', '小猫'], ['xm', '小猫'], ['@v fs', '分数'],
     ['@c chongfuzhixing', '重复执行'], ['@ wdbl', '我的變量'],
     ['> lvqi', '绿旗'], ['@ ydabc', '移动ABC']

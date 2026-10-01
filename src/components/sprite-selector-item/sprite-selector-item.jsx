@@ -15,10 +15,12 @@ const SpriteSelectorItem = props => (
     <ContextMenuTrigger
         attributes={{
             'className': classNames(props.className, styles.spriteSelectorItem, {
+                [styles.hoverable]: !props.dragging,
                 [styles.isSelected]: props.selected,
                 [styles.treeRow]: typeof props.treeDepth === 'number'
             }),
             'data-sprite-id': props.spriteId,
+            'title': props.fullName,
             'onClick': props.onClick,
             'onMouseEnter': props.onMouseEnter,
             'onMouseLeave': props.onMouseLeave,
@@ -77,7 +79,7 @@ const SpriteSelectorItem = props => (
                 onClick={props.onDeleteButtonClick}
             />
         ) : null }
-        {props.onDuplicateButtonClick || props.onDeleteButtonClick || props.onExportButtonClick ? (
+        {props.folderMenu || props.onDuplicateButtonClick || props.onDeleteButtonClick || props.onExportButtonClick ? (
             <ContextMenu id={`${props.name}-${contextMenuId++}`}>
                 {props.onDuplicateButtonClick ? (
                     <MenuItem onClick={props.onDuplicateButtonClick}>
@@ -132,6 +134,7 @@ const SpriteSelectorItem = props => (
                         />
                     </DangerousMenuItem>
                 ) : null }
+                {props.folderMenu}
             </ContextMenu>
         ) : null}
     </ContextMenuTrigger>
@@ -139,9 +142,12 @@ const SpriteSelectorItem = props => (
 
 SpriteSelectorItem.propTypes = {
     className: PropTypes.string,
+    folderMenu: PropTypes.node,
+    fullName: PropTypes.string,
     componentRef: PropTypes.func,
     costumeURL: PropTypes.string,
     details: PropTypes.string,
+    dragging: PropTypes.bool,
     // eslint-disable-next-line react/forbid-prop-types
     name: PropTypes.any,
     number: PropTypes.number,

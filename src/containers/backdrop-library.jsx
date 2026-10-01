@@ -1,3 +1,4 @@
+import {prepareAsset} from '../lib/folders';
 import bindAll from 'lodash.bindall';
 import PropTypes from 'prop-types';
 import React from 'react';
@@ -43,7 +44,8 @@ class BackdropLibrary extends React.Component {
             skinId: null
         };
         // Do not switch to stage, just add the backdrop
-        this.props.vm.addBackdrop(item.md5ext, vmBackdrop);
+        this.props.vm.addBackdrop(item.md5ext, prepareAsset(this.props.vm, 'COSTUME', vmBackdrop,
+            this.props.vm.runtime.getTargetForStage().id));
     }
     render () {
         return (

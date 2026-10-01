@@ -1,3 +1,5 @@
+import {reorderFolderItems, prepareAsset, joinName, splitName} from '../lib/folders';
+import {FOLDER_ORDER_CHANGED, remapAssetSelection} from '../lib/folders/order';
 import AddonHooks from '../addons/hooks';
 import PropTypes from 'prop-types';
 import React from 'react';
@@ -78,6 +80,7 @@ class CostumeTab extends React.Component {
     constructor (props) {
         super(props);
         bindAll(this, [
+            'handleFolderOrderChanged',
             'handleResourceSelection',
             'handleSelectCostume',
             'handleDeleteCostume',
@@ -115,6 +118,7 @@ class CostumeTab extends React.Component {
         };
         AddonHooks.selectAdjacentCostume = this.selectAdjacentCostume;
         this.props.vm.on('EDITOR_SELECT_RESOURCE', this.handleResourceSelection);
+        this.props.vm.on(FOLDER_ORDER_CHANGED, this.handleFolderOrderChanged);
     }
     componentWillReceiveProps (nextProps) {
         const {
@@ -147,6 +151,13 @@ class CostumeTab extends React.Component {
     componentWillUnmount () {
         if (AddonHooks.selectAdjacentCostume === this.selectAdjacentCostume) AddonHooks.selectAdjacentCostume = null;
         this.props.vm.removeListener('EDITOR_SELECT_RESOURCE', this.handleResourceSelection);
+        this.props.vm.removeListener(FOLDER_ORDER_CHANGED, this.handleFolderOrderChanged);
+    }
+    handleFolderOrderChanged ({targetId, beforeCostumes}) {
+        const target = this.props.vm.editingTarget;
+        if (!target || target.id !== targetId) return;
+        this.setState(state => ({selectedCostumeIndex:
+            remapAssetSelection(beforeCostumes, target.sprite.costumes, state.selectedCostumeIndex)}));
     }
     handleResourceSelection (request) {
         if (request.resourceKind !== 'costume' || this.props.editingTarget !== request.targetId) return;
@@ -184,7 +195,8 @@ class CostumeTab extends React.Component {
     handleNewCostume (costume, fromCostumeLibrary, targetId) {
         const costumes = Array.isArray(costume) ? costume : [costume];
 
-        return Promise.all(costumes.map(c => {
+        return Promise.all(costumes.map(costumeItem => {
+            const c = prepareAsset(this.props.vm, 'COSTUME', costumeItem, targetId);
             if (fromCostumeLibrary) {
                 return this.props.vm.addCostumeFromLibrary(c.md5, c);
             }
@@ -250,18 +262,24 @@ class CostumeTab extends React.Component {
         if (dropInfo.dragType === DragConstants.COSTUME) {
             const sprite = this.props.vm.editingTarget.sprite;
             const activeCostume = sprite.costumes[this.state.selectedCostumeIndex];
-            this.props.vm.reorderCostume(this.props.vm.editingTarget.id,
-                dropInfo.index, dropInfo.newIndex);
+            if (dropInfo.folderOrder) {
+                reorderFolderItems(this.props.vm, 'COSTUME', dropInfo.folderOrder);
+            } else {
+                this.props.vm.reorderCostume(this.props.vm.editingTarget.id,
+                    dropInfo.index, dropInfo.newIndex);
+            }
             this.setState({selectedCostumeIndex: sprite.costumes.indexOf(activeCostume)});
         } else if (dropInfo.dragType === DragConstants.BACKPACK_COSTUME) {
             this.props.vm.addCostume(dropInfo.payload.body, {
-                name: dropInfo.payload.name
+                name: typeof dropInfo.folder === 'undefined' ? dropInfo.payload.name :
+                    joinName(dropInfo.folder, splitName(dropInfo.payload.name, false).basename)
             });
         } else if (dropInfo.dragType === DragConstants.BACKPACK_SOUND) {
             this.props.onActivateSoundsTab();
             this.props.vm.addSound({
                 md5: dropInfo.payload.body,
-                name: dropInfo.payload.name
+                name: typeof dropInfo.folder === 'undefined' ? dropInfo.payload.name :
+                    joinName(dropInfo.folder, splitName(dropInfo.payload.name, false).basename)
             });
         }
     }

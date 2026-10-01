@@ -163,7 +163,17 @@
         "gui.actions.zoomIn": "放大代码工作区",
         "gui.actions.zoomOut": "缩小代码工作区",
         "gui.actions.zoomReset": "重置代码工作区缩放",
-        "gui.actions.zoomFit": "缩放以显示全部脚本"
+        "gui.actions.zoomFit": "缩放以显示全部脚本",
+        "blockdia.folders.create": "创建文件夹",
+        "blockdia.folders.rename": "重命名文件夹",
+        "blockdia.folders.dissolve": "移除文件夹（保留内容）",
+        "blockdia.folders.move": "移到 {folder}",
+        "blockdia.folders.root": "最外层",
+        "blockdia.folders.name": "文件夹名称",
+        "blockdia.folders.invalid": "名称不能为空，不能包含 // 或以 / 开头、结尾。",
+        "blockdia.folders.exists": "此处已有同名文件夹。",
+        "blockdia.folders.open": "点击打开",
+        "blockdia.folders.close": "点击关闭"
     },
     "zh-tw": {
         "blockdia.backpack.pin": "固定到積木欄",
@@ -224,7 +234,17 @@
         "gui.windows.close": "關閉",
         "gui.windows.more": "更多工具",
         "gui.windows.tools": "編輯器工具",
-        "gui.windows.addonError": "此工具無法顯示。請關閉並重新開啟視窗以重試。"
+        "gui.windows.addonError": "此工具無法顯示。請關閉並重新開啟視窗以重試。",
+        "blockdia.folders.create": "建立資料夾",
+        "blockdia.folders.rename": "重新命名資料夾",
+        "blockdia.folders.dissolve": "移除資料夾（保留內容）",
+        "blockdia.folders.move": "移至 {folder}",
+        "blockdia.folders.root": "最外層",
+        "blockdia.folders.name": "資料夾名稱",
+        "blockdia.folders.invalid": "名稱不能為空，不能包含 // 或以 / 開頭、結尾。",
+        "blockdia.folders.exists": "此處已有同名資料夾。",
+        "blockdia.folders.open": "點擊開啟",
+        "blockdia.folders.close": "點擊關閉"
     },
     "en": {
         "gui.actions.shortcuts": "Keyboard shortcuts",

@@ -1,16 +1,14 @@
 import PropTypes from 'prop-types';
 import React from 'react';
+import {connect} from 'react-redux';
 import classNames from 'classnames';
 
 import DragConstants from '../../lib/drag-constants';
 
 import Box from '../box/box.jsx';
 import SpriteSelectorItem from '../../containers/sprite-selector-item.jsx';
-import SortableHOC from '../../lib/sortable-hoc.jsx';
-import SortableAsset from '../asset-panel/sortable-asset.jsx';
 import ThrottledPropertyHOC from '../../lib/throttled-property-hoc.jsx';
-import {buildMockSpriteTree} from '../../lib/sprite-tree-mock';
-import SpriteTree from './sprite-tree.jsx';
+import FolderList from '../../containers/folder-list.jsx';
 
 import styles from './sprite-selector.css';
 
@@ -20,21 +18,17 @@ const SpriteList = function (props) {
     const {
         containerRef,
         editingTarget,
-        draggingIndex,
         draggingType,
         hoveredTarget,
         onDeleteSprite,
         onDuplicateSprite,
         onExportSprite,
         onSelectSprite,
-        onAddSortable,
-        onRemoveSortable,
-        ordering,
         raised,
         selectedId,
         items,
         gridLayout,
-        treeView
+        onDrop
     } = props;
 
     const [searchQuery, setSearchQuery] = React.useState('');
@@ -49,8 +43,6 @@ const SpriteList = function (props) {
         node.addEventListener('blockdia:sprite-search', onSearch);
         return () => node.removeEventListener('blockdia:sprite-search', onSearch);
     }, []);
-
-    const isSpriteDrag = draggingType === DragConstants.SPRITE;
 
     const getHighlightState = sprite => {
         // If the sprite has just received a block drop, used for green highlight
@@ -77,7 +69,7 @@ const SpriteList = function (props) {
         return {receivedBlocks, isRaised};
     };
 
-    const renderTreeSprite = (sprite, depth) => {
+    const renderTreeSprite = (sprite, index, depth, folderMenu) => {
         const {receivedBlocks, isRaised} = getHighlightState(sprite);
         return (
             <ThrottledSpriteSelectorItem
@@ -90,8 +82,10 @@ const SpriteList = function (props) {
                 dragPayload={sprite.id}
                 dragType={DragConstants.SPRITE}
                 id={sprite.id}
-                index={items.indexOf(sprite)}
+                index={index}
+                folderMenu={folderMenu}
                 name={sprite.name}
+                fullName={sprite.fullName}
                 selected={sprite.id === selectedId}
                 treeDepth={gridLayout ? null : depth}
                 onClick={onSelectSprite}
@@ -102,26 +96,6 @@ const SpriteList = function (props) {
         );
     };
 
-    if (treeView) {
-        return (
-            <Box
-                className={classNames(styles.scrollWrapper, {
-                    [styles.scrollWrapperDragging]: draggingType === DragConstants.BACKPACK_SPRITE
-                })}
-                componentRef={setListRef}
-                data-sprite-list="true"
-            >
-                <SpriteTree
-                    grid={gridLayout}
-                    renderSprite={renderTreeSprite} // eslint-disable-line react/jsx-no-bind
-                    selectedId={selectedId}
-                    query={searchQuery}
-                    tree={buildMockSpriteTree(items)}
-                />
-            </Box>
-        );
-    }
-
     return (
         <Box
             className={classNames(styles.scrollWrapper, {
@@ -130,50 +104,21 @@ const SpriteList = function (props) {
             componentRef={setListRef}
             data-sprite-list="true"
         >
-            <Box
-                className={styles.itemsWrapper}
-            >
-                {items.map((sprite, index) => {
-                    const {receivedBlocks, isRaised} = getHighlightState(sprite);
-
-                    return (
-                        <SortableAsset
-                            className={classNames(styles.spriteWrapper, {
-                                [styles.placeholder]: isSpriteDrag && index === draggingIndex})}
-                            index={isSpriteDrag ? ordering.indexOf(index) : index}
-                            key={sprite.name}
-                            onAddSortable={onAddSortable}
-                            onRemoveSortable={onRemoveSortable}
-                        >
-                            <ThrottledSpriteSelectorItem
-                                asset={sprite.costume && sprite.costume.asset}
-                                className={classNames(styles.sprite, {
-                                    [styles.raised]: isRaised,
-                                    [styles.receivedBlocks]: receivedBlocks
-                                })}
-                                dragPayload={sprite.id}
-                                dragType={DragConstants.SPRITE}
-                                id={sprite.id}
-                                index={index}
-                                key={sprite.id}
-                                name={sprite.name}
-                                selected={sprite.id === selectedId}
-                                onClick={onSelectSprite}
-                                onDeleteButtonClick={onDeleteSprite}
-                                onDuplicateButtonClick={onDuplicateSprite}
-                                onExportButtonClick={onExportSprite}
-                            />
-                        </SortableAsset>
-                    );
-                })}
-            </Box>
+            <FolderList
+                kind={DragConstants.SPRITE}
+                grid={gridLayout}
+                items={items}
+                selectedId={selectedId}
+                query={searchQuery}
+                renderItem={renderTreeSprite} // eslint-disable-line react/jsx-no-bind
+                onDrop={onDrop}
+            />
         </Box>
     );
 };
 
 SpriteList.propTypes = {
     containerRef: PropTypes.func,
-    draggingIndex: PropTypes.number,
     draggingType: PropTypes.oneOf(Object.keys(DragConstants)),
     editingTarget: PropTypes.string,
     hoveredTarget: PropTypes.shape({
@@ -189,20 +134,17 @@ SpriteList.propTypes = {
             rotationCenterX: PropTypes.number.isRequired,
             rotationCenterY: PropTypes.number.isRequired
         }),
-        name: PropTypes.any, // modified by folders addon
+        name: PropTypes.string,
         order: PropTypes.number.isRequired
     })),
-    onAddSortable: PropTypes.func,
+    onDrop: PropTypes.func,
     onDeleteSprite: PropTypes.func,
     onDuplicateSprite: PropTypes.func,
     onExportSprite: PropTypes.func,
-    onRemoveSortable: PropTypes.func,
     onSelectSprite: PropTypes.func,
-    ordering: PropTypes.arrayOf(PropTypes.number),
     raised: PropTypes.bool,
     selectedId: PropTypes.string,
-    gridLayout: PropTypes.bool,
-    treeView: PropTypes.bool
+    gridLayout: PropTypes.bool
 };
 
-export default SortableHOC(SpriteList);
+export default connect(state => ({draggingType: state.scratchGui.assetDrag.dragType}))(SpriteList);

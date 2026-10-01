@@ -1,3 +1,4 @@
+import {getEntries, splitItemName, isWithin} from '../lib/folders';
 import React from 'react';
 import PropTypes from 'prop-types';
 import bindAll from 'lodash.bindall';
@@ -134,7 +135,18 @@ class Backpack extends React.Component {
         // Log error to console and make the Promise reject.
         throw error;
     }
-    handleDrop (dragInfo) {
+    async handleDrop (dragInfo) {
+        if (dragInfo.dragType === DragConstants.FOLDER) {
+            const {kind, path, scope} = dragInfo.payload;
+            if (kind === 'SPRITE' && this.props.vm.runtime.getTargetForStage().id !== scope) return;
+            const entries = getEntries(this.props.vm, kind, scope)
+                .filter(entry => isWithin(splitItemName(entry.name, kind).folder, path));
+            // Each saved item is prepended, so visit the last member first.
+            for (const entry of entries.reverse()) {
+                await this.handleDrop({dragType: kind, payload: kind === 'SPRITE' ? entry.id : entry.value});
+            }
+            return;
+        }
         let payloader = null;
         let presaveAsset = null;
         switch (dragInfo.dragType) {
@@ -156,37 +168,36 @@ class Backpack extends React.Component {
         if (!payloader) return;
 
         // Creating the payload is async, so set loading before starting
-        this.setState({loading: true}, () => {
-            payloader(dragInfo.payload, this.props.vm)
-                .then(payload => {
-                    // Force the asset to save to the asset server before storing in backpack
-                    // Ensures any asset present in the backpack is also on the asset server
-                    if (presaveAsset && !presaveAsset.clean && !this.props.host === LOCAL_API) {
-                        return storage.store(
-                            presaveAsset.assetType,
-                            presaveAsset.dataFormat,
-                            presaveAsset.data,
-                            presaveAsset.assetId
-                        ).then(() => payload);
-                    }
-                    return payload;
-                })
-                .then(payload => saveBackpackObject({
-                    host: this.props.host,
-                    token: this.props.token,
-                    username: this.props.username,
-                    ...payload
-                }))
-                .then(item => {
-                    this.setState({
-                        loading: false,
-                        contents: [item].concat(this.state.contents)
-                    });
-                })
-                .catch(error => {
-                    this.handleError(error);
+        this.setState({loading: true});
+        return payloader(dragInfo.payload, this.props.vm)
+            .then(payload => {
+                // Force the asset to save to the asset server before storing in backpack
+                // Ensures any asset present in the backpack is also on the asset server
+                if (presaveAsset && !presaveAsset.clean && !this.props.host === LOCAL_API) {
+                    return storage.store(
+                        presaveAsset.assetType,
+                        presaveAsset.dataFormat,
+                        presaveAsset.data,
+                        presaveAsset.assetId
+                    ).then(() => payload);
+                }
+                return payload;
+            })
+            .then(payload => saveBackpackObject({
+                host: this.props.host,
+                token: this.props.token,
+                username: this.props.username,
+                ...payload
+            }))
+            .then(item => {
+                this.setState({
+                    loading: false,
+                    contents: [item].concat(this.state.contents)
                 });
-        });
+            })
+            .catch(error => {
+                this.handleError(error);
+            });
     }
     handleDelete (id) {
         this.setState({loading: true}, () => {

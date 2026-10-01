@@ -1,3 +1,4 @@
+import {prepareAsset} from '../lib/folders';
 import bindAll from 'lodash.bindall';
 import PropTypes from 'prop-types';
 import React from 'react';
@@ -42,7 +43,7 @@ class CostumeLibrary extends React.PureComponent {
             bitmapResolution: item.bitmapResolution,
             skinId: null
         };
-        this.props.vm.addCostumeFromLibrary(item.md5ext, vmCostume);
+        this.props.vm.addCostumeFromLibrary(item.md5ext, prepareAsset(this.props.vm, 'COSTUME', vmCostume));
     }
     render () {
         return (

@@ -3,6 +3,9 @@ import React from 'react';
 import classNames from 'classnames';
 
 import styles from './sprite-tree.css';
+import assetStyles from '../asset-panel/selector.css';
+import {splitName, folderColor, isWithin, joinName} from '../../lib/folders';
+import FolderCard from '../asset-panel/folder-card.jsx';
 
 const collectOpenState = (nodes, state = {}) => {
     nodes.forEach(node => {
@@ -69,7 +72,7 @@ const Chevron = ({open}) => (
 
 Chevron.propTypes = {open: PropTypes.bool};
 
-const FolderRow = function ({depth, hasSelection, id, name, onToggle, open, spriteCount}) {
+const FolderRow = function ({depth, hasSelection, id, name, onToggle, open, spriteCount, dragging}) {
     const handleClick = React.useCallback(() => onToggle(id), [onToggle, id]);
     const handleKeyDown = React.useCallback(e => {
         if (e.key === 'Enter' || e.key === ' ') {
@@ -81,6 +84,7 @@ const FolderRow = function ({depth, hasSelection, id, name, onToggle, open, spri
         <div
             aria-expanded={open}
             className={classNames(styles.row, styles.folderRow, {
+                [styles.hoverable]: !dragging,
                 [styles.hasSelection]: hasSelection
             })}
             role="treeitem"
@@ -101,6 +105,7 @@ const FolderRow = function ({depth, hasSelection, id, name, onToggle, open, spri
 
 FolderRow.propTypes = {
     depth: PropTypes.number.isRequired,
+    dragging: PropTypes.bool,
     hasSelection: PropTypes.bool,
     id: PropTypes.string.isRequired,
     name: PropTypes.string.isRequired,
@@ -113,100 +118,211 @@ const matchesQuery = (node, query) => (node.type === 'folder' ?
     node.name.toLowerCase().includes(query) || node.children.some(child => matchesQuery(child, query)) :
     node.sprite.name.toLowerCase().includes(query));
 
-const SpriteTree = function ({grid, tree, selectedId, renderSprite, query = ''}) {
+const SpriteTree = function ({grid, assetMode, tree, selectedId, renderSprite,
+    renderFolder, onActiveFolderChange, folderTransition, dragPreview, dragging, dropPath, query = ''}) {
     const [openState, setOpenState] = React.useState(() => collectOpenState(tree));
+    const findSelected = nodes => {
+        for (const node of nodes) {
+            if (node.type === 'sprite' && node.sprite.id === selectedId) return node.sprite.fullName || '';
+            if (node.type === 'folder' && containsSprite(node.children, selectedId)) return findSelected(node.children);
+        }
+        return '';
+    };
+    const selectedName = findSelected(tree);
+    const selectedPath = splitName(selectedName, !assetMode).folder;
+    // Asset indices change when a whole folder moves; that is not a new selection.
+    const selectedKey = assetMode ? selectedName : selectedId;
+    React.useEffect(() => {
+        if (!folderTransition) return;
+        const {source, destination} = folderTransition;
+        setOpenState(previous => {
+            const next = {};
+            Object.keys(previous).forEach(path => {
+                if (isWithin(path, source)) {
+                    // Dissolving a child must not overwrite its parent's state.
+                    if (path === source && destination === splitName(source).folder) return;
+                    const renamed = path === source ? destination :
+                        joinName(destination, path.slice(source.length + 2));
+                    if (renamed) next[renamed] = previous[path];
+                } else next[path] = previous[path];
+            });
+            return next;
+        });
+    }, [folderTransition]);
+    const previousSelection = React.useRef({id: selectedId, path: selectedPath});
+    React.useEffect(() => {
+        const selection = previousSelection.current;
+        previousSelection.current = {id: selectedId, path: selectedPath};
+        if (!selectedPath) return;
+        if (folderTransition && selectedId === selection.id && isWithin(selection.path, folderTransition.source)) {
+            const {source, destination} = folderTransition;
+            const renamed = selection.path === source ? destination :
+                joinName(destination, selection.path.slice(source.length + 2));
+            if (selectedPath === renamed) return;
+        }
+        const ancestors = {};
+        const parts = selectedPath.split('//');
+        parts.forEach((part, index) => {
+            ancestors[parts.slice(0, index + 1).join('//')] = true;
+        });
+        setOpenState(previous => ({...previous, ...ancestors}));
+    }, [selectedKey, selectedPath]);
 
-    const toggle = React.useCallback(id => setOpenState(prev => ({...prev, [id]: !prev[id]})), []);
+    // The selected item's deepest visible folder is the insertion destination.
+    // Opening an unrelated folder must not redirect newly imported assets.
+    React.useEffect(() => {
+        if (!onActiveFolderChange) return;
+        let active = '';
+        if (selectedPath) {
+            for (const part of selectedPath.split('//')) {
+                const path = joinName(active, part);
+                if (!openState[path]) break;
+                active = path;
+            }
+        }
+        onActiveFolderChange(active);
+    }, [selectedPath, openState, onActiveFolderChange]);
+
+    const toggle = id => {
+        const open = !openState[id];
+        setOpenState(prev => ({...prev, [id]: open}));
+    };
+
+    const sourceClasses = key => ({
+        [styles.dragSource]: dragPreview && dragPreview.sourceKey === key && !dragPreview.placement,
+        [styles.dragSourceHidden]: dragPreview && dragPreview.sourceKey === key && dragPreview.placement
+    });
+    const renderShadow = (key, position, depth) => {
+        if (!dragPreview || !dragPreview.placement || dragPreview.placement.key !== key ||
+            dragPreview.placement.position !== position) return null;
+        return (<div
+            aria-hidden="true"
+            data-folder-placeholder={`${position}:${key}`}
+            className={classNames(styles.placeholder, {
+                [styles.gridCell]: grid && !dragPreview.isFolder,
+                [styles.folderBlock]: grid && dragPreview.isFolder
+            })}
+            style={!grid && !assetMode ? {paddingInlineStart: depth * 16} : null}
+        >
+            <div
+                className={classNames(styles.placeholderShape, {
+                    [assetStyles.listItem]: assetMode,
+                    [styles.placeholderCard]: grid && !dragPreview.isFolder,
+                    [styles.placeholderRow]: !assetMode && (!grid || dragPreview.isFolder)
+                })}
+            />
+        </div>);
+    };
 
     const renderNodes = (nodes, depth, filter = query) => nodes.map(node => {
         if (filter && !matchesQuery(node, filter)) return null;
         if (node.type === 'sprite') {
-            if (grid) {
-                return (
-                    <div
-                        className={styles.gridCell}
-                        key={node.sprite.id}
-                        role="treeitem"
-                    >
-                        {node.sprite.fake ? (
-                            <div className={styles.fakeCard}>
-                                <span className={styles.fakeThumb} />
-                                <span className={styles.fakeCardName}>{node.sprite.name}</span>
-                            </div>
-                        ) : renderSprite(node.sprite, depth)}
-                    </div>
-                );
-            }
-            return node.sprite.fake ? (
-                <div
-                    className={classNames(styles.row, styles.fakeRow)}
-                    key={node.sprite.id}
-                    role="treeitem"
-                >
-                    <Guides depth={depth} />
-                    <span className={styles.chevronSlot} />
-                    <span className={styles.fakeThumb} />
-                    <span className={styles.name}>{node.sprite.name}</span>
-                </div>
-            ) : (
+            const key = `item:${node.sprite.index}`;
+            return (
                 <React.Fragment key={node.sprite.id}>
-                    {renderSprite(node.sprite, depth)}
+                    {renderShadow(key, 'before', depth)}
+                    <div
+                        className={classNames({[styles.gridCell]: grid,
+                            [styles.dropTarget]: dropPath === key,
+                            ...sourceClasses(key)})}
+                        role="treeitem"
+                        data-folder-entry={splitName(node.sprite.fullName || node.sprite.name, !assetMode).folder}
+                        data-item-index={node.sprite.index}
+                        data-drop-key={key}
+                        style={assetMode ? {
+                            '--folder-color': folderColor(splitName(node.sprite.fullName, false).folder)
+                        } : null}
+                    >
+                        {renderSprite(node.sprite, depth)}
+                    </div>
+                    {renderShadow(key, 'after', depth)}
                 </React.Fragment>
             );
         }
 
         const open = Boolean(query) || Boolean(openState[node.id]);
+        const previewInside = dragPreview && dragPreview.placement && dragPreview.placement.key === node.id &&
+            dragPreview.placement.position.startsWith('inside-');
         const hasSelection = !open && containsSprite(node.children, selectedId);
+        const row = assetMode ? (
+            <FolderCard
+                node={node}
+                dragging={dragging}
+                open={open}
+                onToggle={toggle} // eslint-disable-line react/jsx-no-bind
+                hasSelection={hasSelection}
+            />
+        ) : (
+            <FolderRow
+                depth={grid ? 0 : depth}
+                dragging={dragging}
+                hasSelection={hasSelection}
+                id={node.id}
+                name={node.name}
+                open={open}
+                spriteCount={countSprites(node.children)}
+                onToggle={toggle} // eslint-disable-line react/jsx-no-bind
+            />
+        );
         return (
-            <div
-                className={classNames({[styles.folderBlock]: grid})}
-                key={node.id}
-                role="none"
-            >
-                <FolderRow
-                    depth={grid ? 0 : depth}
-                    hasSelection={hasSelection}
-                    id={node.id}
-                    name={node.name}
-                    open={open}
-                    spriteCount={countSprites(node.children)}
-                    onToggle={toggle}
-                />
-                {open ? (
+            <React.Fragment key={node.id}>
+                {renderShadow(node.id, 'before', depth)}
+                <div
+                    className={classNames({[styles.folderBlock]: grid})}
+                    role="none"
+                >
                     <div
-                        className={classNames({[styles.gridGroup]: grid, [styles.nestedGroup]: grid})}
-                        role="group"
-                        style={grid ? {'--group-indent': `${(depth + 1) * 16}px`} : null}
+                        data-folder-entry={node.id}
+                        data-drop-key={node.id}
+                        data-folder-open={open}
+                        style={assetMode ? {'--folder-color': folderColor(node.id)} : null}
+                        className={classNames({[styles.dropTarget]: dropPath === node.id, ...sourceClasses(node.id)})}
                     >
-                        {node.children.length === 0 ? (
-                            <div className={classNames(styles.row, styles.emptyRow)}>
-                                <Guides depth={grid ? 0 : depth + 1} />
-                                <span className={styles.chevronSlot} />
-                                <span className={styles.name}>{'(空)'}</span>
-                            </div>
-                        ) : renderNodes(node.children, depth + 1,
-                            node.name.toLowerCase().includes(filter) ? '' : filter)}
+                        {renderFolder ? renderFolder(node, row, open) : row}
                     </div>
-                ) : null}
-            </div>
+                    {open || previewInside ? (
+                        <div
+                            className={classNames({[styles.gridGroup]: grid, [styles.nestedGroup]: grid})}
+                            role="group"
+                            style={grid ? {'--group-indent': `${(depth + 1) * 16}px`} : null}
+                        >
+                            {renderShadow(node.id, 'inside-start', assetMode ? 0 : depth + 1)}
+                            {open ? renderNodes(node.children, assetMode ? 0 : depth + 1,
+                                node.name.toLowerCase().includes(filter) ? '' : filter) : null}
+                            {renderShadow(node.id, 'inside-end', assetMode ? 0 : depth + 1)}
+                        </div>
+                    ) : null}
+                </div>
+                {renderShadow(node.id, 'after', depth)}
+            </React.Fragment>
         );
     });
 
     return (
         <div
-            className={classNames(styles.tree, {[styles.gridGroup]: grid})}
+            className={classNames(styles.tree, {[styles.gridGroup]: grid,
+                [styles.assetTree]: assetMode,
+                [styles.dropTarget]: dropPath === 'root'})}
             role="tree"
         >
             {renderNodes(tree, 0)}
+            {renderShadow('root', 'inside-end', 0)}
         </div>
     );
 };
 
 SpriteTree.propTypes = {
     grid: PropTypes.bool,
+    assetMode: PropTypes.bool,
+    dragging: PropTypes.bool,
+    dropPath: PropTypes.string,
+    dragPreview: PropTypes.shape({sourceKey: PropTypes.string, placement: PropTypes.object, isFolder: PropTypes.bool}),
+    renderFolder: PropTypes.func,
+    onActiveFolderChange: PropTypes.func,
+    folderTransition: PropTypes.shape({source: PropTypes.string, destination: PropTypes.string}),
     query: PropTypes.string,
     renderSprite: PropTypes.func.isRequired,
-    selectedId: PropTypes.string,
+    selectedId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
     tree: PropTypes.arrayOf(PropTypes.object).isRequired // eslint-disable-line react/forbid-prop-types
 };
 

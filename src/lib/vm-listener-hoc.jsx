@@ -26,6 +26,7 @@ import {setCustomStageSize} from '../reducers/custom-stage-size';
 import {openUnknownPlatformModal} from '../reducers/modals';
 import implementGuiAPI from './tw-extension-gui-api';
 import {BLOCKS_TAB_INDEX} from '../reducers/editor-tab';
+import {createFolderOrderScheduler} from './folders/order';
 
 let compileErrorCounter = 0;
 
@@ -77,6 +78,8 @@ const vmListenerHOC = function (WrappedComponent) {
             this.props.vm.on('STAGE_SIZE_CHANGED', this.props.onStageSizeChanged);
             this.props.vm.on('CREATE_UNSANDBOXED_EXTENSION_API', implementGuiAPI);
             this.props.vm.runtime.on('PLATFORM_MISMATCH', this.props.onPlatformMismatch);
+            this.folderOrderScheduler = createFolderOrderScheduler(this.props.vm,
+                () => this.props.shouldUpdateTargets);
         }
         componentDidMount () {
             if (this.props.attachKeyboardEvents) {
@@ -97,6 +100,7 @@ const vmListenerHOC = function (WrappedComponent) {
             }
         }
         componentWillUnmount () {
+            this.folderOrderScheduler.dispose();
             if (this.props.attachKeyboardEvents) {
                 document.removeEventListener('keydown', this.handleKeyDown);
                 document.removeEventListener('keyup', this.handleKeyUp);

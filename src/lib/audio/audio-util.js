@@ -1,3 +1,4 @@
+import {prepareAsset} from '../folders';
 import WavEncoder from 'wav-encoder';
 
 export const SOUND_BYTE_LIMIT = 10 * 1000 * 1000; // 10mb
@@ -56,7 +57,7 @@ const encodeAndAddSoundToVM = function (vm, samples, sampleRate, name, callback)
         // The VM will update the sound name to a fresh name
         vmSound.name = name;
 
-        vm.addSound(vmSound).then(() => {
+        vm.addSound(prepareAsset(vm, 'SOUND', vmSound)).then(() => {
             if (callback) callback();
         });
     });

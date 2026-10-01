@@ -94,7 +94,9 @@
 }
 
 .custom-stage-size-setting-label > .help-icon {
-    margin-top: 110px;
+    align-self: flex-end;
+    flex-shrink: 0;
+    margin-bottom: 6px;
 }
 
 .stage-size-presets {
@@ -125,7 +127,8 @@
 }
 
 .stage-size-preset:focus {
-    outline: none;
+    outline: 2px solid transparent;
+    outline-offset: 2px;
     box-shadow: 0 0 0 3px $looks-transparent;
 }
 

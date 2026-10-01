@@ -5,6 +5,7 @@ import PropTypes from 'prop-types';
 import {connect} from 'react-redux';
 import {injectIntl, intlShape, defineMessages} from 'react-intl';
 import manager from '../../lib/editor-windows/manager';
+import observeToolbarLayout from '../../lib/editor-windows/toolbar-layout';
 import withAddonIntl from '../../addons/intl-provider.jsx';
 import styles from './editor-windows.css';
 
@@ -317,6 +318,7 @@ export class Toolbar extends React.Component {
             this.setState({capacity: Math.max(0, Math.floor(this.element.clientWidth / 36) - 1)});
         });
         this.observer.observe(this.element);
+        this.cleanupLayout = observeToolbarLayout(this.element);
     }
     componentDidUpdate () {
         const entries = Array.from(manager.definitions.values());
@@ -329,6 +331,7 @@ export class Toolbar extends React.Component {
     componentWillUnmount () {
         this.unsubscribe();
         this.observer.disconnect();
+        this.cleanupLayout();
         document.removeEventListener('pointerdown', this.dismiss);
         document.removeEventListener('focusin', this.dismiss);
         manager.definitions.forEach(entry => {

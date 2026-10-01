@@ -75,10 +75,6 @@
   right: 0.5rem;
 }
 
-.sa-stage-hidden [class*="gui_tab-list_"] {
-  padding-inline-start: calc(240px + 1.125rem);
-}
-
 /* related to TW changes to headers */
 [dir="ltr"] [class^="stage-header_stage-header-wrapper_"] {
   right: initial;

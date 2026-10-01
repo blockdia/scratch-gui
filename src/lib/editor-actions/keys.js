@@ -41,6 +41,11 @@ export const eventBinding = (event, mac) => {
         return null;
     }
 };
+export const ariaBinding = (binding, mac) => {
+    const parts = resolveBinding(binding, mac).split('+');
+    return parts.map(part => (part === 'Ctrl' ? 'Control' : (part.length === 1 ? part.toUpperCase() : part)))
+        .join('+');
+};
 export const displayBinding = (binding, mac) => binding.split('+').map(part => ({
     Mod: mac ? '⌘' : 'Ctrl',
     Meta: mac ? '⌘' : 'Win',

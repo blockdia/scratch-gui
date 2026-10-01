@@ -93,7 +93,7 @@ const PromptComponent = props => (
                         </div> :
                         <Box
                             className={styles.optionsRow}
-                            aria-keyshortcuts="Alt+0"
+                            aria-keyshortcuts={props.toggleScopeShortcut}
                         >
                             <label>
                                 <input
@@ -228,7 +228,8 @@ PromptComponent.propTypes = {
     onScopeOptionSelection: PropTypes.func.isRequired,
     showCloudOption: PropTypes.bool.isRequired,
     showVariableOptions: PropTypes.bool.isRequired,
-    title: PropTypes.string.isRequired
+    title: PropTypes.string.isRequired,
+    toggleScopeShortcut: PropTypes.string
 };
 
 export default PromptComponent;

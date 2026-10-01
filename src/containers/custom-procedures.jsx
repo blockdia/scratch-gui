@@ -4,6 +4,8 @@ import PropTypes from 'prop-types';
 import React from 'react';
 import CustomProceduresComponent from '../components/custom-procedures/custom-procedures.jsx';
 import LazyScratchBlocks from '../lib/tw-lazy-scratch-blocks';
+import actions from '../lib/editor-actions';
+import {CUSTOM_BLOCK_DIALOG, customBlockShortcuts} from '../lib/editor-actions/dialogs';
 import {connect} from 'react-redux';
 
 export class CustomProcedures extends React.Component {
@@ -126,18 +128,16 @@ export class CustomProcedures extends React.Component {
             if (!event.repeat) this.handleOk();
             return;
         }
-        if (event.altKey && !event.metaKey && !event.ctrlKey && !event.shiftKey) {
-            // event.code avoids macOS Option-key character substitution.
-            const action = CustomProcedures.altShortcuts[event.code];
-            if (action) {
-                event.preventDefault();
-                event.stopImmediatePropagation();
-                if (!event.repeat) {
-                    LazyScratchBlocks.get().WidgetDiv.hide(true);
-                    this[action]();
-                }
-                return;
+        const handler = CustomProcedures.shortcutHandlers[
+            actions.matchDialogShortcut(CUSTOM_BLOCK_DIALOG, event)];
+        if (handler) {
+            event.preventDefault();
+            event.stopImmediatePropagation();
+            if (!event.repeat) {
+                LazyScratchBlocks.get().WidgetDiv.hide(true);
+                this[handler]();
             }
+            return;
         }
         const ScratchBlocks = LazyScratchBlocks.get();
         const htmlInput = ScratchBlocks.FieldTextInput.htmlInput_;
@@ -215,6 +215,10 @@ export class CustomProcedures extends React.Component {
         return (
             <CustomProceduresComponent
                 componentRef={this.setBlocks}
+                shortcutKeys={Object.keys(customBlockShortcuts).reduce((keys, name) => ({
+                    ...keys,
+                    [name]: actions.ariaShortcuts(customBlockShortcuts[name])
+                }), {})}
                 warp={this.state.warp}
                 onAddBoolean={this.handleAddBoolean}
                 onAddLabel={this.handleAddLabel}
@@ -228,11 +232,11 @@ export class CustomProcedures extends React.Component {
     }
 }
 
-CustomProcedures.altShortcuts = {
-    Digit1: 'handleAddTextNumber',
-    Digit2: 'handleAddBoolean',
-    Digit3: 'handleAddLabel',
-    Digit0: 'handleToggleWarp'
+CustomProcedures.shortcutHandlers = {
+    [customBlockShortcuts.addTextNumber]: 'handleAddTextNumber',
+    [customBlockShortcuts.addBoolean]: 'handleAddBoolean',
+    [customBlockShortcuts.addLabel]: 'handleAddLabel',
+    [customBlockShortcuts.toggleWarp]: 'handleToggleWarp'
 };
 
 CustomProcedures.propTypes = {

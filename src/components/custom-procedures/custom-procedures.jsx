@@ -38,7 +38,7 @@ const CustomProcedures = props => (
                     role="button"
                     tabIndex="0"
                     data-procedure-add-input
-                    aria-keyshortcuts="Alt+1"
+                    aria-keyshortcuts={props.shortcutKeys.addTextNumber}
                     onClick={props.onAddTextNumber}
                 >
                     <img
@@ -65,7 +65,7 @@ const CustomProcedures = props => (
                     className={styles.optionCard}
                     role="button"
                     tabIndex="0"
-                    aria-keyshortcuts="Alt+2"
+                    aria-keyshortcuts={props.shortcutKeys.addBoolean}
                     onClick={props.onAddBoolean}
                 >
                     <img
@@ -92,7 +92,7 @@ const CustomProcedures = props => (
                     className={styles.optionCard}
                     role="button"
                     tabIndex="0"
-                    aria-keyshortcuts="Alt+3"
+                    aria-keyshortcuts={props.shortcutKeys.addLabel}
                     onClick={props.onAddLabel}
                 >
                     <img
@@ -113,7 +113,7 @@ const CustomProcedures = props => (
                 <label>
                     <input
                         checked={props.warp}
-                        aria-keyshortcuts="Alt+0"
+                        aria-keyshortcuts={props.shortcutKeys.toggleWarp}
                         type="checkbox"
                         onChange={props.onToggleWarp}
                     />
@@ -162,6 +162,7 @@ CustomProcedures.propTypes = {
     onOk: PropTypes.func.isRequired,
     onToggleWarp: PropTypes.func.isRequired,
     onWorkspaceKeyDown: PropTypes.func.isRequired,
+    shortcutKeys: PropTypes.objectOf(PropTypes.string).isRequired,
     warp: PropTypes.bool.isRequired
 };
 

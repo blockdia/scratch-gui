@@ -33,6 +33,12 @@ export const reservations = [
         name: 'paint'},
     {scopes: ['keyboard'],
         keys: ['Alt+ArrowLeft', 'Alt+ArrowRight', 'Alt+ArrowUp', 'Alt+ArrowDown', 'Shift+Enter'],
+        name: 'navigation'},
+    {scopes: ['customBlockDialog'],
+        keys: ['Escape', 'Tab', 'Shift+Tab', 'Enter', 'Mod+Enter'],
+        name: 'navigation'},
+    {scopes: ['variableDialog'],
+        keys: ['Escape', 'Tab', 'Shift+Tab', 'Enter'],
         name: 'navigation'}
 ];
 // Legacy editors accept either Control or Meta, even on the other platform.

@@ -97,3 +97,22 @@ export const displayBinding = (binding, mac) => {
     return parts.map(part => (mac && macKeyLabels[part]) || keyLabels[part] ||
         (part.length === 1 ? part.toUpperCase() : part)).join(mac ? '' : '+');
 };
+
+// Human-readable names for accessible labels; aria-keyshortcuts uses ariaBinding instead.
+export const accessibleBinding = (binding, mac) => {
+    const labels = {
+        Ctrl: 'Control',
+        Meta: mac ? 'Command' : 'Windows',
+        Alt: mac ? 'Option' : 'Alt',
+        ArrowLeft: 'Left Arrow',
+        ArrowRight: 'Right Arrow',
+        ArrowUp: 'Up Arrow',
+        ArrowDown: 'Down Arrow',
+        PageUp: 'Page Up',
+        PageDown: 'Page Down',
+        Plus: 'Plus'
+    };
+    return resolveBinding(binding, mac).split('+')
+        .map(part => labels[part] || (part.length === 1 ? part.toUpperCase() : part))
+        .join(' + ');
+};

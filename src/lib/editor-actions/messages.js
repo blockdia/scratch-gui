@@ -138,6 +138,7 @@ export default {
         id: 'gui.actions.add',
         defaultMessage: 'Add shortcut'
     },
+    edit: {id: 'gui.actions.edit', defaultMessage: 'Change shortcut'},
     recording: {
         id: 'gui.actions.recording',
         defaultMessage: 'Press a key combination\u2026'

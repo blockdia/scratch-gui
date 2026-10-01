@@ -1,8 +1,9 @@
 @import '../../css/colors.css';
+@import '../../css/z-index.css';
 
 .panel {
     position: fixed;
-    z-index: 499;
+    z-index: $z-index-command-palette;
     top: 3.5rem;
     left: 50%;
     transform: translateX(-50%);
@@ -63,3 +64,9 @@
     .symbolResult .text small { display: none; }
 }
 .panel footer { padding: 8px 12px; font-size: 11px; opacity: .75; }
+
+.error { display: flex; align-items: flex-start; gap: 8px; flex-shrink: 0; margin: 8px 12px 0;
+    padding: 10px 12px; border-inline-start: 3px solid $error-primary; border-radius: 4px;
+    background: $ui-secondary; color: $text-primary; line-height: 1.5; }
+.errorIcon { flex: 0 0 18px; width: 18px; height: 18px; margin-top: 1px; background: $error-primary;
+    mask: url('../../addons/addons/linter/icons/warning.svg') center / contain no-repeat; }

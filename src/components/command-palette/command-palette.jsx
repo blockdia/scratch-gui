@@ -7,7 +7,7 @@ import withAddonIntl from '../../addons/intl-provider.jsx';
 import AddonHooks from '../../addons/hooks';
 import actions from '../../lib/editor-actions';
 import {hasModal} from '../../lib/editor-actions/context';
-import {displayBinding, eventBinding, resolveBinding} from '../../lib/editor-actions/keys';
+import {accessibleBinding, displayBinding, eventBinding, resolveBinding} from '../../lib/editor-actions/keys';
 import windowManager from '../../lib/editor-windows/manager';
 import {activateTab} from '../../reducers/editor-tab';
 import {navigationFor} from '../../lib/block-navigation';
@@ -497,13 +497,24 @@ export class CommandPalette extends React.Component {
                                             }}
                                         >{'▶'}</button>
                                     </span>}
-                            {item.bindings && <kbd>
+                            {item.bindings && <kbd
+                                aria-label={item.bindings.map(key => accessibleBinding(key, actions.mac)).join(', ')}
+                            >
                                 {item.bindings.map(key => displayBinding(key, actions.mac)).join(', ')}
                             </kbd>}
                         </div>
                     )) : <div className={styles.empty}>{this.t('empty')}</div>}
                 </div>
-                {this.state.error && <div role="alert">{this.t('failed')}</div>}
+                {this.state.error && <div
+                    className={styles.error}
+                    role="alert"
+                >
+                    <span
+                        className={styles.errorIcon}
+                        aria-hidden="true"
+                    />
+                    <span>{this.t('failed')}</span>
+                </div>}
                 <footer>
                     <div>{this.t(symbols ? 'symbolHint' : 'hint')}</div>
                     {symbols && <div>{this.t('symbolFilters')}</div>}

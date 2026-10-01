@@ -9,6 +9,8 @@ import SpriteSelectorItem from '../../containers/sprite-selector-item.jsx';
 import SortableHOC from '../../lib/sortable-hoc.jsx';
 import SortableAsset from '../asset-panel/sortable-asset.jsx';
 import ThrottledPropertyHOC from '../../lib/throttled-property-hoc.jsx';
+import {buildMockSpriteTree} from '../../lib/sprite-tree-mock';
+import SpriteTree from './sprite-tree.jsx';
 
 import styles from './sprite-selector.css';
 
@@ -30,10 +32,77 @@ const SpriteList = function (props) {
         ordering,
         raised,
         selectedId,
-        items
+        items,
+        treeView
     } = props;
 
     const isSpriteDrag = draggingType === DragConstants.SPRITE;
+
+    const getHighlightState = sprite => {
+        // If the sprite has just received a block drop, used for green highlight
+        const receivedBlocks = (
+            hoveredTarget.sprite === sprite.id &&
+            sprite.id !== editingTarget &&
+            hoveredTarget.receivedBlocks
+        );
+
+        // If the sprite is indicating it can receive block dropping, used for blue highlight
+        let isRaised = !receivedBlocks && raised && sprite.id !== editingTarget;
+
+        // A sprite is also raised if a costume or sound is being dragged.
+        // Note the absence of the self-sharing check: a sprite can share assets with itself.
+        // This is a quirk of 2.0, but seems worth leaving possible, it
+        // allows quick (albeit unusual) duplication of assets.
+        isRaised = isRaised || [
+            DragConstants.COSTUME,
+            DragConstants.SOUND,
+            DragConstants.BACKPACK_COSTUME,
+            DragConstants.BACKPACK_SOUND,
+            DragConstants.BACKPACK_CODE].includes(draggingType);
+
+        return {receivedBlocks, isRaised};
+    };
+
+    const renderTreeSprite = (sprite, depth) => {
+        const {receivedBlocks, isRaised} = getHighlightState(sprite);
+        return (
+            <ThrottledSpriteSelectorItem
+                asset={sprite.costume && sprite.costume.asset}
+                className={classNames({
+                    [styles.raised]: isRaised,
+                    [styles.receivedBlocks]: receivedBlocks
+                })}
+                dragPayload={sprite.id}
+                dragType={DragConstants.SPRITE}
+                id={sprite.id}
+                index={items.indexOf(sprite)}
+                name={sprite.name}
+                selected={sprite.id === selectedId}
+                treeDepth={depth}
+                onClick={onSelectSprite}
+                onDeleteButtonClick={onDeleteSprite}
+                onDuplicateButtonClick={onDuplicateSprite}
+                onExportButtonClick={onExportSprite}
+            />
+        );
+    };
+
+    if (treeView) {
+        return (
+            <Box
+                className={classNames(styles.scrollWrapper, {
+                    [styles.scrollWrapperDragging]: draggingType === DragConstants.BACKPACK_SPRITE
+                })}
+                componentRef={containerRef}
+            >
+                <SpriteTree
+                    renderSprite={renderTreeSprite} // eslint-disable-line react/jsx-no-bind
+                    selectedId={selectedId}
+                    tree={buildMockSpriteTree(items)}
+                />
+            </Box>
+        );
+    }
 
     return (
         <Box
@@ -46,27 +115,7 @@ const SpriteList = function (props) {
                 className={styles.itemsWrapper}
             >
                 {items.map((sprite, index) => {
-
-                    // If the sprite has just received a block drop, used for green highlight
-                    const receivedBlocks = (
-                        hoveredTarget.sprite === sprite.id &&
-                    sprite.id !== editingTarget &&
-                    hoveredTarget.receivedBlocks
-                    );
-
-                    // If the sprite is indicating it can receive block dropping, used for blue highlight
-                    let isRaised = !receivedBlocks && raised && sprite.id !== editingTarget;
-
-                    // A sprite is also raised if a costume or sound is being dragged.
-                    // Note the absence of the self-sharing check: a sprite can share assets with itself.
-                    // This is a quirk of 2.0, but seems worth leaving possible, it
-                    // allows quick (albeit unusual) duplication of assets.
-                    isRaised = isRaised || [
-                        DragConstants.COSTUME,
-                        DragConstants.SOUND,
-                        DragConstants.BACKPACK_COSTUME,
-                        DragConstants.BACKPACK_SOUND,
-                        DragConstants.BACKPACK_CODE].includes(draggingType);
+                    const {receivedBlocks, isRaised} = getHighlightState(sprite);
 
                     return (
                         <SortableAsset
@@ -132,7 +181,8 @@ SpriteList.propTypes = {
     onSelectSprite: PropTypes.func,
     ordering: PropTypes.arrayOf(PropTypes.number),
     raised: PropTypes.bool,
-    selectedId: PropTypes.string
+    selectedId: PropTypes.string,
+    treeView: PropTypes.bool
 };
 
 export default SortableHOC(SpriteList);

@@ -15,7 +15,8 @@ const SpriteSelectorItem = props => (
     <ContextMenuTrigger
         attributes={{
             className: classNames(props.className, styles.spriteSelectorItem, {
-                [styles.isSelected]: props.selected
+                [styles.isSelected]: props.selected,
+                [styles.treeRow]: typeof props.treeDepth === 'number'
             }),
             onClick: props.onClick,
             onMouseEnter: props.onMouseEnter,
@@ -27,6 +28,17 @@ const SpriteSelectorItem = props => (
         id={`${props.name}-${contextMenuId}`}
         ref={props.componentRef}
     >
+        {typeof props.treeDepth === 'number' ? (
+            <React.Fragment>
+                {Array.from({length: props.treeDepth}, (_, i) => (
+                    <span
+                        className={styles.treeGuide}
+                        key={i}
+                    />
+                ))}
+                <span className={styles.treeChevronSlot} />
+            </React.Fragment>
+        ) : null}
         {typeof props.number === 'undefined' ? null : (
             <div className={styles.number}>{props.number}</div>
         )}
@@ -143,7 +155,8 @@ SpriteSelectorItem.propTypes = {
     onMouseEnter: PropTypes.func,
     onMouseLeave: PropTypes.func,
     preventContextMenu: PropTypes.bool,
-    selected: PropTypes.bool.isRequired
+    selected: PropTypes.bool.isRequired,
+    treeDepth: PropTypes.number
 };
 
 export default SpriteSelectorItem;

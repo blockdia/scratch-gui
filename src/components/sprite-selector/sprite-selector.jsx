@@ -11,6 +11,7 @@ import componentMessages from '../../lib/component-messages';
 import componentIcon from '../action-menu/icon--component.svg';
 import ActionMenu from '../action-menu/action-menu.jsx';
 import {STAGE_DISPLAY_SIZES} from '../../lib/layout-constants';
+import DragConstants from '../../lib/drag-constants';
 import {isRtl} from '@turbowarp/scratch-l10n';
 
 import styles from './sprite-selector.css';
@@ -75,6 +76,7 @@ const SpriteSelectorComponent = function (props) {
         sprites,
         stageSelector,
         stageSize,
+        treeView,
         ...componentProps
     } = props;
     let selectedSprite = sprites[selectedId];
@@ -83,6 +85,9 @@ const SpriteSelectorComponent = function (props) {
         selectedSprite = {};
         spriteInfoDisabled = true;
     }
+    const handleTreeDrop = dragInfo => {
+        if (dragInfo.dragType !== DragConstants.SPRITE) onDrop(dragInfo);
+    };
     return (
         <Box
             className={classNames(styles.spriteSelector, {
@@ -122,7 +127,9 @@ const SpriteSelectorComponent = function (props) {
                 raised={raised}
                 selectedId={selectedId}
                 onDeleteSprite={onDeleteSprite}
-                onDrop={onDrop}
+                // Reordering is not supported by the tree layout yet.
+                onDrop={treeView ? handleTreeDrop : onDrop} // eslint-disable-line react/jsx-no-bind
+                treeView={treeView}
                 onDuplicateSprite={onDuplicateSprite}
                 onExportSprite={onExportSprite}
                 onSelectSprite={onSelectSprite}
@@ -212,12 +219,14 @@ SpriteSelectorComponent.propTypes = {
         })
     }),
     stageSelector: PropTypes.node,
-    stageSize: PropTypes.oneOf(Object.keys(STAGE_DISPLAY_SIZES)).isRequired
+    stageSize: PropTypes.oneOf(Object.keys(STAGE_DISPLAY_SIZES)).isRequired,
+    treeView: PropTypes.bool
 };
 
 SpriteSelectorComponent.defaultProps = {
     fullWidth: false,
-    showSpriteActionMenu: true
+    showSpriteActionMenu: true,
+    treeView: true
 };
 
 export default injectIntl(SpriteSelectorComponent);

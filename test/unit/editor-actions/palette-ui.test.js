@@ -27,6 +27,7 @@ beforeEach(() => {
         editorState: {scratchGui: {vm, mode: {}, editorTab: {activeTabIndex: 0}}}});
     instance.navigation = navigationFor(vm);
     vm.on('PROJECT_CHANGED', instance.projectChanged);
+    vm.on('workspaceUpdate', instance.workspaceUpdated);
     instance.forceUpdate = jest.fn();
     instance.input = {focus: () => { document.activeElement = instance.input; }};
     instance.setState = (patch, callback) => {
@@ -131,6 +132,98 @@ test('localized event searches survive a broadcast preview in another target', a
     instance.setState({query: '@e 绿旗'});
     expect(instance.results()).toEqual([before]);
     expect(instance.results()[0].blockIds).toEqual(['flag', 'flag2']);
+});
+
+test.each([1, 2])('event labels refresh after activating a relocalized workspace from tab %s', async tab => {
+    const originalRaf = global.requestAnimationFrame;
+    let scheduled;
+    global.requestAnimationFrame = callback => { scheduled = callback; return 1; };
+    let label = 'when space key pressed';
+    instance.props.intl = new IntlProvider({locale: 'zh-CN', messages: {
+        'gui.palette.event': '事件'
+    }}, {}).getChildContext().intl;
+    instance.props.editorState.scratchGui.editorTab.activeTabIndex = tab;
+    const target = vm.editingTarget;
+    target.blocks._blocks.key = {id: 'key', opcode: 'event_whenkeypressed', topLevel: true,
+        fields: {KEY_OPTION: {value: 'space'}}};
+    target.blocks.getScripts = jest.fn(() => ['key']);
+    instance.workspace = {isDragging: () => false, getBlockById: () => ({
+        inputList: [{fieldRow: [{getText: () => label}]}]
+    })};
+    instance.bindWorkspace = jest.fn();
+    vm.on('targetsUpdate', instance.refresh);
+    instance.navigation.locate = jest.fn(async (location, options) => {
+        options.activate();
+        await Promise.resolve();
+        // Locale application reloads the same workspace with Blockly events disabled.
+        // Emit before replacing its fields to cover either VM listener order.
+        vm.emit('workspaceUpdate', {xml: '<xml/>'});
+        label = '当按下 空格 键';
+        vm.emit('targetsUpdate');
+        return true;
+    });
+    try {
+        instance.open({mode: 'symbols'});
+        instance.setState({query: '@e '});
+        const symbol = instance.results()[0];
+        const references = instance.referencesFor(symbol);
+        const scans = target.blocks.getScripts.mock.calls.length;
+        await instance.choose(symbol);
+        instance.setState({query: '@e 空格'});
+        expect(instance.results()).toHaveLength(0);
+        scheduled();
+        expect(instance.results()).toHaveLength(1);
+        expect(instance.results()[0].label).toBe(label);
+        expect(instance.referencesFor(symbol)).toBe(references);
+        expect(target.blocks.getScripts).toHaveBeenCalledTimes(scans);
+    } finally {
+        global.requestAnimationFrame = originalRaf;
+    }
+});
+
+test('workspace reloads during broadcast tours preserve origin labels and the reference index', async () => {
+    const originalRaf = global.requestAnimationFrame;
+    let scheduled;
+    global.requestAnimationFrame = callback => { scheduled = callback; return 1; };
+    const original = vm.editingTarget;
+    const receive = id => ({id, opcode: 'event_whenbroadcastreceived',
+        fields: {BROADCAST_OPTION: {value: 'hello'}}});
+    original.blocks._blocks = {
+        flag: {id: 'flag', opcode: 'event_whenflagclicked', topLevel: true},
+        a: receive('a')
+    };
+    original.blocks.getScripts = jest.fn(() => ['flag', 'a']);
+    const other = {...original, id: 'other', blocks: {_blocks: {b: receive('b')},
+        getScripts: jest.fn(() => ['b'])}};
+    vm.runtime.targets.push(other);
+    instance.workspace = {isDragging: () => false, getBlockById: id => (
+        vm.editingTarget === original && id === 'flag' ? {inputList: [
+            {fieldRow: [{getText: () => '当绿旗被点击'}]}
+        ]} : null
+    )};
+    instance.bindWorkspace = jest.fn();
+    instance.navigation.locate = jest.fn(async ref => {
+        vm.editingTarget = vm.runtime.targets.find(target => target.id === ref.targetId);
+        vm.emit('workspaceUpdate', {xml: '<xml/>'});
+        return true;
+    });
+    try {
+        instance.open({mode: 'symbols'});
+        const broadcast = instance.results().find(item => item.kind === 'broadcast');
+        const references = instance.referencesFor(broadcast);
+        await instance.navigate(broadcast, 1);
+        scheduled();
+        expect(instance.results().find(item => item.kind === 'event').label).toBe('当绿旗被点击');
+        await instance.navigate(broadcast, 0);
+        scheduled();
+        instance.setState({query: '@e 绿旗'});
+        expect(instance.results()).toHaveLength(1);
+        expect(instance.referencesFor(broadcast)).toBe(references);
+        expect(original.blocks.getScripts).toHaveBeenCalledTimes(2);
+        expect(other.blocks.getScripts).toHaveBeenCalledTimes(1);
+    } finally {
+        global.requestAnimationFrame = originalRaf;
+    }
 });
 
 test('symbol Escape clears the query before closing, retaining the symbol prefix', () => {

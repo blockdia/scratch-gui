@@ -43,6 +43,19 @@ const visibleFieldText = (item, t) => {
     if (typeof value === 'string' && value.endsWith('/green-flag.svg')) return t('greenFlag');
     return item.getText && item.getText();
 };
+const eventLabel = (visual, t) => visual.inputList.map(input => input.fieldRow.map(item =>
+    visibleFieldText(item, t)).filter(Boolean)
+    .join(' ')).filter(Boolean)
+    .join(' ');
+
+export const refreshEventLabels = (items, workspace, t) => {
+    if (!workspace) return;
+    for (const item of items) {
+        if (item.kind !== 'event') continue;
+        const visual = workspace.getBlockById(item.blockIds[0]);
+        if (visual) item.label = eventLabel(visual, t);
+    }
+};
 
 export const targetResults = (vm, t) => originals(vm).map(target => {
     const kind = target.isStage ? 'stage' : target.component ? 'component' : 'sprite';
@@ -120,10 +133,7 @@ export const symbolResults = (vm, targetId, tab, workspace, t) => {
             block.opcode === 'control_start_as_clone')) {
             const visual = workspace && vm.editingTarget === target && workspace.getBlockById(block.id);
             // A header's own fields omit the connected script body.
-            const label = visual ? visual.inputList.map(input => input.fieldRow.map(item =>
-                visibleFieldText(item, t)).filter(Boolean)
-                .join(' ')).filter(Boolean)
-                .join(' ') :
+            const label = visual ? eventLabel(visual, t) :
                 [block.opcode, ...Object.values(block.fields || {}).map(item => item.value)].join(' ');
             // Labels depend on the active Blockly workspace and locale. Keep
             // group identity in VM data so cached labels survive target switches.

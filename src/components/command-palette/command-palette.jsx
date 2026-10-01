@@ -15,7 +15,8 @@ import service from '../../lib/command-palette/service';
 import installGestures from '../../lib/command-palette/gestures';
 import messages from '../../lib/command-palette/messages';
 import {parseQuery, filterResults, createSearchAliases, sortCommands} from '../../lib/command-palette/search';
-import {targetResults, commandResults, symbolResults, createReferenceIndex} from '../../lib/command-palette/providers';
+import {targetResults, commandResults, symbolResults, createReferenceIndex,
+    refreshEventLabels} from '../../lib/command-palette/providers';
 import addonManifests from '../../addons/generated/addon-manifests';
 import {loadAddonSettingsMessages} from '../../addons/settings/addon-translations';
 import actionMessages from '../../lib/editor-actions/messages';
@@ -36,6 +37,13 @@ export class CommandPalette extends React.Component {
             // Selecting/scrolling to a search result does not change symbols.
             if (event && (event.type === 'ui' || event.isUiEvent)) return;
             this.projectChanged();
+        };
+        this.workspaceUpdated = () => {
+            const target = this.vm.editingTarget;
+            if (this.symbolCache && target && target.id === this.originId) {
+                this.symbolCache.refreshLabels = true;
+                this.refresh();
+            }
         };
         this.keydown = this.keydown.bind(this);
         this.outside = this.outside.bind(this);
@@ -91,6 +99,7 @@ export class CommandPalette extends React.Component {
         this.unsubscribe = actions.subscribe(this.refresh);
         this.vm.on('targetsUpdate', this.refresh);
         this.vm.on('PROJECT_CHANGED', this.projectChanged);
+        this.vm.on('workspaceUpdate', this.workspaceUpdated);
         this.vm.runtime.on('PROJECT_LOADED', this.projectLoaded);
         window.addEventListener('keydown', this.keydown, true);
         window.addEventListener('pointerdown', this.outside, true);
@@ -138,6 +147,7 @@ export class CommandPalette extends React.Component {
         if (this.workspace) this.workspace.removeChangeListener(this.workspaceChanged);
         this.vm.removeListener('targetsUpdate', this.refresh);
         this.vm.removeListener('PROJECT_CHANGED', this.projectChanged);
+        this.vm.removeListener('workspaceUpdate', this.workspaceUpdated);
         this.vm.runtime.removeListener('PROJECT_LOADED', this.projectLoaded);
         window.removeEventListener('keydown', this.keydown, true);
         window.removeEventListener('pointerdown', this.outside, true);
@@ -160,6 +170,18 @@ export class CommandPalette extends React.Component {
         this.refreshFrame = requestAnimationFrame(() => {
             this.refreshFrame = null;
             if (!this.detached && this.state.open) {
+                const cache = this.symbolCache;
+                if (cache && cache.refreshLabels && this.vm.editingTarget &&
+                    this.vm.editingTarget.id === cache.targetId) {
+                    // Wait for all workspaceUpdate listeners to finish rebuilding Blockly.
+                    // Labels may change without a project edit; references remain valid.
+                    refreshEventLabels(cache.items, this.workspace, key => this.t(key));
+                    for (const item of cache.items) {
+                        if (item.kind === 'event') this.labelCache.set(item.id, item.label);
+                    }
+                    cache.matches = null;
+                    cache.refreshLabels = false;
+                }
                 if (this.state.symbol && !this.results().some(item => item.id === this.state.symbol.id)) {
                     this.navigation.cancel();
                     this.setState({symbol: null, reference: null, error: true});

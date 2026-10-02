@@ -7,7 +7,7 @@
     "short-names/@settings-name-editShortNames": "编辑名称时也显示短名（应用于已勾选的名称输入框）",
     "middle-click-popup/@description": "鼠标中键或 Shift+左键单击代码区域，或者按 Ctrl+空格键弹出积木搜索窗口。输入积木名称（或部分名称），然后将积木拖入代码区。支持上下键选择和 Tab 自动补全，按住 Shift 拖出积木可保持菜单打开。Shift+点击输入框可搜索兼容的积木，点击结果或按 Enter 即可直接插入该输入框。",
     "layer-manager/@name": "图层管理器",
-    "layer-manager/@description": "查看舞台上的角色与克隆体图层，拖动即可调整叠放顺序。",
+    "layer-manager/@description": "以树状结构查看容器、角色和克隆体的图层，拖动手柄即可在所属容器内调整叠放顺序。",
     "linter/@name": "代码检查",
     "linter/@description": "检查引用、自制积木、组件、执行行为和未使用的项目数据。",
     "linter/@settings-name-missing-target": "不存在的角色引用",

@@ -24,14 +24,17 @@ afterEach(() => {
     global.document = previousDocument;
     global.window = previousWindow;
 });
-const fixture = () => {
+const fixture = (withContainers = false) => {
     const target = (id, order, extra = {}) => ({id, isOriginal: true, isStage: false, visible: true,
         getLayerOrder: () => order, getCostumes: () => [], getName: () => id, ...extra});
     const stage = target('stage', 0, {isStage: true});
-    const a = target('a', 1);
+    const a = target('a', 1, withContainers ? {getName: () => 'A//N//Sprite'} : {});
     const clone = target('clone', 2, {isOriginal: false});
     const runtime = new EventEmitter();
     runtime.targets = [stage, a, clone];
+    if (withContainers) runtime.spriteContainers = {serialize: () => [
+        {path: 'A', visible: true}, {path: 'A//N', visible: true}
+    ]};
     const vm = {runtime, editingTarget: a, setEditingTarget: jest.fn()};
     const model = createLayerModel(vm);
     const snapshot = jest.spyOn(model, 'snapshot');
@@ -66,6 +69,39 @@ test('polls only while visible, preserves clone selection and removes listeners 
     const finalCalls = snapshot.mock.calls.length;
     renderer.act(() => { jest.advanceTimersByTime(500); });
     expect(snapshot).toHaveBeenCalledTimes(finalCalls);
+});
+
+test('containers select without changing the VM, collapse descendants and reveal externally selected sprites', () => {
+    const {root, vm, render} = fixture(true);
+    const item = id => root.root.findByProps({'data-layer-id': id});
+    const select = id => item(id).findByProps({className: 'sa-layer-select'}).props.onClick();
+    const toggle = id => item(id).findByProps({className: 'sa-layer-toggle'}).props.onClick();
+    expect(item('a').props['aria-level']).toBe(3);
+    renderer.act(() => select('container:A'));
+    expect(vm.setEditingTarget).not.toHaveBeenCalled();
+    expect(root.root.findByProps({className: 'sa-layer-actions'}).findAllByType('button')[1].props.disabled).toBe(true);
+    renderer.act(() => select('a'));
+    renderer.act(() => toggle('container:A'));
+    expect(root.root.findAllByProps({'data-layer-id': 'a'})).toHaveLength(0);
+    expect(item('container:A').props['aria-selected']).toBe(true);
+    expect(item('container:A').props['aria-expanded']).toBe(false);
+    renderer.act(() => root.update(render(false)));
+    renderer.act(() => root.update(render(true)));
+    expect(item('container:A').props['aria-expanded']).toBe(false);
+    renderer.act(() => {
+        vm.editingTarget = vm.runtime.targets[0];
+        jest.advanceTimersByTime(100);
+    });
+    renderer.act(() => {
+        vm.editingTarget = vm.runtime.targets[1];
+        jest.advanceTimersByTime(100);
+    });
+    expect(item('a').props['aria-selected']).toBe(true);
+    expect(item('container:A').props['aria-expanded']).toBe(true);
+    renderer.act(() => toggle('container:A'));
+    renderer.act(() => vm.runtime.emit('PROJECT_LOADED'));
+    expect(item('container:A').props['aria-expanded']).toBe(true);
+    renderer.act(() => root.unmount());
 });
 
 test('Escape cancels a pending drag and a project replacement resets selection', () => {

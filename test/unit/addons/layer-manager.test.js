@@ -15,6 +15,7 @@ const fixture = () => {
         _drawableGroupById: new Map([[2, 'component'], [3, 'component']])});
     const runtime = Object.create(Runtime.prototype);
     Object.assign(runtime, {targets: [], executableTargets: [], requestRedraw: jest.fn(), emitProjectChanged: jest.fn()});
+    runtime.spriteContainers = {serialize: () => [], refreshExecutableOrder: () => {}};
     const make = (id, drawableID, extra = {}) => Object.assign(Object.create(RenderedTarget.prototype), {
         id, drawableID, renderer, runtime, isOriginal: true, isStage: false, visible: true,
         currentCostume: 0, getName: () => id, getCostumes: () => [], ...extra
@@ -70,4 +71,16 @@ test('snapshots include hidden clones and keep clone numbers stable across order
     vm.runtime.targets = fixture().runtime.targets;
     expect(model.snapshot().generation).toBe(initial.generation + 1);
     expect(model.snapshot().rows[0].clone).toBe(1);
+});
+
+test('clone numbers follow creation order even when the first snapshot sorts them in reverse', () => {
+    const vm = fixture();
+    const newest = Object.assign(Object.create(Object.getPrototypeOf(vm.c)), vm.c, {
+        id: 'new-clone', drawableID: 5
+    });
+    vm.runtime.targets.push(newest);
+    vm.renderer._drawList.push(5);
+    const rows = createLayerModel(vm).snapshot().rows;
+    expect(rows[0]).toMatchObject({id: 'new-clone', clone: 2});
+    expect(rows[1]).toMatchObject({id: 'c', clone: 1});
 });

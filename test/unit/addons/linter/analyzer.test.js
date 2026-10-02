@@ -45,7 +45,8 @@ test.each([
     ['motion_glideto', 'TO', '_random_'], ['motion_pointtowards', 'TOWARDS', '_mouse_'],
     ['sensing_touchingobject', 'TOUCHINGOBJECTMENU', '_edge_'],
     ['sensing_distanceto', 'DISTANCETOMENU', '_mouse_'],
-    ['control_create_clone_of', 'CLONE_OPTION', '_myself_'], ['sensing_of', 'OBJECT', '_stage_']
+    ['control_create_clone_of', 'CLONE_OPTION', '_myself_'],
+    ['control_create_clone_of', 'CLONE_OPTION', '_mycontainer_'], ['sensing_of', 'OBJECT', '_stage_']
 ])('accepts only the relevant special target for %s', (opcode, input, special) => {
     expect(analyze([target('a', reference(special, opcode, input))])).toEqual([]);
     expect(analyze([target('a', reference('missing', opcode, input))])).toHaveLength(1);

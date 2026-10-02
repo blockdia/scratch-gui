@@ -3,6 +3,7 @@
 // Start the editor with BLOCKDIA_LOCAL_PACKAGES=1; reuse the container harness environment variables.
 const {chromium} = require(process.env.COMPONENTS_PLAYWRIGHT_PATH || 'playwright');
 const assert = require('assert/strict');
+const messages = require('../src/addons/blockdia-l10n/zh-cn.json');
 
 (async () => {
     const browser = await chromium.launch({headless: true, executablePath: process.env.COMPONENTS_CHROME_PATH});
@@ -127,7 +128,7 @@ const assert = require('assert/strict');
         await page.evaluate(() => vm.setSpriteContainerVisible('A', false));
         await page.waitForFunction(() => document.querySelectorAll('.sa-layer-badge').length === 7);
         assert.equal(await row(ids.clone).locator('.sa-layer-badge')
-            .innerText(), '容器已隐藏');
+            .innerText(), messages['layer-manager/hiddenByContainer']);
         const screenshot = `/tmp/blockdia-layer-tree${process.env.COMPONENTS_COMPACT ? '-compact' : ''}.png`;
         await panel.screenshot({path: screenshot});
         await toggle('container:A');

@@ -100,6 +100,38 @@ test('snapshots form a render-ordered tree, preserve ordinary paths and inherit 
     expect(dissolved.rows.find(row => row.id === 'clone')).toMatchObject({name: 'N//First', parent: A, depth: 1, clone: 1});
 });
 
+test('runtime container instances have separate layer rows, labels and atomic movement', () => {
+    const vm = fixture();
+    const manager = vm.runtime.spriteContainers;
+    manager.cloneDefinitions.set('instance', {path: 'A', visible: true});
+    manager.cloneDefinitions.set('nested-instance', {path: 'A//N', visible: true});
+    const clone = vm.runtime.targets.find(target => target.id === 'clone');
+    const component = vm.runtime.targets.find(target => target.id === 'component');
+    clone._containerClonePaths = ['instance', 'nested-instance'];
+    component._containerClonePaths = ['instance', 'nested-instance'];
+    component.isOriginal = false;
+    manager.sync();
+    const model = createLayerModel(vm);
+    const rows = model.snapshot().rows;
+    const instanceId = containerLayerId('instance');
+    const nestedId = containerLayerId('nested-instance');
+    expect(rows.find(row => row.id === instanceId)).toMatchObject({name: 'A', parent: null,
+        count: 2, isContainerClone: true});
+    expect(rows.find(row => row.id === instanceId).clone).toBeGreaterThan(0);
+    expect(rows.find(row => row.id === nestedId)).toMatchObject({name: 'N', parent: instanceId});
+    expect(rows.find(row => row.id === 'clone')).toMatchObject({name: 'First', parent: nestedId});
+    expect(rows.find(row => row.id === 'component')).toMatchObject({name: 'Slider', parent: nestedId});
+    expect(rows.find(row => row.id === A)).toMatchObject({count: 3, clone: null});
+    const cloneLabel = rows.find(row => row.id === instanceId).clone;
+    expect(moveLayer(vm, instanceId, null)).toBe(true);
+    expect(ordered(vm).slice(-2)).toEqual(['component', 'clone']);
+    expect(model.snapshot().rows.find(row => row.id === instanceId).clone).toBe(cloneLabel);
+    expect(moveLayer(vm, 'clone', 'n')).toBe(false, 'source and clone containers are separate parents');
+    manager.setVisible('instance', false);
+    expect(model.snapshot().rows.find(row => row.id === instanceId).visible).toBe(false);
+    expect(model.snapshot().rows.find(row => row.id === A).visible).toBe(true);
+});
+
 test('drop slots use whole subtrees and stay inside the current parent when expanded or collapsed', () => {
     const rows = createLayerModel(fixture()).snapshot().rows;
     const rectangles = items => items.map((row, i) => ({id: row.id, top: i * 50, bottom: (i + 1) * 50}));

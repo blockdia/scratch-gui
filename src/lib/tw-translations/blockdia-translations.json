@@ -180,6 +180,8 @@
         "blockdia.containers.hideContainer": "隐藏容器",
         "blockdia.containers.showContainer": "显示容器",
         "blockdia.containers.container": "容器",
+        "blockdia.containers.containerPath": "容器：{path}",
+        "blockdia.containers.containingContainer": "所在容器",
         "blockdia.containers.hiddenContainer": "容器 · 已隐藏"
     },
     "zh-tw": {
@@ -258,6 +260,8 @@
         "blockdia.containers.hideContainer": "隱藏容器",
         "blockdia.containers.showContainer": "顯示容器",
         "blockdia.containers.container": "容器",
+        "blockdia.containers.containerPath": "容器：{path}",
+        "blockdia.containers.containingContainer": "所在容器",
         "blockdia.containers.hiddenContainer": "容器 · 已隱藏"
     },
     "en": {
@@ -341,6 +345,8 @@
         "blockdia.containers.hideContainer": "Hide container",
         "blockdia.containers.showContainer": "Show container",
         "blockdia.containers.container": "Container",
+        "blockdia.containers.containerPath": "Container: {path}",
+        "blockdia.containers.containingContainer": "my container",
         "blockdia.containers.hiddenContainer": "Hidden container"
     }
 }

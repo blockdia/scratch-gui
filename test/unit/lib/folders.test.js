@@ -67,9 +67,12 @@ test('simultaneous renames preserve references when destination names overlap ol
 });
 
 test('moving reserved basenames out of a folder produces legal Scratch sprite names', () => {
-    const {vm} = makeVM(['A//_stage_', 'A//']);
+    const {vm, references} = makeVM(['A//_stage_', 'A//', 'A//_mycontainer_',
+        'A//_container_:A', '__container_:A']);
     moveFolder(vm, 'SPRITE', 'A', '');
-    expect(getEntries(vm, 'SPRITE').map(entry => entry.name)).toEqual(['_stage_2', '2']);
+    const names = getEntries(vm, 'SPRITE').map(entry => entry.name);
+    expect(names).toEqual(['_stage_2', '2', '_mycontainer_2', '__container_:A2', '__container_:A']);
+    expect(references).toEqual(names);
 });
 
 test('drop ordering uses actual indices, preserves grouped order and never moves the stage', () => {

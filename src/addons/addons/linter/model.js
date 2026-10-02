@@ -52,6 +52,8 @@ export const createLinterModel = (vm, getRules = () => DEFAULT_RULES, options = 
         let coverage = {limitations: [], unknownOpcodes: []};
         const iterator = analyzeProject(targets, monitors, getRules(), {
             runtimeOptions: {...vm.runtime.runtimeOptions},
+            containerCloneOptions: vm.runtime.spriteContainers && vm.runtime.spriteContainers.getCloneMenu ?
+                vm.runtime.spriteContainers.getCloneMenu().map(([, value]) => value) : [],
             compilerOptions: {...vm.runtime.compilerOptions},
             addonBlocks: vm.runtime.addonBlocks || {},
             ...options.context,

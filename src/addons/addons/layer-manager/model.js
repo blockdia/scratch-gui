@@ -5,6 +5,7 @@ export const containerLayerId = path => `container:${path}`;
 
 // Only containers affect render order. Ordinary folders stay in the displayed name.
 const readLayerRows = vm => {
+    const manager = vm.runtime.spriteContainers;
     const definitions = new Map(vm.runtime.spriteContainers ?
         vm.runtime.spriteContainers.serialize().map(container => [container.path, container]) : []);
     const containers = new Map();
@@ -17,15 +18,19 @@ const readLayerRows = vm => {
         const fullName = target.getName();
         const folder = target.isStage ? '' : splitName(fullName).folder;
         const parts = folder ? folder.split('//') : [];
-        for (let i = 0; i < parts.length; i++) {
-            const path = parts.slice(0, i + 1).join('//');
-            if (!definitions.has(path)) continue;
-            if (!containers.has(path)) {
-                const ownVisible = definitions.get(path).visible;
-                const node = {id: containerLayerId(path),
-                    container: path,
+        const membership = manager && manager.getTargetContainers ? manager.getTargetContainers(target) :
+            parts.map((part, i) => parts.slice(0, i + 1).join('//')).filter(path => definitions.has(path))
+                .map(path => ({...definitions.get(path), id: path}));
+        for (const entry of membership) {
+            const {id, path} = entry;
+            if (!containers.has(id)) {
+                const ownVisible = entry.visible;
+                const node = {id: containerLayerId(id),
+                    container: id,
                     fullName: path,
-                    name: parent ? path.slice(parent.container.length + 2) : path,
+                    name: parent && path.startsWith(`${parent.fullName}//`) ?
+                        path.slice(parent.fullName.length + 2) : path,
+                    isContainerClone: Boolean(entry.isClone),
                     parent: parent ? parent.id : null,
                     stage: false,
                     visible: ownVisible && (!parent || parent.visible),
@@ -34,10 +39,10 @@ const readLayerRows = vm => {
                     count: 0,
                     order: target.getLayerOrder(),
                     backId: target.id};
-                containers.set(path, node);
+                containers.set(id, node);
                 (parent ? parent.children : roots).push(node);
             }
-            parent = containers.get(path);
+            parent = containers.get(id);
             parent.count++;
             parent.backId = target.id;
         }
@@ -45,7 +50,8 @@ const readLayerRows = vm => {
             target.isEffectivelyVisible() : target.visible;
         (parent ? parent.children : roots).push({id: target.id,
             container: null,
-            name: parent ? fullName.slice(parent.container.length + 2) : fullName,
+            name: parent && fullName.startsWith(`${parent.fullName}//`) ?
+                fullName.slice(parent.fullName.length + 2) : fullName,
             fullName,
             parent: parent ? parent.id : null,
             stage: target.isStage,
@@ -84,6 +90,7 @@ export const createLayerModel = vm => {
     let generation = 0;
     let nextClone = 1;
     let clones = new WeakMap();
+    let containerClones = new Map();
     const thumbnails = new WeakMap();
     const snapshot = () => {
         const currentStage = vm.runtime.targets.find(target => target.isStage);
@@ -92,6 +99,7 @@ export const createLayerModel = vm => {
             generation++;
             nextClone = 1;
             clones = new WeakMap();
+            containerClones = new Map();
         }
         const targets = new Map(vm.runtime.targets.map(target => [target.id, target]));
         // Allocate labels in creation order, independently of tree/render ordering.
@@ -100,7 +108,10 @@ export const createLayerModel = vm => {
                 target.getLayerOrder() >= 0) clones.set(target, nextClone++);
         }
         const rows = readLayerRows(vm).map(row => {
-            if (row.container) return {...row, clone: null, thumbnail: null};
+            if (row.container) {
+                if (row.isContainerClone && !containerClones.has(row.id)) containerClones.set(row.id, nextClone++);
+                return {...row, clone: containerClones.get(row.id) || null, thumbnail: null};
+            }
             const target = targets.get(row.id);
             const costume = target.getCostumes()[target.currentCostume];
             const asset = costume && costume.asset;
@@ -109,6 +120,10 @@ export const createLayerModel = vm => {
                 clone: target.isOriginal ? null : clones.get(target),
                 thumbnail: asset ? thumbnails.get(asset) : null};
         });
+        const liveContainers = new Set(rows.filter(row => row.isContainerClone).map(row => row.id));
+        for (const id of containerClones.keys()) {
+            if (!liveContainers.has(id)) containerClones.delete(id);
+        }
         const editing = vm.editingTarget && vm.editingTarget.id;
         if (previous && previous.generation === generation && previous.editing === editing &&
             previous.rows.length === rows.length && rows.every((row, index) =>

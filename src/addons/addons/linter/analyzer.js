@@ -167,8 +167,10 @@ export const analyzeProject = function* (targets, monitors = [], enabled = DEFAU
             const reference = own(TARGET_INPUTS, op) || (extension && extension.targetInput);
             if (reference) {
                 const value = index.input(block, reference[0]);
+                const container = op === 'control_create_clone_of' &&
+                    (context.containerCloneOptions || []).includes(String(value));
                 if (value === UNKNOWN) limitations.add('dynamic-reference');
-                else if (!reference[1].includes(String(value)) && !names.has(String(value))) {
+                else if (!container && !reference[1].includes(String(value)) && !names.has(String(value))) {
                     add('missing-target', target, location, {name: String(value)});
                 }
             }

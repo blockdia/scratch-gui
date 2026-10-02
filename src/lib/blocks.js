@@ -1,11 +1,13 @@
 import LazyScratchBlocks from './tw-lazy-scratch-blocks';
+import containerMessages from './folders/messages';
 
 /**
  * Connect scratch blocks with the vm
  * @param {VirtualMachine} vm - The scratch vm
+ * @param {Function} getIntl - Read the editor's current localization context.
  * @return {ScratchBlocks} ScratchBlocks connected with the vm
  */
-export default function (vm) {
+export default function (vm, getIntl) {
     const ScratchBlocks = LazyScratchBlocks.get();
     const jsonForMenuBlock = function (name, menuOptionsFn, colors, start) {
         return {
@@ -133,15 +135,23 @@ export default function (vm) {
     };
 
     const cloneMenu = function () {
+        const containers = vm.runtime.spriteContainers;
+        const menu = spriteMenu();
+        if (containers && containers.getCloneMenu) {
+            for (const [path, value] of containers.getCloneMenu(vm.editingTarget)) {
+                if (path === null) {
+                    menu.unshift([getIntl().formatMessage(containerMessages.containingContainer), value]);
+                } else menu.push([getIntl().formatMessage(containerMessages.containerPath, {path}), value]);
+            }
+        }
         if (vm.editingTarget && vm.editingTarget.isStage) {
-            const menu = spriteMenu();
             if (menu.length === 0) {
                 return [['', '']]; // Empty menu matches Scratch 2 behavior
             }
             return menu;
         }
         const myself = ScratchBlocks.ScratchMsgs.translate('CONTROL_CREATECLONEOF_MYSELF', 'myself');
-        return [[myself, '_myself_']].concat(spriteMenu());
+        return [[myself, '_myself_']].concat(menu);
     };
 
     const soundColors = ScratchBlocks.Colours.sounds;

@@ -104,7 +104,7 @@ const DroppableBlocks = DropAreaHOC([
 class Blocks extends React.Component {
     constructor (props) {
         super(props);
-        this.ScratchBlocks = VMScratchBlocks(props.vm, false);
+        this.ScratchBlocks = VMScratchBlocks(props.vm, () => this.props.intl);
 
         window.ScratchBlocks = this.ScratchBlocks;
         AddonHooks.blockly = this.ScratchBlocks;
@@ -150,7 +150,7 @@ class Blocks extends React.Component {
         this.toolboxUpdateQueue = [];
     }
     componentDidMount () {
-        this.ScratchBlocks = VMScratchBlocks(this.props.vm, this.props.useCatBlocks);
+        this.ScratchBlocks = VMScratchBlocks(this.props.vm, () => this.props.intl);
         this.ScratchBlocks.prompt = this.handlePromptStart;
         this.ScratchBlocks.statusButtonCallback = this.handleConnectionModalStart;
         this.ScratchBlocks.recordSoundCallback = this.handleOpenSoundRecorder;

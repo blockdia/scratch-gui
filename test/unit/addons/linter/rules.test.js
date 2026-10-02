@@ -33,6 +33,15 @@ const analyze = (targets, rules, context = {}) => {
     } while (!next.done);
     return next.value;
 };
+
+test('clone references accept existing containers without accepting them as ordinary sprite references', () => {
+    const make = opcode => target([block('clone', opcode, {inputs: {CLONE_OPTION: input('choice'), TO: input('choice')}}),
+        literal('choice', '_container_:A')]);
+    const context = {containerCloneOptions: ['_container_:A']};
+    expect(analyze([make('control_create_clone_of')], ['missing-target'], context)).toEqual([]);
+    expect(analyze([make('control_create_clone_of')], ['missing-target'])).toHaveLength(1);
+    expect(analyze([make('motion_goto')], ['missing-target'], context)).toHaveLength(1);
+});
 const reference = (opcode, name, value) => [block('ref', opcode, {inputs: {[name]: input('value')}}), literal('value', value)];
 
 // Independent expected cases: do not enumerate the implementation's opcode sets for semantic coverage.

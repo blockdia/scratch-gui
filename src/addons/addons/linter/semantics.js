@@ -8,7 +8,7 @@ export const TARGET_INPUTS = {
     motion_pointtowards: ['TOWARDS', ['_mouse_']],
     sensing_touchingobject: ['TOUCHINGOBJECTMENU', ['_mouse_', '_edge_']],
     sensing_distanceto: ['DISTANCETOMENU', ['_mouse_']],
-    control_create_clone_of: ['CLONE_OPTION', ['_myself_']],
+    control_create_clone_of: ['CLONE_OPTION', ['_myself_', '_mycontainer_']],
     sensing_of: ['OBJECT', ['_stage_']]
 };
 export const WAIT_OPERATIONS = new Set([

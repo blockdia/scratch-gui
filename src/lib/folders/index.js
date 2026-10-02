@@ -70,12 +70,16 @@ export const getEntries = (vm, kind, targetId = vm.editingTarget && vm.editingTa
         .map((value, id) => ({id, name: value.name, value}));
 };
 
-const reservedNames = ['_mouse_', '_stage_', '_edge_', '_myself_', '_random_'];
+const reservedNames = ['_mouse_', '_stage_', '_edge_', '_myself_', '_mycontainer_', '_random_'];
+// Container clone menu values use this prefix, so sprite names must not start with it.
+const containerOptionPrefix = '_container_:';
 const unusedName = (name, used, sprite = true) => {
-    let candidate = name;
+    // A numeric suffix cannot escape a reserved prefix; escape it before deduplicating.
+    let candidate = sprite && name.startsWith(containerOptionPrefix) ? `_${name}` : name;
     let suffix = 2;
-    const base = name.replace(/\d+$/, '');
-    const unavailable = value => used.has(value) || (sprite && (!value || reservedNames.includes(value)));
+    const base = candidate.replace(/\d+$/, '');
+    const unavailable = value => used.has(value) || (sprite && (!value || reservedNames.includes(value) ||
+        value.startsWith(containerOptionPrefix)));
     while (unavailable(candidate)) {
         candidate = `${base}${suffix++}`;
     }

@@ -329,6 +329,20 @@ export default function (vm, getIntl) {
     ScratchBlocks.Blocks.control_create_clone_of_menu.init = function () {
         const json = jsonForMenuBlock('CLONE_OPTION', cloneMenu, controlColors, []);
         this.jsonInit(json);
+        const field = this.getField('CLONE_OPTION');
+        const setValue = field.setValue;
+        field.setValue = function (value) {
+            setValue.call(this, value);
+            // Like a named sprite shared into itself, a named container keeps its value even
+            // when hidden from this target's menu. Display its label without changing clone semantics.
+            const selected = this.getValue();
+            if (selected === '_mycontainer_') {
+                this.setText(getIntl().formatMessage(containerMessages.containingContainer));
+            } else if (typeof selected === 'string' && selected.startsWith('_container_:')) {
+                this.setText(getIntl().formatMessage(containerMessages.containerPath,
+                    {path: selected.slice('_container_:'.length)}));
+            }
+        };
     };
 
     ScratchBlocks.VerticalFlyout.getCheckboxState = function (blockId) {

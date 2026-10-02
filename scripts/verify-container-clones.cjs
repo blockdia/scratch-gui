@@ -72,6 +72,15 @@ const assert = require('assert/strict');
                 {CLONE_OPTION: input('menu-second')});
             create(controller, 'menu-second', 'control_create_clone_of_menu', 'clone-second', null, {},
                 {CLONE_OPTION: {name: 'CLONE_OPTION', value: '_container_:World'}}, true);
+            create(controller, 'share-sprite', 'control_create_clone_of', null, 'share-container',
+                {CLONE_OPTION: input('share-sprite-menu')});
+            controller.blocks.getBlock('share-sprite').y = 260;
+            create(controller, 'share-sprite-menu', 'control_create_clone_of_menu', 'share-sprite', null, {},
+                {CLONE_OPTION: {name: 'CLONE_OPTION', value: first.getName()}}, true);
+            create(controller, 'share-container', 'control_create_clone_of', 'share-sprite', null,
+                {CLONE_OPTION: input('share-container-menu')});
+            create(controller, 'share-container-menu', 'control_create_clone_of_menu', 'share-container', null, {},
+                {CLONE_OPTION: {name: 'CLONE_OPTION', value: '_container_:World'}}, true);
             vm.setSpriteFolderContainer('World', true);
             vm.setSpriteFolderContainer('World//Nested', true);
             vm.setEditingTarget(first.id);
@@ -86,10 +95,11 @@ const assert = require('assert/strict');
             field.showEditor_();
             return field.getOptions();
         });
-        assert(options.some(([label, value]) => label === '容器: World' && value === '_container_:World'));
+        assert(options.some(([label, value]) => label === '容器：World' && value === '_container_:World'),
+            JSON.stringify(options));
         assert(options.some(([, value]) => value === '_container_:World//Nested'));
         assert(!options.some(([, value]) => value === '_mycontainer_'));
-        await page.getByText('容器: World', {exact: true}).last()
+        await page.getByText('容器：World', {exact: true}).last()
             .click();
         console.log('PASS real localized clone dropdown with nested containers');
 
@@ -122,6 +132,60 @@ const assert = require('assert/strict');
         }
         await page.evaluate(() => vm.setEditingTarget(vm.runtime.getSpriteTargetByName('World').id));
         console.log('PASS native-style relative selection, own-name filtering, nested containers and stage menu');
+
+        // Reproduce dragging named sprite/container clone blocks into the named sprite itself.
+        const recipientId = await page.evaluate(() => vm.runtime.getSpriteTargetByName('World//Back').id);
+        const recipient = page.locator(`[data-sprite-id="${recipientId}"]`);
+        await recipient.scrollIntoViewIfNeeded();
+        const destination = await recipient.boundingBox();
+        const start = await page.evaluate(() => {
+            const block = (window.Blockly || window.ScratchBlocks).getMainWorkspace().getBlockById('share-sprite');
+            const rect = block.getSvgRoot().getBoundingClientRect();
+            return {x: rect.x + 15, y: rect.y + 20};
+        });
+        await page.mouse.move(start.x, start.y);
+        await page.mouse.down();
+        await page.mouse.move(start.x + 30, start.y + 20, {steps: 5});
+        await page.mouse.move(destination.x + (destination.width / 2), destination.y + (destination.height / 2),
+            {steps: 20});
+        await page.mouse.up();
+        await page.waitForFunction(() => Object.values(vm.runtime.getSpriteTargetByName('World//Back').blocks._blocks)
+            .some(block => block.fields.CLONE_OPTION?.value === '_container_:World'));
+        await recipient.click();
+        const shared = await page.evaluate(() => {
+            const workspace = (window.Blockly || window.ScratchBlocks).getMainWorkspace();
+            const fields = workspace.getAllBlocks().filter(block => block.type === 'control_create_clone_of_menu');
+            const container = fields.find(block => block.getFieldValue('CLONE_OPTION') === '_container_:World');
+            window.sharedContainerMenuId = container.id;
+            const field = container.getField('CLONE_OPTION');
+            const sprite = fields.find(block => block.getFieldValue('CLONE_OPTION') === 'World//Back');
+            return {sprite: sprite.getField('CLONE_OPTION').getText(),
+                container: field.getText(),
+                value: field.getValue(),
+                options: field.getOptions()};
+        });
+        assert.equal(shared.sprite, 'World//Back', 'native named sprite selection remains named after sharing');
+        assert.equal(shared.container, '容器：World', 'hidden named container keeps its readable label');
+        assert.equal(shared.value, '_container_:World', 'sharing does not change named clone semantics');
+        assert(!shared.options.some(([, value]) => value === '_container_:World'));
+        await page.evaluate(() => (window.Blockly || window.ScratchBlocks).getMainWorkspace()
+            .getBlockById(window.sharedContainerMenuId)
+            .getField('CLONE_OPTION')
+            .showEditor_());
+        await page.getByText('所在容器', {exact: true}).last()
+            .click();
+        await page.waitForFunction(() => vm.editingTarget.blocks.getBlock(window.sharedContainerMenuId)
+            .fields.CLONE_OPTION.value === '_mycontainer_');
+        await page.evaluate(() => (window.Blockly || window.ScratchBlocks).getMainWorkspace().undo(false));
+        await page.waitForFunction(() => vm.editingTarget.blocks.getBlock(window.sharedContainerMenuId)
+            .fields.CLONE_OPTION.value === '_container_:World');
+        assert.equal(await page.evaluate(() => (window.Blockly || window.ScratchBlocks).getMainWorkspace()
+            .getBlockById(window.sharedContainerMenuId)
+            .getField('CLONE_OPTION')
+            .getText()), '容器：World');
+        await page.screenshot({path: '/tmp/blockdia-shared-container-clone.png'});
+        await page.evaluate(() => vm.setEditingTarget(vm.runtime.getSpriteTargetByName('World').id));
+        console.log('PASS real cross-sprite drag preserves named clone values, labels, menu filtering and undo');
 
         for (const enabled of [false, true]) {
             const compiled = await page.evaluate(compilerEnabled => {
@@ -255,6 +319,18 @@ const assert = require('assert/strict');
         assert.equal(saved.menu, '_container_:World');
         assert.equal(saved.relative, true);
         assert.deepEqual(saved.containers, [{path: 'World', visible: true}, {path: 'World//Nested', visible: true}]);
+        await page.evaluate(() => {
+            const target = vm.runtime.getSpriteTargetByName('World//Back');
+            window.sharedContainerMenuId = Object.values(target.blocks._blocks)
+                .find(block => block.fields.CLONE_OPTION?.value === '_container_:World').id;
+            vm.setEditingTarget(target.id);
+        });
+        await page.waitForFunction(() => (window.Blockly || window.ScratchBlocks).getMainWorkspace()
+            .getBlockById(window.sharedContainerMenuId));
+        assert.equal(await page.evaluate(() => (window.Blockly || window.ScratchBlocks).getMainWorkspace()
+            .getBlockById(window.sharedContainerMenuId)
+            .getField('CLONE_OPTION')
+            .getText()), '容器：World', 'shared named selection survives SB3 reload');
         await panel.getByRole('button', {name: '关闭', exact: true}).click();
         await page.locator('[data-folder-entry="World"]').getByRole('treeitem')
             .first()
@@ -267,6 +343,12 @@ const assert = require('assert/strict');
         assert.equal(await page.evaluate(() => Object.values(vm.runtime.getSpriteTargetByName('World').blocks._blocks)
             .filter(block => block.fields.CLONE_OPTION?.value.startsWith('_container_:'))
             .every(block => block.fields.CLONE_OPTION.value === '_container_:Scene')), true);
+        assert.deepEqual(await page.evaluate(() => {
+            const field = (window.Blockly || window.ScratchBlocks).getMainWorkspace()
+                .getBlockById(window.sharedContainerMenuId)
+                .getField('CLONE_OPTION');
+            return [field.getText(), field.getValue()];
+        }), ['容器：Scene', '_container_:Scene'], 'shared named selection follows container renames');
         await page.evaluate(() => vm.greenFlag());
         await page.waitForFunction(() => vm.runtime._cloneCounter === 6);
         await page.evaluate(() => vm.stopAll());

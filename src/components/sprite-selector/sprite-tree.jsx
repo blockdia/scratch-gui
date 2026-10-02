@@ -6,6 +6,11 @@ import styles from './sprite-tree.css';
 import assetStyles from '../asset-panel/selector.css';
 import {splitName, folderColor, isWithin, joinName} from '../../lib/folders';
 import FolderCard from '../asset-panel/folder-card.jsx';
+import TWRenderRecoloredImage from '../../lib/tw-recolor/render.jsx';
+import showIcon from '!../../lib/tw-recolor/build!../sprite-info/icon--show.svg';
+import hideIcon from '!../../lib/tw-recolor/build!../sprite-info/icon--hide.svg';
+
+const stopPropagation = event => event.stopPropagation();
 
 const collectOpenState = (nodes, state = {}) => {
     nodes.forEach(node => {
@@ -35,24 +40,36 @@ const Guides = ({depth}) => Array.from({length: depth}, (_, i) => (
 
 Guides.propTypes = {depth: PropTypes.number.isRequired};
 
-const FolderIcon = ({open}) => (
+const FolderIcon = ({open, container, label}) => (
     <svg
         className={styles.folderIcon}
         viewBox="0 0 24 24"
+        aria-hidden="true"
     >
-        <path
-            d="M3 6.5A1.5 1.5 0 0 1 4.5 5h4.3c.4 0 .8.2 1.1.5L11 7h6.5A1.5 1.5 0 0 1 19 8.5V17H3z"
-            opacity="0.55"
-        />
-        <path
-            d={open ?
-                'M6 10h16.2a.8.8 0 0 1 .77 1.02l-1.9 6.5A1.5 1.5 0 0 1 19.6 18.6H4.5A1.5 1.5 0 0 1 3 17.1z' :
-                'M3 9.5A1.5 1.5 0 0 1 4.5 8h15A1.5 1.5 0 0 1 21 9.5v8a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 17.5z'}
-        />
+        {label ? <title>{label}</title> : null}
+        {container ? <React.Fragment>
+            <path d="M12 4L21 8 12 12 3 8z" />
+            <path
+                d="M3 10l8 3.5V21l-8-4z"
+                opacity="0.55"
+            />
+            <path d="M13 13.5l8-3.5V17l-8 4z" />
+        </React.Fragment> : <React.Fragment>
+            <path
+                d="M3 5.5A1.5 1.5 0 0 1 4.5 4h4.3c.4 0 .8.2 1.1.5L11 6h6.5A1.5 1.5 0 0 1 19 7.5V19H3z"
+                opacity="0.55"
+            />
+            <path
+                d={open ?
+                    'M6 9h15.2a.8.8 0 0 1 .77 1.02l-1.9 9.5A1.5 1.5 0 0 1 18.6 20.6H4.5A1.5 1.5 0 0 1 3 19.1z' :
+                    'M3 8.5A1.5 1.5 0 0 1 4.5 7h15A1.5 1.5 0 0 1 21 8.5v11' +
+                    'a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 19.5z'}
+            />
+        </React.Fragment>}
     </svg>
 );
 
-FolderIcon.propTypes = {open: PropTypes.bool};
+FolderIcon.propTypes = {open: PropTypes.bool, container: PropTypes.bool, label: PropTypes.string};
 
 const Chevron = ({open}) => (
     <svg
@@ -72,20 +89,36 @@ const Chevron = ({open}) => (
 
 Chevron.propTypes = {open: PropTypes.bool};
 
-const FolderRow = function ({depth, hasSelection, id, name, onToggle, open, spriteCount, dragging}) {
+const FolderRow = function ({depth, hasSelection, id, name, onToggle, open, spriteCount, dragging,
+    container, hidden, label, visibilityLabel, onToggleVisibility}) {
     const handleClick = React.useCallback(() => onToggle(id), [onToggle, id]);
     const handleKeyDown = React.useCallback(e => {
+        if (e.target !== e.currentTarget) return;
         if (e.key === 'Enter' || e.key === ' ') {
             e.preventDefault();
             onToggle(id);
         }
     }, [onToggle, id]);
+    const handleToggleVisibility = React.useCallback(event => {
+        event.stopPropagation();
+        onToggleVisibility(id);
+    }, [onToggleVisibility, id]);
+    const handleVisibilityKeyDown = React.useCallback(event => {
+        if (event.key === 'Enter' || event.key === ' ') {
+            // The VM's document keyup handler suppresses native space activation.
+            event.preventDefault();
+            event.stopPropagation();
+            if (!event.repeat) onToggleVisibility(id);
+        }
+    }, [onToggleVisibility, id]);
     return (
         <div
             aria-expanded={open}
+            aria-label={label ? `${name} (${label})` : name}
             className={classNames(styles.row, styles.folderRow, {
                 [styles.hoverable]: !dragging,
-                [styles.hasSelection]: hasSelection
+                [styles.hasSelection]: hasSelection,
+                [styles.hiddenContainer]: hidden
             })}
             role="treeitem"
             tabIndex={0}
@@ -96,14 +129,41 @@ const FolderRow = function ({depth, hasSelection, id, name, onToggle, open, spri
             <span className={styles.chevronSlot}>
                 <Chevron open={open} />
             </span>
-            <FolderIcon open={open} />
+            <FolderIcon
+                open={open}
+                container={container}
+                label={label}
+            />
             <span className={styles.name}>{name}</span>
+            {container ? <button
+                type="button"
+                className={styles.visibilityButton}
+                title={visibilityLabel}
+                aria-label={visibilityLabel}
+                aria-pressed={!hidden}
+                disabled={dragging}
+                onClick={handleToggleVisibility}
+                onKeyDown={handleVisibilityKeyDown}
+                onMouseDown={stopPropagation}
+                onTouchStart={stopPropagation}
+            >
+                <TWRenderRecoloredImage
+                    src={hidden ? hideIcon : showIcon}
+                    alt=""
+                    draggable={false}
+                />
+            </button> : null}
             <span className={styles.count}>{spriteCount}</span>
         </div>
     );
 };
 
 FolderRow.propTypes = {
+    container: PropTypes.bool,
+    hidden: PropTypes.bool,
+    label: PropTypes.string,
+    visibilityLabel: PropTypes.string,
+    onToggleVisibility: PropTypes.func,
     depth: PropTypes.number.isRequired,
     dragging: PropTypes.bool,
     hasSelection: PropTypes.bool,
@@ -119,7 +179,8 @@ const matchesQuery = (node, query) => (node.type === 'folder' ?
     node.sprite.name.toLowerCase().includes(query));
 
 const SpriteTree = function ({grid, assetMode, tree, selectedId, renderSprite,
-    renderFolder, onActiveFolderChange, folderTransition, dragPreview, dragging, dropPath, query = ''}) {
+    renderFolder, onActiveFolderChange, onToggleContainerVisibility, folderTransition, dragPreview,
+    dragging, dropPath, query = ''}) {
     const [openState, setOpenState] = React.useState(() => collectOpenState(tree));
     const findSelected = nodes => {
         for (const node of nodes) {
@@ -254,6 +315,11 @@ const SpriteTree = function ({grid, assetMode, tree, selectedId, renderSprite,
             />
         ) : (
             <FolderRow
+                container={node.container}
+                hidden={node.hidden}
+                label={node.label}
+                visibilityLabel={node.visibilityLabel}
+                onToggleVisibility={onToggleContainerVisibility}
                 depth={grid ? 0 : depth}
                 dragging={dragging}
                 hasSelection={hasSelection}
@@ -275,6 +341,7 @@ const SpriteTree = function ({grid, assetMode, tree, selectedId, renderSprite,
                         data-folder-entry={node.id}
                         data-drop-key={node.id}
                         data-folder-open={open}
+                        data-container={node.container || null}
                         style={assetMode ? {'--folder-color': folderColor(node.id)} : null}
                         className={classNames({[styles.dropTarget]: dropPath === node.id, ...sourceClasses(node.id)})}
                     >
@@ -319,6 +386,7 @@ SpriteTree.propTypes = {
     dragPreview: PropTypes.shape({sourceKey: PropTypes.string, placement: PropTypes.object, isFolder: PropTypes.bool}),
     renderFolder: PropTypes.func,
     onActiveFolderChange: PropTypes.func,
+    onToggleContainerVisibility: PropTypes.func,
     folderTransition: PropTypes.shape({source: PropTypes.string, destination: PropTypes.string}),
     query: PropTypes.string,
     renderSprite: PropTypes.func.isRequired,

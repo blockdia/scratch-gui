@@ -174,7 +174,13 @@
         "blockdia.folders.invalid": "名称不能为空，不能包含 // 或以 / 开头、结尾。",
         "blockdia.folders.exists": "此处已有同名文件夹。",
         "blockdia.folders.open": "点击打开",
-        "blockdia.folders.close": "点击关闭"
+        "blockdia.folders.close": "点击关闭",
+        "blockdia.containers.toContainer": "设为容器",
+        "blockdia.containers.toFolder": "转为普通文件夹",
+        "blockdia.containers.hideContainer": "隐藏容器",
+        "blockdia.containers.showContainer": "显示容器",
+        "blockdia.containers.container": "容器",
+        "blockdia.containers.hiddenContainer": "容器 · 已隐藏"
     },
     "zh-tw": {
         "blockdia.spriteInfo.moreProperties": "更多角色屬性",
@@ -246,7 +252,13 @@
         "blockdia.folders.invalid": "名稱不能為空，不能包含 // 或以 / 開頭、結尾。",
         "blockdia.folders.exists": "此處已有同名資料夾。",
         "blockdia.folders.open": "點擊開啟",
-        "blockdia.folders.close": "點擊關閉"
+        "blockdia.folders.close": "點擊關閉",
+        "blockdia.containers.toContainer": "設為容器",
+        "blockdia.containers.toFolder": "轉為一般資料夾",
+        "blockdia.containers.hideContainer": "隱藏容器",
+        "blockdia.containers.showContainer": "顯示容器",
+        "blockdia.containers.container": "容器",
+        "blockdia.containers.hiddenContainer": "容器 · 已隱藏"
     },
     "en": {
         "gui.actions.shortcuts": "Keyboard shortcuts",
@@ -323,6 +335,12 @@
         "gui.actions.zoomIn": "Zoom in on code workspace",
         "gui.actions.zoomOut": "Zoom out of code workspace",
         "gui.actions.zoomReset": "Reset code workspace zoom",
-        "gui.actions.zoomFit": "Fit all scripts in code workspace"
+        "gui.actions.zoomFit": "Fit all scripts in code workspace",
+        "blockdia.containers.toContainer": "Set as container",
+        "blockdia.containers.toFolder": "Convert to folder",
+        "blockdia.containers.hideContainer": "Hide container",
+        "blockdia.containers.showContainer": "Show container",
+        "blockdia.containers.container": "Container",
+        "blockdia.containers.hiddenContainer": "Hidden container"
     }
 }

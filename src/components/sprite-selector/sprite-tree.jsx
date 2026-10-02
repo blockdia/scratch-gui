@@ -90,7 +90,7 @@ const Chevron = ({open}) => (
 Chevron.propTypes = {open: PropTypes.bool};
 
 const FolderRow = function ({depth, hasSelection, id, name, onToggle, open, spriteCount, dragging,
-    container, hidden, label, visibilityLabel, onToggleVisibility}) {
+    container, hidden, label, visibilityLabel, onToggleVisibility, renderContainerProperties}) {
     const handleClick = React.useCallback(() => onToggle(id), [onToggle, id]);
     const handleKeyDown = React.useCallback(e => {
         if (e.target !== e.currentTarget) return;
@@ -153,12 +153,14 @@ const FolderRow = function ({depth, hasSelection, id, name, onToggle, open, spri
                     draggable={false}
                 />
             </button> : null}
+            {container && renderContainerProperties ? renderContainerProperties(id) : null}
             <span className={styles.count}>{spriteCount}</span>
         </div>
     );
 };
 
 FolderRow.propTypes = {
+    renderContainerProperties: PropTypes.func,
     container: PropTypes.bool,
     hidden: PropTypes.bool,
     label: PropTypes.string,
@@ -179,7 +181,8 @@ const matchesQuery = (node, query) => (node.type === 'folder' ?
     node.sprite.name.toLowerCase().includes(query));
 
 const SpriteTree = function ({grid, assetMode, tree, selectedId, renderSprite,
-    renderFolder, onActiveFolderChange, onToggleContainerVisibility, folderTransition, dragPreview,
+    renderFolder, renderContainerProperties, onActiveFolderChange, onToggleContainerVisibility,
+    folderTransition, dragPreview,
     dragging, dropPath, query = ''}) {
     const [openState, setOpenState] = React.useState(() => collectOpenState(tree));
     const findSelected = nodes => {
@@ -320,6 +323,7 @@ const SpriteTree = function ({grid, assetMode, tree, selectedId, renderSprite,
                 label={node.label}
                 visibilityLabel={node.visibilityLabel}
                 onToggleVisibility={onToggleContainerVisibility}
+                renderContainerProperties={renderContainerProperties}
                 depth={grid ? 0 : depth}
                 dragging={dragging}
                 hasSelection={hasSelection}
@@ -387,6 +391,7 @@ SpriteTree.propTypes = {
     renderFolder: PropTypes.func,
     onActiveFolderChange: PropTypes.func,
     onToggleContainerVisibility: PropTypes.func,
+    renderContainerProperties: PropTypes.func,
     folderTransition: PropTypes.shape({source: PropTypes.string, destination: PropTypes.string}),
     query: PropTypes.string,
     renderSprite: PropTypes.func.isRequired,

@@ -1,6 +1,9 @@
 import {defineMessages} from 'react-intl';
 
 export default defineMessages({
+    properties: {id: 'blockdia.containers.properties',
+        defaultMessage: 'Container properties',
+        description: 'Open position, size, direction and rotation style controls for a sprite container'},
     toContainer: {id: 'blockdia.containers.toContainer',
         defaultMessage: 'Set as container',
         description: 'Sprite container'},

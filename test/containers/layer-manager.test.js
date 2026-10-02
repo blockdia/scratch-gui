@@ -14,6 +14,7 @@ const N = containerLayerId('A//N');
 
 const fixture = () => {
     const renderer = Object.create(RenderWebGL.prototype);
+    renderer.updateDrawableParentTransform = jest.fn();
     const group = StageLayering.SPRITE_LAYER;
     Object.assign(renderer, {_drawList: [0, 1, 2, 3, 4, 5, 6, 7, 8],
         _layerGroups: {[group]: {drawListOffset: 1, groupIndex: 0}}, _groupOrdering: [group],

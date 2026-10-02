@@ -238,9 +238,10 @@ class Stage extends React.Component {
                 this.positionDragCanvas(mousePosition[0], mousePosition[1]);
             } else {
                 const spritePosition = this.getScratchCoords(mousePosition[0], mousePosition[1]);
+                const position = this.getDraggedLocalPosition(spritePosition);
                 this.props.vm.postSpriteInfo({
-                    x: spritePosition[0] + this.state.dragOffset[0],
-                    y: -(spritePosition[1] + this.state.dragOffset[1]),
+                    x: position[0],
+                    y: position[1],
                     force: true
                 });
             }
@@ -386,6 +387,12 @@ class Stage extends React.Component {
         // positioned so that the pick location is at (0,0).
         this.dragCanvas.style.transform = `translate(${mouseX}px, ${mouseY}px)`;
     }
+    getDraggedLocalPosition (position) {
+        const target = this.props.vm.runtime.getTargetById(this.state.dragId);
+        const x = position[0] + this.state.dragOffset[0];
+        const y = -(position[1] + this.state.dragOffset[1]);
+        return target.worldToLocal ? target.worldToLocal(x, y) : [x, y];
+    }
     onStartDrag (x, y) {
         if (this.state.dragId) return;
         const drawableId = this.renderer.pick(x, y);
@@ -402,8 +409,9 @@ class Stage extends React.Component {
         target.goToFront();
 
         const [scratchMouseX, scratchMouseY] = this.getScratchCoords(x, y);
-        const offsetX = target.x - scratchMouseX;
-        const offsetY = -(target.y + scratchMouseY);
+        const position = target.getWorldPosition ? target.getWorldPosition() : [target.x, target.y];
+        const offsetX = position[0] - scratchMouseX;
+        const offsetY = -(position[1] + scratchMouseY);
 
         this.props.vm.startDrag(targetId);
         this.setState({
@@ -437,8 +445,7 @@ class Stage extends React.Component {
             if (mouseX > 0 && mouseX < this.rect.width &&
                 mouseY > 0 && mouseY < this.rect.height) {
                 const spritePosition = this.getScratchCoords(mouseX, mouseY);
-                spriteInfo.x = spritePosition[0] + this.state.dragOffset[0];
-                spriteInfo.y = -(spritePosition[1] + this.state.dragOffset[1]);
+                [spriteInfo.x, spriteInfo.y] = this.getDraggedLocalPosition(spritePosition);
                 spriteInfo.force = true;
             }
             this.props.vm.postSpriteInfo(spriteInfo);

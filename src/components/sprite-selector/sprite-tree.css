@@ -186,6 +186,10 @@
     filter: $filter-icon-gray;
 }
 
+.properties-button img {
+    filter: $filter-icon-black;
+}
+
 .visibility-button:hover:not(:disabled) {
     background: $ui-black-transparent;
 }

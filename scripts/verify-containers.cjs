@@ -45,7 +45,7 @@ const assert = require('assert/strict');
         };
         const visibility = async path => {
             const expanded = await row(path).getAttribute('aria-expanded');
-            const button = row(path).getByRole('button');
+            const button = row(path).getByRole('button', {name: /Hide container|Show container|隐藏容器|显示容器/});
             const pressed = await button.getAttribute('aria-pressed');
             await button.click();
             assert.equal(await button.getAttribute('aria-pressed'), pressed === 'true' ? 'false' : 'true');
@@ -89,7 +89,7 @@ const assert = require('assert/strict');
         assert.equal(layout[0].nameX, layout[1].nameX);
         assert.equal(layout[0].eyeBeforeCount, true);
         assert.doesNotMatch(layout[0].text, /Container|容器/);
-        const eye = row('World').getByRole('button');
+        const eye = row('World').getByRole('button', {name: /Hide container|Show container|隐藏容器|显示容器/});
         const expanded = await row('World').getAttribute('aria-expanded');
         const eyeRect = await eye.boundingBox();
         await page.mouse.move(eyeRect.x + 12, eyeRect.y + 12);

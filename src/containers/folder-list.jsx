@@ -7,6 +7,7 @@ import {ContextMenuTrigger} from 'react-contextmenu';
 import {ContextMenu, MenuItem} from '../components/context-menu/context-menu.jsx';
 import Prompt from '../components/prompt/prompt.jsx';
 import SpriteTree from '../components/sprite-selector/sprite-tree.jsx';
+import ContainerProperties from './container-properties.jsx';
 import {getFolderPreview} from '../components/asset-panel/folder-thumbnail.jsx';
 import DragRecognizer from '../lib/drag-recognizer';
 import {updateAssetDrag} from '../reducers/asset-drag';
@@ -297,6 +298,12 @@ class FolderList extends React.Component {
                     dragging={this.props.drag.dragging}
                     onActiveFolderChange={this.handleActiveFolderChange}
                     onToggleContainerVisibility={this.handleToggleContainerVisibility}
+                    renderContainerProperties={path => (<ContainerProperties
+                        vm={this.props.vm}
+                        path={path}
+                        container={containers.get(path)}
+                        disabled={this.props.drag.dragging}
+                    />)}
                     folderTransition={this.state.folderTransition && this.state.folderTransition.scope === scope ?
                         this.state.folderTransition : null}
                     renderSprite={(item, depth) => renderItem(item, item.index, depth, this.menu(item))}

@@ -71,7 +71,7 @@ test('moving reserved basenames out of a folder produces legal Scratch sprite na
         'A//_container_:A', '__container_:A']);
     moveFolder(vm, 'SPRITE', 'A', '');
     const names = getEntries(vm, 'SPRITE').map(entry => entry.name);
-    expect(names).toEqual(['_stage_2', '2', '_mycontainer_2', '__container_:A2', '__container_:A']);
+    expect(names).toEqual(['_stage_2', '2', '_mycontainer_', '_container_:A', '__container_:A']);
     expect(references).toEqual(names);
 });
 

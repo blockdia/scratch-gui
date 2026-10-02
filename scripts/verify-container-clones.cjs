@@ -10,410 +10,195 @@ const assert = require('assert/strict');
         const page = await browser.newPage({viewport: {width: 1440, height: 1000}});
         const errors = [];
         page.on('pageerror', error => errors.push(error.message));
-        await page.addInitScript(compact => {
+        await page.addInitScript(() => {
             localStorage.setItem('tw:language', 'zh-cn');
-            localStorage.setItem('tw:addons', JSON.stringify({'layer-manager': {enabled: true},
-                'editor-compact': {enabled: compact}}));
-        }, process.env.COMPONENTS_COMPACT === '1');
-        await page.goto(process.env.COMPONENTS_EDITOR_URL || 'http://localhost:8614/editor.html');
+            localStorage.setItem('tw:addons', JSON.stringify({'layer-manager': {enabled: true}}));
+        });
+        await page.goto(process.env.COMPONENTS_EDITOR_URL || 'http://localhost:8618/editor.html');
         await page.waitForFunction(() => window.vm && vm.editingTarget && vm.editingTarget.sprite.costumes.length);
         await page.evaluate(async () => {
-            if (!vm.runtime.spriteContainers.getCloneMenu) throw new Error('Use BLOCKDIA_LOCAL_PACKAGES=1');
             const first = vm.editingTarget;
             vm.renameSprite(first.id, 'World//Back');
             await vm.duplicateSprite(first.id);
             vm.renameSprite(vm.editingTarget.id, 'World//Nested//Front');
             await vm.addComponent('slider', 'World//Nested//Slider');
             await vm.duplicateSprite(first.id);
-            vm.renameSprite(vm.editingTarget.id, 'World'); // Sprite and container may have the same label.
-            const sprites = vm.runtime.targets.filter(target => !target.isStage);
+            vm.renameSprite(vm.editingTarget.id, 'World');
+            vm.setSpriteFolderContainer('World', true);
+            vm.setSpriteFolderContainer('World//Nested', true);
             const create = (target, id, opcode, parent, next, inputs = {}, fields = {}, shadow = false) =>
                 target.blocks.createBlock({id,
                     opcode,
                     parent,
                     next,
-                    inputs: Object.fromEntries(Object.entries(inputs).map(([name, value]) => [name, {...value, name}])),
-                    fields,
+                    inputs: Object.fromEntries(Object.entries(inputs).map(([name, block]) =>
+                        [name, {name, block, shadow: block}])),
+                    fields: Object.fromEntries(Object.entries(fields).map(([name, value]) =>
+                        [name, {name, value, ...(name === 'VARIABLE' ? {id: value} : {})}])),
                     shadow,
                     topLevel: parent === null,
                     x: 40,
                     y: 40});
-            const input = id => ({block: id, shadow: id});
             for (const target of vm.runtime.targets) {
-                create(target, 'container-self-command', 'control_create_clone_of', null, null,
-                    {CLONE_OPTION: input('container-self-menu')});
-                target.blocks.getBlock('container-self-command').x = 320;
-                create(target, 'container-self-menu', 'control_create_clone_of_menu',
-                    'container-self-command', null, {},
-                    {CLONE_OPTION: {name: 'CLONE_OPTION',
-                        value: target.getName().startsWith('World//') ?
-                            '_mycontainer_' : 'World//Back'}}, true);
-            }
-            sprites.forEach((target, index) => {
-                target.setXY(-130, 100 - (index * 70));
+                create(target, 'native-clone', 'control_create_clone_of', null, null, {CLONE_OPTION: 'native-menu'});
+                create(target, 'native-menu', 'control_create_clone_of_menu', 'native-clone', null, {},
+                    {CLONE_OPTION: 'World'}, true);
+                create(target, 'group-clone', 'containers_createClone', null, null, {CONTAINER: 'group-menu'});
+                create(target, 'group-menu', 'containers_menu_containers', 'group-clone', null, {},
+                    {containers: '_mycontainer_'}, true);
+                target.blocks.getBlock('group-clone').y = 160;
+                create(target, 'named-show', 'containers_show', null, null, {CONTAINER: 'named-menu'});
+                create(target, 'named-menu', 'containers_menu_containers', 'named-show', null, {},
+                    {containers: 'World'}, true);
+                target.blocks.getBlock('named-show').y = 420;
+                if (target.isStage) continue;
+                target.setXY(-130, 40);
                 target.goToFront();
-                if (target.getName() === 'World') return;
+                if (target.getName() === 'World') continue;
                 target.createVariable('local', 'local', '');
                 target.variables.local.value = 10;
-                create(target, 'clone-hat', 'control_start_as_clone', null, 'clone-value');
-                create(target, 'clone-value', 'data_changevariableby', 'clone-hat', 'clone-move',
-                    {VALUE: input('one')}, {VARIABLE: {name: 'VARIABLE', value: 'local', id: 'local'}});
-                create(target, 'one', 'math_number', 'clone-value', null, {}, {NUM: {name: 'NUM', value: 1}}, true);
-                create(target, 'clone-move', 'motion_changexby', 'clone-value', null, {DX: input('offset')});
-                create(target, 'offset', 'math_number', 'clone-move', null, {}, {NUM: {name: 'NUM', value: 80}}, true);
-            });
-            const controller = vm.runtime.getSpriteTargetByName('World');
-            create(controller, 'flag', 'event_whenflagclicked', null, 'clone-first');
-            create(controller, 'clone-first', 'control_create_clone_of', 'flag', 'clone-second',
-                {CLONE_OPTION: input('menu-first')});
-            create(controller, 'menu-first', 'control_create_clone_of_menu', 'clone-first', null, {},
-                {CLONE_OPTION: {name: 'CLONE_OPTION', value: '_container_:World'}}, true);
-            create(controller, 'clone-second', 'control_create_clone_of', 'clone-first', null,
-                {CLONE_OPTION: input('menu-second')});
-            create(controller, 'menu-second', 'control_create_clone_of_menu', 'clone-second', null, {},
-                {CLONE_OPTION: {name: 'CLONE_OPTION', value: '_container_:World'}}, true);
-            create(controller, 'share-sprite', 'control_create_clone_of', null, 'share-container',
-                {CLONE_OPTION: input('share-sprite-menu')});
-            controller.blocks.getBlock('share-sprite').y = 260;
-            create(controller, 'share-sprite-menu', 'control_create_clone_of_menu', 'share-sprite', null, {},
-                {CLONE_OPTION: {name: 'CLONE_OPTION', value: first.getName()}}, true);
-            create(controller, 'share-container', 'control_create_clone_of', 'share-sprite', null,
-                {CLONE_OPTION: input('share-container-menu')});
-            create(controller, 'share-container-menu', 'control_create_clone_of_menu', 'share-container', null, {},
-                {CLONE_OPTION: {name: 'CLONE_OPTION', value: '_container_:World'}}, true);
-            vm.setSpriteFolderContainer('World', true);
-            vm.setSpriteFolderContainer('World//Nested', true);
+                create(target, 'hat', 'control_start_as_clone', null, 'change');
+                create(target, 'change', 'data_changevariableby', 'hat', 'move', {VALUE: 'one'}, {VARIABLE: 'local'});
+                create(target, 'one', 'math_number', 'change', null, {}, {NUM: 1}, true);
+                create(target, 'move', 'motion_changexby', 'change', null, {DX: 'offset'});
+                create(target, 'offset', 'math_number', 'move', null, {}, {NUM: 80}, true);
+                target.blocks.getBlock('hat').y = 280;
+            }
             vm.setEditingTarget(first.id);
-            vm.setEditingTarget(controller.id);
             vm.emitWorkspaceUpdate();
         });
-        await page.waitForFunction(() => (window.Blockly || window.ScratchBlocks).getMainWorkspace()
-            .getBlockById('menu-first'));
-        const options = await page.evaluate(() => {
-            const workspace = (window.Blockly || window.ScratchBlocks).getMainWorkspace();
-            const field = workspace.getBlockById('menu-first').getField('CLONE_OPTION');
-            field.showEditor_();
-            return field.getOptions();
-        });
-        assert(options.some(([label, value]) => label === '容器：World' && value === '_container_:World'),
-            JSON.stringify(options));
-        assert(options.some(([, value]) => value === '_container_:World//Nested'));
-        assert(!options.some(([, value]) => value === '_mycontainer_'));
-        await page.getByText('容器：World', {exact: true}).last()
-            .click();
-        console.log('PASS real localized clone dropdown with nested containers');
-
-        const contexts = [['World//Back', 'World'], ['World//Nested//Front', 'World//Nested'], [null, null]];
-        for (const [name, current] of contexts) {
-            const menu = await page.evaluate(targetName => {
-                vm.setEditingTarget(targetName ? vm.runtime.getSpriteTargetByName(targetName).id :
-                    vm.runtime.getTargetForStage().id);
+        // Native clone menus contain only sprites and "myself", even with active containers.
+        for (const name of ['World//Back', 'World//Nested//Front', 'World', 'Stage']) {
+            const menus = await page.evaluate(targetName => {
+                const target = targetName === 'Stage' ? vm.runtime.getTargetForStage() :
+                    vm.runtime.getSpriteTargetByName(targetName);
+                vm.setEditingTarget(target.id);
                 const workspace = (window.Blockly || window.ScratchBlocks).getMainWorkspace();
-                return workspace.getBlockById('container-self-menu').getField('CLONE_OPTION')
-                    .getOptions();
+                const field = workspace.getBlockById('group-menu').getField('containers');
+                const named = workspace.getBlockById('named-menu').getField('containers');
+                return {native: workspace.getBlockById('native-menu').getField('CLONE_OPTION')
+                    .getOptions(),
+                group: field.getOptions(),
+                groupLabel: field.getText(),
+                groupValue: field.getValue(),
+                namedLabel: named.getText(),
+                namedValue: named.getValue()};
             }, name);
-            if (current) {
-                assert.deepEqual(menu.slice(0, 2).map(([, value]) => value), ['_myself_', '_mycontainer_']);
-                assert.equal(menu[1][0], '所在容器');
-                assert(!menu.some(([, value]) => value === `_container_:${current}`));
-                const other = current === 'World' ? 'World//Nested' : 'World';
-                assert(menu.some(([, value]) => value === `_container_:${other}`));
-                await page.evaluate(() => (window.Blockly || window.ScratchBlocks).getMainWorkspace()
-                    .getBlockById('container-self-menu')
-                    .getField('CLONE_OPTION')
-                    .showEditor_());
-                await page.getByText('所在容器', {exact: true}).last()
-                    .click();
-                await page.screenshot({path: '/tmp/blockdia-containing-container.png'});
-            } else {
-                assert(!menu.some(([, value]) => ['_myself_', '_mycontainer_'].includes(value)));
-                assert(menu.some(([, value]) => value === '_container_:World'));
-            }
+            const menu = menus.native;
+            assert(!menu.some(([, value]) => value === '_mycontainer_' || value.startsWith('_container_:')));
+            assert.equal(menu.some(([, value]) => value === '_myself_'), name !== 'Stage');
+            assert.equal(menu.some(([, value]) => value === 'World'), name !== 'World');
+            assert.equal(menus.groupValue, '_mycontainer_', 'sharing preserves a relative container selection');
+            assert.equal(menus.groupLabel, '所在容器', 'a shared relative selection keeps its localized label');
+            const current = name === 'World//Back' ? 'World' :
+                (name === 'World//Nested//Front' ? 'World//Nested' : null);
+            assert.deepEqual(menus.group.map(([, value]) => value), [
+                ...(current ? ['_mycontainer_'] : []),
+                ...['World', 'World//Nested'].filter(path => path !== current)
+            ], 'relative selection replaces only the current container name');
+            assert.equal(menus.namedValue, 'World', 'sharing a named selection into itself preserves its value');
+            assert.equal(menus.namedLabel, 'World', 'plain path selections retain readable labels');
         }
-        await page.evaluate(() => vm.setEditingTarget(vm.runtime.getSpriteTargetByName('World').id));
-        console.log('PASS native-style relative selection, own-name filtering, nested containers and stage menu');
-
-        // Reproduce dragging named sprite/container clone blocks into the named sprite itself.
-        const recipientId = await page.evaluate(() => vm.runtime.getSpriteTargetByName('World//Back').id);
-        const recipient = page.locator(`[data-sprite-id="${recipientId}"]`);
-        await recipient.scrollIntoViewIfNeeded();
-        const destination = await recipient.boundingBox();
-        const start = await page.evaluate(() => {
-            const block = (window.Blockly || window.ScratchBlocks).getMainWorkspace().getBlockById('share-sprite');
-            const rect = block.getSvgRoot().getBoundingClientRect();
-            return {x: rect.x + 15, y: rect.y + 20};
-        });
-        await page.mouse.move(start.x, start.y);
-        await page.mouse.down();
-        await page.mouse.move(start.x + 30, start.y + 20, {steps: 5});
-        await page.mouse.move(destination.x + (destination.width / 2), destination.y + (destination.height / 2),
-            {steps: 20});
-        await page.mouse.up();
-        await page.waitForFunction(() => Object.values(vm.runtime.getSpriteTargetByName('World//Back').blocks._blocks)
-            .some(block => block.fields.CLONE_OPTION?.value === '_container_:World'));
-        await recipient.click();
-        const shared = await page.evaluate(() => {
-            const workspace = (window.Blockly || window.ScratchBlocks).getMainWorkspace();
-            const fields = workspace.getAllBlocks().filter(block => block.type === 'control_create_clone_of_menu');
-            const container = fields.find(block => block.getFieldValue('CLONE_OPTION') === '_container_:World');
-            window.sharedContainerMenuId = container.id;
-            const field = container.getField('CLONE_OPTION');
-            const sprite = fields.find(block => block.getFieldValue('CLONE_OPTION') === 'World//Back');
-            return {sprite: sprite.getField('CLONE_OPTION').getText(),
-                container: field.getText(),
-                value: field.getValue(),
-                options: field.getOptions()};
-        });
-        assert.equal(shared.sprite, 'World//Back', 'native named sprite selection remains named after sharing');
-        assert.equal(shared.container, '容器：World', 'hidden named container keeps its readable label');
-        assert.equal(shared.value, '_container_:World', 'sharing does not change named clone semantics');
-        assert(!shared.options.some(([, value]) => value === '_container_:World'));
-        await page.evaluate(() => (window.Blockly || window.ScratchBlocks).getMainWorkspace()
-            .getBlockById(window.sharedContainerMenuId)
-            .getField('CLONE_OPTION')
-            .showEditor_());
-        await page.getByText('所在容器', {exact: true}).last()
-            .click();
-        await page.waitForFunction(() => vm.editingTarget.blocks.getBlock(window.sharedContainerMenuId)
-            .fields.CLONE_OPTION.value === '_mycontainer_');
-        await page.evaluate(() => (window.Blockly || window.ScratchBlocks).getMainWorkspace().undo(false));
-        await page.waitForFunction(() => vm.editingTarget.blocks.getBlock(window.sharedContainerMenuId)
-            .fields.CLONE_OPTION.value === '_container_:World');
-        assert.equal(await page.evaluate(() => (window.Blockly || window.ScratchBlocks).getMainWorkspace()
-            .getBlockById(window.sharedContainerMenuId)
-            .getField('CLONE_OPTION')
-            .getText()), '容器：World');
-        await page.screenshot({path: '/tmp/blockdia-shared-container-clone.png'});
-        await page.evaluate(() => vm.setEditingTarget(vm.runtime.getSpriteTargetByName('World').id));
-        console.log('PASS real cross-sprite drag preserves named clone values, labels, menu filtering and undo');
-
+        console.log('PASS native clone menus contain only sprite selections');
         for (const enabled of [false, true]) {
-            const compiled = await page.evaluate(compilerEnabled => {
+            const result = await page.evaluate(compilerEnabled => {
                 vm.stopAll();
                 vm.setCompilerOptions({enabled: compilerEnabled});
-                vm.greenFlag();
-                return vm.runtime.threads.some(thread => thread.isCompiled);
-            }, enabled);
-            assert.equal(compiled, enabled, 'requested execution mode is actually active');
-            await page.waitForFunction(() => {
-                const clones = vm.runtime.targets.filter(target => !target.isOriginal);
-                return clones.length === 6 && clones.every(target =>
-                    target.variables.local.value === 11 && target.x === -50);
-            });
-            const result = await page.evaluate(() => {
-                const manager = vm.runtime.spriteContainers;
-                const originals = vm.runtime.targets.filter(target => target.isOriginal && !target.isStage &&
-                    target.getName().startsWith('World//')).sort((a, b) => a.getLayerOrder() - b.getLayerOrder());
-                const clones = vm.runtime.targets.filter(target => !target.isOriginal);
-                const groups = [...new Set(clones.map(target => manager.getTargetContainers(target)[0].id))];
-                const ordered = vm.runtime.targets.filter(target => !target.isStage)
-                    .sort((a, b) => a.getLayerOrder() - b.getLayerOrder());
-                const groupOrder = ordered.map(target => manager.getTargetContainers(target)[0]?.id || 'outside');
-                const members = groups.map(id => ordered.filter(target =>
-                    manager.getTargetContainers(target)[0]?.id === id).map(target => target.getName()));
-                const components = clones.filter(target => target.componentController);
-                const componentParts = components.every(target => {
-                    const orders = target.getDrawableIDs().map(id => vm.renderer.getDrawableOrder(id));
-                    return orders.every((order, i) => order === orders[0] + i);
-                });
-                const instance = groups[0];
-                const member = clones.find(target => manager.getTargetContainers(target)[0].id === instance);
-                member.goToFront();
-                const outside = vm.runtime.getSpriteTargetByName('World');
-                const contained = member.getLayerOrder() < originals[0].getLayerOrder() &&
-                    member.getLayerOrder() < outside.getLayerOrder();
-                vm.setSpriteContainerVisible(instance, false);
-                const independentVisibility = clones.filter(target =>
-                    manager.getTargetContainers(target)[0].id === instance)
-                    .every(target => !target.isEffectivelyVisible()) &&
-                    originals.every(target => target.isEffectivelyVisible());
-                vm.setSpriteContainerVisible(instance, true);
-                const originalUnchanged = originals.every(target =>
-                    target.variables.local.value === 10 && target.x === -130);
-                return {groups,
-                    groupOrder,
-                    members,
-                    expected: originals.map(target => target.getName()),
-                    componentParts,
-                    contained,
-                    independentVisibility,
-                    originalUnchanged};
-            });
-            assert.equal(result.groups.length, 2);
-            assert.deepEqual(result.groupOrder, [...Array(3).fill(result.groups[0]), ...Array(3).fill(result.groups[1]),
-                ...Array(3).fill('World'), 'outside']);
-            result.members.forEach(members => assert.deepEqual(members, result.expected));
-            for (const key of ['componentParts', 'contained', 'independentVisibility', 'originalUnchanged']) {
-                assert.equal(result[key], true, key);
-            }
-            console.log('PASS container clone scripts, independent state and atomic renderer order;',
-                `compiler=${enabled}`);
-            const relativeCompiled = await page.evaluate(() => {
-                const manager = vm.runtime.spriteContainers;
-                const source = vm.runtime.targets.find(target => !target.isOriginal &&
-                    target.getName() === 'World//Nested//Front');
-                window.relativeSource = source;
-                window.relativeBefore = vm.runtime.targets.map(target => target.id);
-                const container = manager.getContainingContainer(source).id;
-                for (const target of vm.runtime.targets.filter(item =>
-                    manager.getContainingContainer(item)?.id === container)) {
+                const runtime = vm.runtime;
+                const containers = runtime.spriteContainers;
+                const controller = runtime.getTargetForStage();
+                vm.setEditingTarget(controller.id);
+                const run = (target, blockId) => {
+                    const thread = runtime._pushThread(blockId, target, {stackClick: true});
+                    for (let i = 0; i < 8; i++) runtime._step();
+                    return Boolean(thread.isCompiled);
+                };
+                const nativeCompiled = run(controller, 'native-clone');
+                const native = runtime.targets.filter(target => !target.isOriginal);
+                const nativeNames = native.map(target => target.getName());
+                const nativeInstances = containers.cloneDefinitions.size;
+                vm.stopAll();
+                const obsoleteCounts = [];
+                for (const value of ['_mycontainer_', '_container_:World']) {
+                    controller.blocks.changeBlock({element: 'field', id: 'native-menu', name: 'CLONE_OPTION', value});
+                    run(controller, 'native-clone');
+                    obsoleteCounts.push(runtime._cloneCounter);
+                }
+                controller.blocks.changeBlock({element: 'field',
+                    id: 'native-menu',
+                    name: 'CLONE_OPTION',
+                    value: 'World'});
+                controller.blocks.changeBlock({element: 'field',
+                    id: 'group-menu',
+                    name: 'containers',
+                    value: 'World'});
+                const groupCompiled = run(controller, 'group-clone');
+                run(controller, 'group-clone');
+                const clones = runtime.targets.filter(target => !target.isOriginal);
+                const groups = [...new Set(clones.map(target => containers.getTargetContainers(target)[0].id))];
+                const members = groups.map(id => clones.filter(target =>
+                    containers.getTargetContainers(target)[0].id === id));
+                const order = [...new Set(vm.renderer._drawList.map(id => runtime.getTargetByDrawableId(id)))]
+                    .filter(target => target && !target.isStage);
+                const groupOrder = order.map(target => containers.getTargetContainers(target)[0]?.id || 'outside');
+                const componentParts = clones.filter(target => target.component)
+                    .every(target => target.getDrawableIDs().length === 3 && target.componentController);
+                const stateCopied = clones.every(target => target.variables.local.value === 11 && target.x === -50);
+                const source = members[0].find(target => target.getName() === 'World//Nested//Front');
+                const nestedID = containers.getContainingContainer(source).id;
+                const currentMembers = clones.filter(target =>
+                    containers.getContainingContainer(target).id === nestedID);
+                for (const target of currentMembers) {
                     target.variables.local.value = 30;
-                    target.setXY(-90, target.y);
                     if (target.componentController) target.componentController.setProperties({value: 68});
                 }
-                return vm.runtime._pushThread('container-self-command', source, {stackClick: true}).isCompiled;
-            });
-            assert.equal(Boolean(relativeCompiled), enabled);
-            await page.waitForFunction(() => {
-                const created = vm.runtime.targets.filter(target => !window.relativeBefore.includes(target.id));
-                return created.length === 2 && created.every(target =>
-                    target.variables.local.value === 31 && target.x === -10);
-            });
-            assert.equal(await page.evaluate(() => {
-                const manager = vm.runtime.spriteContainers;
-                const source = manager.getTargetContainers(window.relativeSource);
-                const created = vm.runtime.targets.filter(target => !window.relativeBefore.includes(target.id));
-                const copiedInstance = created.every(target => {
-                    const membership = manager.getTargetContainers(target);
-                    return membership[0].id === source[0].id && membership[1].id !== source[1].id &&
-                        (!target.component || target.component.properties.value === 68);
-                });
-                created.forEach(target => vm.runtime.disposeTarget(target));
-                return copiedInstance;
-            }), true);
-            console.log(`PASS my container clones the current nested instance and its live state; compiler=${enabled}`);
+                const before = new Set(runtime.targets);
+                const relativeCompiled = run(source, 'group-clone');
+                const copies = runtime.targets.filter(target => !before.has(target));
+                const relativeState = copies.length === 2 && copies.every(target =>
+                    target.variables.local.value === 31 && target.x === 30 &&
+                    containers.getTargetContainers(target)[0].id === groups[0] &&
+                    containers.getContainingContainer(target).id !== nestedID &&
+                    (!target.component || target.component.properties.value === 68));
+                return {nativeCompiled,
+                    groupCompiled,
+                    relativeCompiled,
+                    nativeNames,
+                    nativeInstances,
+                    obsoleteCounts,
+                    groups,
+                    groupOrder,
+                    componentParts,
+                    stateCopied,
+                    relativeState,
+                    sizes: members.map(group => group.length)};
+            }, enabled);
+            for (const key of ['nativeCompiled', 'groupCompiled', 'relativeCompiled']) {
+                assert.equal(result[key], enabled);
+            }
+            assert.deepEqual(result.nativeNames, ['World'], 'same-named sprite never selects its container');
+            assert.equal(result.nativeInstances, 0);
+            assert.deepEqual(result.obsoleteCounts, [0, 0], 'native clone never interprets obsolete container markers');
+            assert.deepEqual(result.sizes, [3, 3]);
+            // The later clone is immediately behind its source, after the earlier clone.
+            assert.deepEqual(result.groupOrder, [
+                ...Array(3).fill(result.groups[0]), ...Array(3).fill(result.groups[1]),
+                ...Array(3).fill('World'), 'outside'
+            ]);
+            assert(result.componentParts && result.stateCopied && result.relativeState);
+            console.log('PASS', enabled ? 'compiler' : 'interpreter',
+                'sprite/group separation, component copies and layers');
         }
-
         await page.getByRole('button', {name: '图层管理器', exact: true}).click();
         const panel = page.locator('[data-editor-window="layer-manager/layers"]');
         await panel.waitFor({state: 'visible'});
         await page.waitForFunction(() => document.querySelectorAll(
-            '[data-layer-id^="container:_container_clone_:"]').length === 4);
-        await panel.locator('[data-layer-id="container:World"] .sa-layer-toggle').click();
-        const bounds = await panel.boundingBox();
-        await page.mouse.move(bounds.x + 100, bounds.y + 20);
-        await page.mouse.down();
-        await page.mouse.move(bounds.x - 170, bounds.y + 20, {steps: 8});
-        await page.mouse.up();
-        const firstInstance = panel.locator('[data-layer-id^="container:_container_clone_:"]').first();
-        await firstInstance.locator('.sa-layer-select').click();
-        assert.match(await firstInstance.innerText(), /克隆体/);
-        await firstInstance.scrollIntoViewIfNeeded();
+            '[data-layer-id^="container:_container_clone_:"]').length === 5);
         await page.screenshot({path: '/tmp/blockdia-container-clones.png'});
-        console.log('PASS layer tree distinguishes both container instances and their nested containers');
-
-        const saved = await page.evaluate(async () => {
-            const data = await vm.saveProjectSb3();
-            await vm.loadProject(await data.arrayBuffer());
-            const controller = vm.runtime.getSpriteTargetByName('World');
-            return {clones: vm.runtime._cloneCounter,
-                instances: vm.runtime.spriteContainers.cloneDefinitions.size,
-                containers: vm.runtime.spriteContainers.serialize(),
-                relative: Object.values(vm.runtime.getSpriteTargetByName('World//Back').blocks._blocks)
-                    .some(block => block.fields.CLONE_OPTION?.value === '_mycontainer_'),
-                menu: Object.values(controller.blocks._blocks).find(block =>
-                    block.fields.CLONE_OPTION?.value.startsWith('_container_:')).fields.CLONE_OPTION.value};
-        });
-        assert.equal(saved.clones, 0);
-        assert.equal(saved.instances, 0);
-        assert.equal(saved.menu, '_container_:World');
-        assert.equal(saved.relative, true);
-        assert.deepEqual(saved.containers, [{path: 'World', visible: true}, {path: 'World//Nested', visible: true}]);
-        await page.evaluate(() => {
-            const target = vm.runtime.getSpriteTargetByName('World//Back');
-            window.sharedContainerMenuId = Object.values(target.blocks._blocks)
-                .find(block => block.fields.CLONE_OPTION?.value === '_container_:World').id;
-            vm.setEditingTarget(target.id);
-        });
-        await page.waitForFunction(() => (window.Blockly || window.ScratchBlocks).getMainWorkspace()
-            .getBlockById(window.sharedContainerMenuId));
-        assert.equal(await page.evaluate(() => (window.Blockly || window.ScratchBlocks).getMainWorkspace()
-            .getBlockById(window.sharedContainerMenuId)
-            .getField('CLONE_OPTION')
-            .getText()), '容器：World', 'shared named selection survives SB3 reload');
-        await panel.getByRole('button', {name: '关闭', exact: true}).click();
-        await page.locator('[data-folder-entry="World"]').getByRole('treeitem')
-            .first()
-            .click({button: 'right'});
-        await page.locator('.react-contextmenu--visible').getByText('重命名文件夹', {exact: true})
-            .click();
-        const dialog = page.getByRole('dialog');
-        await dialog.getByRole('textbox').fill('Scene');
-        await dialog.getByRole('button', {name: '确定', exact: true}).click();
-        assert.equal(await page.evaluate(() => Object.values(vm.runtime.getSpriteTargetByName('World').blocks._blocks)
-            .filter(block => block.fields.CLONE_OPTION?.value.startsWith('_container_:'))
-            .every(block => block.fields.CLONE_OPTION.value === '_container_:Scene')), true);
-        assert.deepEqual(await page.evaluate(() => {
-            const field = (window.Blockly || window.ScratchBlocks).getMainWorkspace()
-                .getBlockById(window.sharedContainerMenuId)
-                .getField('CLONE_OPTION');
-            return [field.getText(), field.getValue()];
-        }), ['容器：Scene', '_container_:Scene'], 'shared named selection follows container renames');
-        await page.evaluate(() => vm.greenFlag());
-        await page.waitForFunction(() => vm.runtime._cloneCounter === 6);
         await page.evaluate(() => vm.stopAll());
         assert.equal(await page.evaluate(() => vm.runtime.spriteContainers.cloneDefinitions.size), 0);
-        // Regression: cloning myself first adds a live member which must be included in the container snapshot.
-        await page.evaluate(() => {
-            const target = vm.runtime.getSpriteTargetByName('Scene//Back');
-            vm.renameSprite(target.id, 'Repro//Role');
-            vm.setSpriteFolderContainer('Repro', true);
-            target.blocks.deleteAllBlocks();
-            const create = (id, opcode, parent, next, inputs, fields, shadow = false) =>
-                target.blocks.createBlock({id,
-                    opcode,
-                    parent,
-                    next,
-                    inputs,
-                    fields,
-                    shadow,
-                    topLevel: parent === null,
-                    x: 40,
-                    y: 40});
-            create('clone-self-first', 'control_create_clone_of', null, 'clone-container-next',
-                {CLONE_OPTION: {name: 'CLONE_OPTION', block: 'self-choice', shadow: 'self-choice'}}, {});
-            create('self-choice', 'control_create_clone_of_menu', 'clone-self-first', null, {},
-                {CLONE_OPTION: {name: 'CLONE_OPTION', value: '_myself_'}}, true);
-            create('clone-container-next', 'control_create_clone_of', 'clone-self-first', null,
-                {CLONE_OPTION: {name: 'CLONE_OPTION', block: 'container-choice', shadow: 'container-choice'}}, {});
-            create('container-choice', 'control_create_clone_of_menu', 'clone-container-next', null, {},
-                {CLONE_OPTION: {name: 'CLONE_OPTION', value: '_mycontainer_'}}, true);
-            vm.setEditingTarget(vm.runtime.getTargetForStage().id);
-            vm.setEditingTarget(target.id);
-        });
-        await page.waitForFunction(() => (window.Blockly || window.ScratchBlocks).getMainWorkspace()
-            .getBlockById('clone-self-first'));
-        for (const enabled of [false, true]) {
-            const compiled = await page.evaluate(compilerEnabled => {
-                vm.stopAll();
-                vm.setCompilerOptions({enabled: compilerEnabled});
-                const target = vm.runtime.getSpriteTargetByName('Repro//Role');
-                return Boolean(vm.runtime._pushThread('clone-self-first', target, {stackClick: true}).isCompiled);
-            }, enabled);
-            assert.equal(compiled, enabled);
-            await page.waitForFunction(() => vm.runtime._cloneCounter === 3);
-            const sizes = await page.evaluate(() => {
-                const manager = vm.runtime.spriteContainers;
-                const groups = new Map();
-                for (const target of vm.runtime.targets.filter(item => item.getName() === 'Repro//Role')) {
-                    const container = manager.getContainingContainer(target);
-                    groups.set(container.id, (groups.get(container.id) || 0) + 1);
-                }
-                return {source: groups.get('Repro'),
-                    copies: [...groups].filter(([id]) => id !== 'Repro')
-                        .map(([, count]) => count)};
-            });
-            assert.deepEqual(sizes, {source: 2, copies: [2]});
-            console.log(`PASS clone myself then my container preserves both live members; compiler=${enabled}`);
-        }
-        await page.getByRole('button', {name: '图层管理器', exact: true}).click();
-        await panel.locator('[data-layer-id="container:Repro"]').waitFor({state: 'visible'});
-        assert.match(await panel.locator('[data-layer-id="container:Repro"]').innerText(), /2 个图层/);
-        assert.match(await panel.locator('[data-layer-id^="container:_container_clone_:"]').innerText(), /2 个图层/);
-        await page.screenshot({path: '/tmp/blockdia-container-live-members.png'});
-        await page.evaluate(() => vm.stopAll());
         assert.deepEqual(errors, []);
-        console.log('PASS SB3 reload, folder rename, re-execution and stop cleanup; PAGE_ERRORS []');
+        console.log('PASS layer tree and stop cleanup; PAGE_ERRORS []');
     } finally {
         await browser.close();
     }

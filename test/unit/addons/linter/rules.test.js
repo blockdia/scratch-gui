@@ -34,13 +34,11 @@ const analyze = (targets, rules, context = {}) => {
     return next.value;
 };
 
-test('clone references accept existing containers without accepting them as ordinary sprite references', () => {
-    const make = opcode => target([block('clone', opcode, {inputs: {CLONE_OPTION: input('choice'), TO: input('choice')}}),
-        literal('choice', '_container_:A')]);
-    const context = {containerCloneOptions: ['_container_:A']};
-    expect(analyze([make('control_create_clone_of')], ['missing-target'], context)).toEqual([]);
-    expect(analyze([make('control_create_clone_of')], ['missing-target'])).toHaveLength(1);
-    expect(analyze([make('motion_goto')], ['missing-target'], context)).toHaveLength(1);
+test.each(['_container_:A', '_mycontainer_'])('clone references treat %s as an ordinary sprite name', value => {
+    const sprite = target([block('clone', 'control_create_clone_of', {inputs: {CLONE_OPTION: input('choice')}}),
+        literal('choice', value)]);
+    expect(analyze([sprite], ['missing-target'])).toHaveLength(1);
+    expect(analyze([sprite, target([], {id: 'b', getName: () => value})], ['missing-target'])).toEqual([]);
 });
 const reference = (opcode, name, value) => [block('ref', opcode, {inputs: {[name]: input('value')}}), literal('value', value)];
 

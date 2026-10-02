@@ -1,13 +1,11 @@
 import LazyScratchBlocks from './tw-lazy-scratch-blocks';
-import containerMessages from './folders/messages';
 
 /**
  * Connect scratch blocks with the vm
  * @param {VirtualMachine} vm - The scratch vm
- * @param {Function} getIntl - Read the editor's current localization context.
  * @return {ScratchBlocks} ScratchBlocks connected with the vm
  */
-export default function (vm, getIntl) {
+export default function (vm) {
     const ScratchBlocks = LazyScratchBlocks.get();
     const jsonForMenuBlock = function (name, menuOptionsFn, colors, start) {
         return {
@@ -135,15 +133,7 @@ export default function (vm, getIntl) {
     };
 
     const cloneMenu = function () {
-        const containers = vm.runtime.spriteContainers;
         const menu = spriteMenu();
-        if (containers && containers.getCloneMenu) {
-            for (const [path, value] of containers.getCloneMenu(vm.editingTarget)) {
-                if (path === null) {
-                    menu.unshift([getIntl().formatMessage(containerMessages.containingContainer), value]);
-                } else menu.push([getIntl().formatMessage(containerMessages.containerPath, {path}), value]);
-            }
-        }
         if (vm.editingTarget && vm.editingTarget.isStage) {
             if (menu.length === 0) {
                 return [['', '']]; // Empty menu matches Scratch 2 behavior
@@ -329,20 +319,6 @@ export default function (vm, getIntl) {
     ScratchBlocks.Blocks.control_create_clone_of_menu.init = function () {
         const json = jsonForMenuBlock('CLONE_OPTION', cloneMenu, controlColors, []);
         this.jsonInit(json);
-        const field = this.getField('CLONE_OPTION');
-        const setValue = field.setValue;
-        field.setValue = function (value) {
-            setValue.call(this, value);
-            // Like a named sprite shared into itself, a named container keeps its value even
-            // when hidden from this target's menu. Display its label without changing clone semantics.
-            const selected = this.getValue();
-            if (selected === '_mycontainer_') {
-                this.setText(getIntl().formatMessage(containerMessages.containingContainer));
-            } else if (typeof selected === 'string' && selected.startsWith('_container_:')) {
-                this.setText(getIntl().formatMessage(containerMessages.containerPath,
-                    {path: selected.slice('_container_:'.length)}));
-            }
-        };
     };
 
     ScratchBlocks.VerticalFlyout.getCheckboxState = function (blockId) {

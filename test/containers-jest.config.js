@@ -7,6 +7,7 @@ module.exports = {
         '<rootDir>/test/containers/stage-drag.test.js',
         '<rootDir>/test/containers/container-events.test.js',
         '<rootDir>/test/unit/lib/container-properties.test.js',
+        '<rootDir>/test/unit/lib/container-native-messages.test.js',
         '<rootDir>/test/unit/lib/folders.test.js', '<rootDir>/test/unit/lib/folder-order.test.js',
         '<rootDir>/test/unit/addons/layer-manager.test.js',
         '<rootDir>/test/containers/layer-manager.test.js',

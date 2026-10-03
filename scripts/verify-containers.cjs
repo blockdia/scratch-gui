@@ -55,9 +55,9 @@ const assert = require('assert/strict');
         const expand = async path => {
             if (await row(path).getAttribute('aria-expanded') !== 'true') await row(path).click();
         };
-        await menu('World', /Set as container|设为容器/);
+        await menu('World', /Convert to container|转为容器/);
         await expand('World');
-        await menu('World//Nested', /Set as container|设为容器/);
+        await menu('World//Nested', /Convert to container|转为容器/);
         await expand('World//Nested');
         await expand('World//Controls');
         assert.equal(await page.locator('[data-container="true"]').count(), 2);
@@ -232,7 +232,7 @@ const assert = require('assert/strict');
         assert.equal(await page.evaluate(() =>
             vm.runtime.getSpriteTargetByName('Scene//Nested//First').isEffectivelyVisible()), true);
         await page.getByRole('button', {name: /Switch to small stage|缩小舞台/, exact: true}).click();
-        await menu('Scene', /Set as container|设为容器/);
+        await menu('Scene', /Convert to container|转为容器/);
         await visibility('Scene');
         await visibility('Scene');
         await page.mouse.click(900, 30);

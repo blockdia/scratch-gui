@@ -33,7 +33,7 @@ const JSZip = require('@turbowarp/jszip');
         await page.locator('[data-folder-entry="World"]').getByRole('treeitem')
             .first()
             .click({button: 'right'});
-        await page.locator('.react-contextmenu--visible').getByText(/Set as container|设为容器/, {exact: true})
+        await page.locator('.react-contextmenu--visible').getByText(/Convert to container|转为容器/, {exact: true})
             .click();
         await page.waitForFunction(() => vm.extensionManager.isExtensionLoaded('containers'));
         await page.locator('.scratchCategoryId-containers').waitFor();

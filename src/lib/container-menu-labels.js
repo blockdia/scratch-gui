@@ -1,9 +1,11 @@
 // A shared menu shadow may keep a selection unavailable in its new target's menu.
 // Preserve its value and readable label, including a relative selection shared to the stage.
 export default (ScratchBlocks, getIntl) => {
-    for (const [menu, relative, id, defaultMessage] of [
-        ['containers', '_mycontainer_', 'containers.containingContainer', 'containing container'],
-        ['sprites', '_myself_', 'containers.myself', 'myself']
+    for (const [menu, relative, label] of [
+        ['containers', '_mycontainer_', () => getIntl().formatMessage({
+            id: 'containers.containingContainer', defaultMessage: 'containing container'
+        })],
+        ['sprites', '_myself_', () => ScratchBlocks.ScratchMsgs.translate('CONTROL_CREATECLONEOF_MYSELF', 'myself')]
     ]) {
         const definition = ScratchBlocks.Blocks[`containers_menu_${menu}`];
         const init = definition.init;
@@ -14,7 +16,7 @@ export default (ScratchBlocks, getIntl) => {
             field.setValue = function (value) {
                 setValue.call(this, value);
                 if (this.getValue() === relative) {
-                    this.setText(getIntl().formatMessage({id, defaultMessage}));
+                    this.setText(label());
                 }
             };
         };

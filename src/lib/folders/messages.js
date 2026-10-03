@@ -5,7 +5,7 @@ export default defineMessages({
         defaultMessage: 'Container properties',
         description: 'Open position, size, direction and rotation style controls for a sprite container'},
     toContainer: {id: 'blockdia.containers.toContainer',
-        defaultMessage: 'Set as container',
+        defaultMessage: 'Convert to container',
         description: 'Sprite container'},
     toFolder: {id: 'blockdia.containers.toFolder',
         defaultMessage: 'Convert to folder',

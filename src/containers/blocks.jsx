@@ -9,6 +9,7 @@ import React from 'react';
 import {intlShape, injectIntl, defineMessages} from 'react-intl';
 import VMScratchBlocks from '../lib/blocks';
 import preserveContainerMenuLabels from '../lib/container-menu-labels';
+import {withNativeContainerMessages} from '../lib/container-native-messages';
 import VM from 'scratch-vm';
 
 import log from '../lib/log.js';
@@ -334,7 +335,8 @@ class Blocks extends React.Component {
     }
     setLocale () {
         this.ScratchBlocks.ScratchMsgs.setLocale(this.props.locale);
-        this.props.vm.setLocale(this.props.locale, this.props.messages)
+        this.props.vm.setLocale(this.props.locale,
+            withNativeContainerMessages(this.ScratchBlocks, this.props.locale, this.props.messages))
             .then(() => {
                 if (this.unmounted) return;
                 this.workspace.getFlyout().setRecyclingEnabled(false);

@@ -12,6 +12,10 @@ const JSZip = require('@turbowarp/jszip');
         const errors = [];
         page.on('pageerror', error => errors.push(error.message));
         await page.addInitScript(() => localStorage.setItem('tw:language', 'zh-cn'));
+        if (process.env.COMPONENTS_COMPACT === '1') {
+            await page.addInitScript(() => localStorage.setItem('tw:addons',
+                JSON.stringify({'editor-compact': {enabled: true}})));
+        }
         const url = process.env.COMPONENTS_EDITOR_URL || 'http://localhost:8618/editor.html';
         await page.goto(url);
         await page.waitForFunction(() => window.vm && vm.editingTarget && vm.editingTarget.sprite.costumes.length);
@@ -58,6 +62,7 @@ const JSZip = require('@turbowarp/jszip');
             const field = blocks.find(block => block.type === 'containers_menu_containers').getField('containers');
             const sprites = blocks.find(block => block.type === 'containers_menu_sprites').getField('sprites');
             const deletion = blocks.find(block => block.type === 'containers_deleteClone');
+            const worldSetter = blocks.find(block => block.type === 'containers_setWorldProperty');
             const deleteField = deletion.getInputTargetBlock('CONTAINER').getField('containers');
             const nativeDeletion = workspace.newBlock('control_delete_this_clone');
             const shape = [Boolean(deletion.previousConnection), Boolean(deletion.nextConnection)];
@@ -65,6 +70,9 @@ const JSZip = require('@turbowarp/jszip');
             nativeDeletion.dispose();
             return {options: field.getOptions(),
                 sprites: sprites.getOptions(),
+                worldProperties: worldSetter.getField('PROPERTY').getOptions()
+                    .map(([, value]) => value),
+                worldSetterHasTarget: Boolean(worldSetter.getInput('TARGET')),
                 texts: blocks.map(block => block.toString()).join('\n'),
                 deleteValue: deleteField.getValue(),
                 shape,
@@ -79,8 +87,21 @@ const JSZip = require('@turbowarp/jszip');
         assert.match(menu.texts, /删除所在的容器 所在容器 的克隆体/);
         assert.equal(menu.deleteValue, '_mycontainer_');
         assert.match(menu.texts, /角色 自己 在舞台上的 x 坐标/);
+        assert.match(menu.texts, /将在舞台上的 x 坐标 设为 0/);
+        assert.deepEqual(menu.worldProperties, ['x', 'y', 'size', 'direction']);
+        assert.equal(menu.worldSetterHasTarget, false);
         assert.deepEqual(menu.sprites, [['自己', '_myself_'], ['World//Nested//Two', 'World//Nested//Two'],
             ['Outside', 'Outside']]);
+        await page.waitForFunction(() => {
+            const workspace = (window.Blockly || window.ScratchBlocks).getMainWorkspace();
+            const block = workspace.getFlyout().getWorkspace()
+                .getAllBlocks()
+                .find(item => item.type === 'containers_setWorldProperty');
+            const bounds = block.getSvgRoot().getBoundingClientRect();
+            return bounds.top > 100 && bounds.bottom < window.innerHeight - 100;
+        });
+        await page.screenshot({path: `/tmp/blockdia-world-setter-palette${
+            process.env.COMPONENTS_COMPACT === '1' ? '-compact' : ''}.png`});
         console.log('PASS automatic loading on creation and old-project import, Chinese palette and live menus');
 
         // Container metadata must update the open inspector without a surrogate target update.
@@ -170,6 +191,12 @@ const JSZip = require('@turbowarp/jszip');
                 command('named-delete', 'containers_deleteClone', null, null, {CONTAINER: 'World//Nested'});
                 command('clamp', 'containers_changeProperty', null, null,
                     {...self, VALUE: -100000}, {PROPERTY: 'size'});
+                for (const [PROPERTY, VALUE] of [['x', -30], ['y', 45], ['direction', -135], ['size', 120]]) {
+                    command(`set-world-${PROPERTY}`, 'containers_setWorldProperty', null, null,
+                        {VALUE}, {PROPERTY});
+                    Object.assign(first.blocks.getBlock(`set-world-${PROPERTY}`), {x: 40,
+                        y: 900 + (['x', 'y', 'direction', 'size'].indexOf(PROPERTY) * 70)});
+                }
                 for (const PROPERTY of ['x', 'y', 'direction', 'size']) {
                     const id = `world-${PROPERTY}`;
                     first.createVariable(id, id, '');
@@ -238,6 +265,22 @@ const JSZip = require('@turbowarp/jszip');
                 runtime._pushThread('read-world-dynamic', member, {stackClick: true});
                 for (let i = 0; i < 4; i++) runtime._step();
                 state.changedDynamicWorld = member.variables['world-dynamic'].value;
+                state.worldWrites = [];
+                for (const rotationStyle of ['all around', 'left-right']) {
+                    containers.setTransform(instance, {size: 200, direction: -135, rotationStyle});
+                    const before = member.getWorldPosition();
+                    const writeThreads = [];
+                    for (const property of ['x', 'y', 'direction', 'size']) {
+                        writeThreads.push(runtime._pushThread(`set-world-${property}`, member, {stackClick: true}));
+                        for (let i = 0; i < 4; i++) runtime._step();
+                        if (property === 'x') state.worldWrites.push({before, afterX: member.getWorldPosition()});
+                    }
+                    state.worldWrites[state.worldWrites.length - 1].values = [...member.getWorldPosition(),
+                        member.getWorldDirection(), member.getWorldSize()];
+                    state.worldWrites[state.worldWrites.length - 1].compiled =
+                        writeThreads.every(thread => Boolean(thread.isCompiled) === compilerEnabled);
+                }
+                state.originalAfterWorldWrite = [...first.getWorldPosition(), first.direction, first.size];
                 const deletion = runtime.startHats('event_whenbroadcastreceived', {BROADCAST_OPTION: 'delete'}, member);
                 runtime._pushThread('after', member, {stackClick: true});
                 for (let i = 0; i < 4; i++) runtime._step();
@@ -255,6 +298,15 @@ const JSZip = require('@turbowarp/jszip');
             }, enabled);
             assert.equal(result.compiled, enabled);
             assert(result.worldCompiled);
+            for (const write of result.worldWrites) {
+                assert(write.compiled, 'world setters use the selected execution mode');
+                assert(Math.abs(write.afterX[0] + 30) < 1e-8);
+                assert(Math.abs(write.afterX[1] - write.before[1]) < 1e-8, 'setting world x preserves world y');
+                [-30, 45, -135, 120].forEach((value, index) =>
+                    assert(Math.abs(write.values[index] - value) < 1e-8));
+            }
+            assert.deepEqual(result.originalAfterWorldWrite, [40, 20, 90, 100],
+                'world setters only change the executing clone');
             assert.deepEqual(result.boundarySizes, [0.01, 1.01, 10000, 9999]);
             assert.deepEqual(result.worldReadings, [60, 20, 90, 150]);
             assert.equal(result.namedWorld, 145, 'named selection reads the original, not a sibling clone');
@@ -277,7 +329,7 @@ const JSZip = require('@turbowarp/jszip');
             assert.equal(result.remainingClones, 0);
             assert.equal(result.remainingInstances, 0);
             console.log('PASS', enabled ? 'compiler' : 'interpreter',
-                'transforms, reporters, layers and clone lifecycle');
+                'transforms, world reporters/setters, layers and clone lifecycle');
 
             const deletionCases = await page.evaluate(compilerEnabled => {
                 const runtime = vm.runtime;
@@ -462,6 +514,12 @@ const JSZip = require('@turbowarp/jszip');
                 .map(block => block.getFieldValue('PROPERTY'));
         });
         assert.deepEqual(worldFields.sort(), ['direction', 'size', 'x', 'x', 'x', 'y']);
+        const setterFields = await page.evaluate(() => {
+            const workspace = (window.Blockly || window.ScratchBlocks).getMainWorkspace();
+            return workspace.getAllBlocks().filter(block => block.type === 'containers_setWorldProperty')
+                .map(block => block.getFieldValue('PROPERTY'));
+        });
+        assert.deepEqual(setterFields.sort(), ['direction', 'size', 'x', 'y'], 'world setters survive SB3 reload');
         await page.locator('.scratchCategoryId-containers').click();
         await page.locator('[class*="stage-header_stage-size-toggle-group"]').getByRole('button',
             {name: /Switch to small stage|缩小舞台/})

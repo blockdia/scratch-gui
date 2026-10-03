@@ -37,9 +37,10 @@ const fixture = () => {
     runtime.spriteContainers.load([{path: 'A', visible: true}, {path: 'A//N', visible: true}]);
     runtime.spriteContainers.sync();
     runtime.requestRedraw.mockClear();
-    return {runtime, renderer, editingTarget: runtime.targets[2],
+    return Object.assign(Object.create(VirtualMachine.prototype), {runtime, editingTarget: runtime.targets[2],
         setSpriteContainerOrder: VirtualMachine.prototype.setSpriteContainerOrder,
-        emitTargetsUpdate: () => runtime.emitProjectChanged()};
+        emitContainersUpdate: jest.fn(),
+        emitTargetsUpdate: () => runtime.emitProjectChanged()});
 };
 const ordered = vm => vm.runtime.targets.filter(t => !t.isStage)
     .sort((a, b) => a.getLayerOrder() - b.getLayerOrder()).map(t => t.id);

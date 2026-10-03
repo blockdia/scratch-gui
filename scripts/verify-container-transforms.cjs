@@ -106,6 +106,9 @@ const near = (actual, expected, tolerance = 0.01) => actual.forEach((n, i) =>
         const native = page.locator('[class*="sprite-info_sprite-info_"]');
         for (const [name, expected] of [['x', '13'], ['y', '-12'], ['大小', '123'], ['方向', '112']]) {
             const spriteField = native.getByRole('spinbutton', {name, exact: true});
+            // Native sprite changes publish on the next VM frame, independently of container edits.
+            await page.waitForFunction(([input, value]) => input.value === value,
+                [await spriteField.elementHandle(), expected]);
             assert.equal(await spriteField.inputValue(), expected);
             assert.equal(await field(name).inputValue(), await spriteField.inputValue());
             assert.equal(await field(name).getAttribute('step'), await spriteField.getAttribute('step'));
@@ -125,9 +128,9 @@ const near = (actual, expected, tolerance = 0.01) => actual.forEach((n, i) =>
         const handle = panel.locator('[class*="dial_dial-handle_"]');
         const dialBounds = await dial.boundingBox();
         const handleBounds = await handle.boundingBox();
-        await page.mouse.move(handleBounds.x + handleBounds.width / 2, handleBounds.y + handleBounds.height / 2);
+        await page.mouse.move(handleBounds.x + (handleBounds.width / 2), handleBounds.y + (handleBounds.height / 2));
         await page.mouse.down();
-        await page.mouse.move(dialBounds.x + dialBounds.width - 5, dialBounds.y + dialBounds.height / 2 + 17,
+        await page.mouse.move(dialBounds.x + dialBounds.width - 5, dialBounds.y + (dialBounds.height / 2) + 17,
             {steps: 5});
         await page.mouse.up();
         const direction = await page.evaluate(() => vm.runtime.spriteContainers.get('A').transform.direction);
@@ -153,7 +156,13 @@ const near = (actual, expected, tolerance = 0.01) => actual.forEach((n, i) =>
         assert.equal(await field('方向').inputValue(), '180');
         await field('大小').fill('0');
         await field('大小').press('Enter');
-        assert.equal(await field('大小').inputValue(), '150');
+        assert.equal(await field('大小').inputValue(), '0');
+        assert.equal(await page.evaluate(() => vm.runtime.spriteContainers.get('A').transform.size), 0.01);
+        await field('大小').fill('10001');
+        await field('大小').press('Enter');
+        assert.equal(await field('大小').inputValue(), '10000');
+        await field('大小').fill('150');
+        await field('大小').press('Enter');
         await field('方向').fill('270');
         await field('方向').press('Enter');
         assert.equal(await field('方向').inputValue(), '-90');

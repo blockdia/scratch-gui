@@ -6,6 +6,7 @@ import VM from 'scratch-vm';
 import {connect} from 'react-redux';
 
 import {updateTargets} from '../reducers/targets';
+import {updateContainers} from '../reducers/containers';
 import {updateBlockDrag} from '../reducers/block-drag';
 import {updateMonitors} from '../reducers/monitors';
 import {setProjectChanged, setProjectUnchanged} from '../reducers/project-changed';
@@ -44,6 +45,7 @@ const vmListenerHOC = function (WrappedComponent) {
                 'handleKeyUp',
                 'handleProjectChanged',
                 'handleTargetsUpdate',
+                'handleContainersUpdate',
                 'handleCloudDataUpdate',
                 'handleCompileError'
             ]);
@@ -54,6 +56,7 @@ const vmListenerHOC = function (WrappedComponent) {
             // If the wrapped component uses the vm in componentDidMount, then
             // we need to start listening before mounting the wrapped component.
             this.props.vm.on('targetsUpdate', this.handleTargetsUpdate);
+            this.props.vm.on('containersUpdate', this.handleContainersUpdate);
             this.props.vm.on('MONITORS_UPDATE', this.props.onMonitorsUpdate);
             this.props.vm.on('BLOCK_DRAG_UPDATE', this.props.onBlockDragUpdate);
             this.props.vm.on('TURBO_MODE_ON', this.props.onTurboModeOn);
@@ -82,6 +85,7 @@ const vmListenerHOC = function (WrappedComponent) {
                 () => this.props.shouldUpdateTargets);
         }
         componentDidMount () {
+            this.props.vm.emitContainersUpdate();
             if (this.props.attachKeyboardEvents) {
                 document.addEventListener('keydown', this.handleKeyDown);
                 document.addEventListener('keyup', this.handleKeyUp);
@@ -97,6 +101,7 @@ const vmListenerHOC = function (WrappedComponent) {
             // i.e. when the editor transitions out of fullscreen/player only modes
             if (this.props.shouldUpdateTargets && !prevProps.shouldUpdateTargets) {
                 this.props.vm.emitTargetsUpdate(false /* Emit the event, but do not trigger project change */);
+                this.props.vm.emitContainersUpdate();
             }
         }
         componentWillUnmount () {
@@ -107,6 +112,7 @@ const vmListenerHOC = function (WrappedComponent) {
             }
 
             this.props.vm.off('targetsUpdate', this.handleTargetsUpdate);
+            this.props.vm.off('containersUpdate', this.handleContainersUpdate);
             this.props.vm.off('MONITORS_UPDATE', this.props.onMonitorsUpdate);
             this.props.vm.off('BLOCK_DRAG_UPDATE', this.props.onBlockDragUpdate);
             this.props.vm.off('TURBO_MODE_ON', this.props.onTurboModeOn);
@@ -159,6 +165,9 @@ const vmListenerHOC = function (WrappedComponent) {
             if (this.props.shouldUpdateTargets) {
                 this.props.onTargetsUpdate(data);
             }
+        }
+        handleContainersUpdate (containers) {
+            if (this.props.shouldUpdateTargets) this.props.onContainersUpdate(containers);
         }
         handleKeyDown (e) {
             // Don't capture keys intended for Blockly inputs.
@@ -234,6 +243,7 @@ const vmListenerHOC = function (WrappedComponent) {
                 onMicListeningUpdate,
                 onMonitorsUpdate,
                 onTargetsUpdate,
+                onContainersUpdate,
                 onProjectChanged,
                 onProjectRunStart,
                 onProjectRunStop,
@@ -277,6 +287,7 @@ const vmListenerHOC = function (WrappedComponent) {
         onRuntimeStopped: PropTypes.func.isRequired,
         onShowExtensionAlert: PropTypes.func.isRequired,
         onTargetsUpdate: PropTypes.func.isRequired,
+        onContainersUpdate: PropTypes.func.isRequired,
         onTurboModeOff: PropTypes.func.isRequired,
         onTurboModeOn: PropTypes.func.isRequired,
         hasCloudVariables: PropTypes.bool,
@@ -325,6 +336,7 @@ const vmListenerHOC = function (WrappedComponent) {
         onTargetsUpdate: data => {
             dispatch(updateTargets(data.targetList, data.editingTarget));
         },
+        onContainersUpdate: containers => dispatch(updateContainers(containers)),
         onMonitorsUpdate: monitorList => {
             dispatch(updateMonitors(monitorList));
         },

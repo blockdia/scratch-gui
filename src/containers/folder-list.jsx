@@ -267,10 +267,10 @@ class FolderList extends React.Component {
     render () {
         const {items, renderItem, selectedId, query, grid, assetMode, scope, kind, onDrag, intl} = this.props;
         const tree = buildFolderTree(items, !assetMode);
-        const containers = kind === 'SPRITE' && this.props.vm.runtime.spriteContainers;
+        const containers = kind === 'SPRITE' ? this.props.containers : {};
         const annotate = nodes => nodes.forEach(node => {
             if (node.type !== 'folder') return;
-            const container = containers && containers.get(node.id);
+            const container = Object.prototype.hasOwnProperty.call(containers, node.id) && containers[node.id];
             if (container) {
                 node.container = true;
                 node.hidden = !container.visible;
@@ -301,7 +301,7 @@ class FolderList extends React.Component {
                     renderContainerProperties={path => (<ContainerProperties
                         vm={this.props.vm}
                         path={path}
-                        container={containers.get(path)}
+                        container={containers[path]}
                         disabled={this.props.drag.dragging}
                     />)}
                     folderTransition={this.state.folderTransition && this.state.folderTransition.scope === scope ?
@@ -356,6 +356,7 @@ FolderList.propTypes = {
     isRtl: PropTypes.bool,
     drag: PropTypes.object,
     vm: PropTypes.object,
+    containers: PropTypes.object,
     intl: intlShape,
     onDrag: PropTypes.func
 };
@@ -364,6 +365,7 @@ export {FolderList};
 export default injectIntl(connect((state, props) => ({
     isRtl: state.locales.isRtl,
     vm: state.scratchGui.vm,
+    containers: state.scratchGui.containers,
     drag: state.scratchGui.assetDrag,
     targetId: state.scratchGui.targets.editingTarget,
     scope: props.kind === 'SPRITE' ? (state.scratchGui.targets.stage || {}).id : state.scratchGui.targets.editingTarget

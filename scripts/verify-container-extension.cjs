@@ -56,12 +56,14 @@ const JSZip = require('@turbowarp/jszip');
             const blocks = workspace.getFlyout().getWorkspace()
                 .getAllBlocks();
             const field = blocks.find(block => block.type === 'containers_menu_containers').getField('containers');
+            const sprites = blocks.find(block => block.type === 'containers_menu_sprites').getField('sprites');
             const deletion = blocks.find(block => block.type === 'containers_deleteClone');
             const nativeDeletion = workspace.newBlock('control_delete_this_clone');
             const shape = [Boolean(deletion.previousConnection), Boolean(deletion.nextConnection)];
             const nativeShape = [Boolean(nativeDeletion.previousConnection), Boolean(nativeDeletion.nextConnection)];
             nativeDeletion.dispose();
             return {options: field.getOptions(),
+                sprites: sprites.getOptions(),
                 texts: blocks.map(block => block.toString()).join('\n'),
                 shape,
                 nativeShape};
@@ -73,7 +75,34 @@ const JSZip = require('@turbowarp/jszip');
         assert.deepEqual(menu.shape, menu.nativeShape, 'container delete has the same connections as native delete');
         assert.match(menu.texts, /将容器.*移到/);
         assert.match(menu.texts, /删除此容器克隆体/);
+        assert.match(menu.texts, /角色 自己 的世界 x 坐标/);
+        assert.deepEqual(menu.sprites, [['自己', '_myself_'], ['World//Nested//Two', 'World//Nested//Two'],
+            ['Outside', 'Outside']]);
         console.log('PASS automatic loading on creation and old-project import, Chinese palette and live menus');
+
+        // Container metadata must update the open inspector without a surrogate target update.
+        await page.locator('[data-container-properties="World"]').click();
+        const popup = page.locator('[data-container-properties-popup="World"]');
+        await popup.getByRole('spinbutton', {name: 'x', exact: true}).press('Tab');
+        await page.evaluate(() => {
+            window.containerEventCounts = {containers: 0, targets: 0};
+            vm.on('containersUpdate', () => window.containerEventCounts.containers++);
+            vm.on('targetsUpdate', () => window.containerEventCounts.targets++);
+            vm.runtime._refreshTargets = false;
+            vm.runtime.getOpcodeFunction('containers_setProperty')({CONTAINER: 'World', PROPERTY: 'x', VALUE: 37},
+                {target: vm.editingTarget});
+        });
+        await page.waitForFunction(() => document.querySelector(
+            '[data-container-properties-popup="World"] input[aria-label="x"]').value === '37');
+        const counts = await page.evaluate(() => window.containerEventCounts);
+        assert(counts.containers > 0);
+        assert.equal(counts.targets, 0, 'container inspector does not depend on targetsUpdate');
+        await popup.getByRole('spinbutton', {name: '大小', exact: true}).fill('0');
+        await popup.getByRole('spinbutton', {name: '大小', exact: true}).press('Tab');
+        assert.equal(await page.evaluate(() => vm.runtime.spriteContainers.get('World').transform.size), 0.01);
+        await page.mouse.click(800, 200);
+        await popup.waitFor({state: 'hidden'});
+        console.log('PASS independent container events, live property panel and size clamping');
 
         for (const enabled of [false, true]) {
             const result = await page.evaluate(compilerEnabled => {
@@ -135,20 +164,62 @@ const JSZip = require('@turbowarp/jszip');
                 command('after', 'data_setvariableto', null, null, {VALUE: 123}, {VARIABLE: 'after-delete'});
                 // A named menu shadow must survive SB3 and follow folder moves.
                 command('named', 'containers_show', null, null, {CONTAINER: 'World//Nested'});
+                command('clamp', 'containers_changeProperty', null, null,
+                    {...self, VALUE: -100000}, {PROPERTY: 'size'});
+                for (const PROPERTY of ['x', 'y', 'direction', 'size']) {
+                    const id = `world-${PROPERTY}`;
+                    first.createVariable(id, id, '');
+                    add(`read-${id}`, 'data_setvariableto', null, null, {VALUE: id}, {VARIABLE: id});
+                    add(`${id}-TARGET`, 'containers_menu_sprites', id, null, {}, {sprites: '_myself_'}, true);
+                    add(id, 'containers_worldProperty', `read-${id}`, null, {TARGET: `${id}-TARGET`}, {PROPERTY});
+                    Object.assign(first.blocks.getBlock(`read-${id}`), {x: 660,
+                        y: 40 +
+                        (['x', 'y', 'direction', 'size'].indexOf(PROPERTY) * 80)});
+                }
+                first.createVariable('world-target', 'world-target', '');
+                first.variables['world-target'].value = second.getName();
+                for (const selection of ['named', 'dynamic']) {
+                    const id = `world-${selection}`;
+                    first.createVariable(id, id, '');
+                    add(`read-${id}`, 'data_setvariableto', null, null, {VALUE: id}, {VARIABLE: id});
+                    add(`${id}-TARGET`, selection === 'named' ? 'containers_menu_sprites' : 'data_variable',
+                        id, null, {}, selection === 'named' ? {sprites: second.getName()} : {VARIABLE: 'world-target'},
+                        selection === 'named');
+                    add(id, 'containers_worldProperty', `read-${id}`, null, {TARGET: `${id}-TARGET`}, {PROPERTY: 'x'});
+                    Object.assign(first.blocks.getBlock(`read-${id}`), {x: 660,
+                        y: selection === 'named' ? 510 : 600});
+                }
                 for (const [id, x, y] of [['flag', 40, 40], ['clone-hat', 40, 490],
-                    ['delete-hat', 330, 590], ['named', 330, 730], ['after', 330, 830]]) {
+                    ['delete-hat', 330, 590], ['named', 330, 730], ['after', 330, 830], ['clamp', 660, 420]]) {
                     Object.assign(first.blocks.getBlock(id), {x, y});
                 }
                 first.variables['after-delete'].value = 0;
                 vm.setEditingTarget(runtime.getTargetForStage().id);
                 vm.setCompilerOptions({enabled: compilerEnabled});
+                const boundarySizes = [];
+                for (const value of [-100000, 1, 100000, -1]) {
+                    first.blocks.changeBlock({element: 'field', id: 'clamp-VALUE', name: 'NUM', value});
+                    runtime._pushThread('clamp', first, {stackClick: true});
+                    for (let i = 0; i < 4; i++) runtime._step();
+                    boundarySizes.push(containers.get('World').transform.size);
+                }
+                containers.setTransform('World', {size: 100});
                 const threads = runtime.startHats('event_whenflagclicked', null, first);
                 for (let i = 0; i < 8; i++) runtime._step();
                 const clones = runtime.targets.filter(target => !target.isOriginal);
                 const member = clones.find(target => target.getName() === first.getName());
                 const instance = containers.getContainingContainer(member).id;
+                const worldThreads = ['x', 'y', 'direction', 'size', 'named', 'dynamic'].map(property =>
+                    runtime._pushThread(`read-world-${property}`, member, {stackClick: true}));
+                for (let i = 0; i < 4; i++) runtime._step();
                 const state = {
                     compiled: Boolean(threads[0].isCompiled),
+                    worldCompiled: worldThreads.every(thread => Boolean(thread.isCompiled) === compilerEnabled),
+                    worldReadings: ['x', 'y', 'direction', 'size'].map(property =>
+                        member.variables[`world-${property}`].value),
+                    namedWorld: member.variables['world-named'].value,
+                    dynamicWorld: member.variables['world-dynamic'].value,
+                    boundarySizes,
                     value: first.variables.result.value,
                     source: containers.get('World').transform,
                     clone: containers.get(instance).transform,
@@ -159,6 +230,10 @@ const JSZip = require('@turbowarp/jszip');
                     siblingLayer: second.getLayerOrder(),
                     outsideLayer: runtime.getSpriteTargetByName('Outside').getLayerOrder()
                 };
+                member.variables['world-target'].value = 'Outside';
+                runtime._pushThread('read-world-dynamic', member, {stackClick: true});
+                for (let i = 0; i < 4; i++) runtime._step();
+                state.changedDynamicWorld = member.variables['world-dynamic'].value;
                 const deletion = runtime.startHats('event_whenbroadcastreceived', {BROADCAST_OPTION: 'delete'}, member);
                 runtime._pushThread('after', member, {stackClick: true});
                 for (let i = 0; i < 4; i++) runtime._step();
@@ -175,6 +250,12 @@ const JSZip = require('@turbowarp/jszip');
                 return state;
             }, enabled);
             assert.equal(result.compiled, enabled);
+            assert(result.worldCompiled);
+            assert.deepEqual(result.boundarySizes, [0.01, 1.01, 10000, 9999]);
+            assert.deepEqual(result.worldReadings, [60, 20, 90, 150]);
+            assert.equal(result.namedWorld, 145, 'named selection reads the original, not a sibling clone');
+            assert.equal(result.dynamicWorld, 145, 'reporter inputs resolve sprite names');
+            assert.equal(result.changedDynamicWorld, -100, 'reporter targets are resolved on each execution');
             assert.equal(result.deleteCompiled, enabled);
             assert.equal(result.value, 40);
             assert.equal(result.source.x, 40);
@@ -195,6 +276,39 @@ const JSZip = require('@turbowarp/jszip');
                 'transforms, reporters, layers and clone lifecycle');
         }
 
+        await page.evaluate(async () => {
+            const first = vm.editingTarget;
+            const other = vm.runtime.getSpriteTargetByName('World//Nested//Two');
+            const stage = vm.runtime.getTargetForStage();
+            const share = (id, target) => vm.shareBlocksToTarget([
+                {...first.blocks.getBlock(id), parent: null, topLevel: true, x: 40, y: 40},
+                first.blocks.getBlock(`${id}-TARGET`)
+            ], target.id, first.id);
+            await share('world-named', other);
+            await share('world-x', stage);
+            vm.setEditingTarget(other.id);
+        });
+        const sharedMenu = () => page.evaluate(() => {
+            const workspace = (window.Blockly || window.ScratchBlocks).getMainWorkspace();
+            const field = workspace.getAllBlocks().find(block => block.type === 'containers_menu_sprites')
+                .getField('sprites');
+            return {value: field.getValue(), label: field.getText()};
+        });
+        assert.deepEqual(await sharedMenu(), {value: 'World//Nested//Two', label: 'World//Nested//Two'});
+        await page.evaluate(() => vm.setEditingTarget(vm.runtime.getTargetForStage().id));
+        assert.deepEqual(await sharedMenu(), {value: '_myself_', label: '自己'});
+        await page.locator('.scratchCategoryId-containers').click();
+        const stageMenu = await page.evaluate(() => {
+            const workspace = (window.Blockly || window.ScratchBlocks).getMainWorkspace().getFlyout()
+                .getWorkspace();
+            const field = workspace.getAllBlocks().find(block => block.type === 'containers_menu_sprites')
+                .getField('sprites');
+            return field.getOptions();
+        });
+        assert.deepEqual(stageMenu.map(([, value]) => value), ['World//One', 'World//Nested//Two', 'Outside']);
+        await page.evaluate(() => vm.setEditingTarget(vm.runtime.getSpriteTargetByName('World//One').id));
+        console.log('PASS sprite and stage menus, shared explicit targets and localized relative targets');
+
         const saved = await page.evaluate(async () => {
             const containers = vm.runtime.spriteContainers;
             containers.beginUpdate();
@@ -207,10 +321,12 @@ const JSZip = require('@turbowarp/jszip');
             vm.emitWorkspaceUpdate();
             const first = vm.runtime.getSpriteTargetByName('Scene//One');
             const selection = first.blocks.getBlock('named-CONTAINER').fields.containers.value;
+            const spriteSelection = first.blocks.getBlock('world-named-TARGET').fields.sprites.value;
             const blob = await vm.saveProjectSb3();
-            return {selection, bytes: Array.from(new Uint8Array(await blob.arrayBuffer()))};
+            return {selection, spriteSelection, bytes: Array.from(new Uint8Array(await blob.arrayBuffer()))};
         });
         assert.equal(saved.selection, 'Scene//Nested');
+        assert.equal(saved.spriteSelection, 'Scene//Nested//Two');
         await page.screenshot({path: '/tmp/blockdia-container-extension.png'});
         await page.reload();
         await page.waitForFunction(() => window.vm && vm.editingTarget && vm.editingTarget.sprite.costumes.length);
@@ -221,13 +337,27 @@ const JSZip = require('@turbowarp/jszip');
             const named = Object.values(first.blocks._blocks).find(block =>
                 block.opcode === 'containers_menu_containers' &&
                 block.fields.containers.value === 'Scene//Nested');
+            const sprite = Object.values(first.blocks._blocks).find(block =>
+                block.opcode === 'containers_menu_sprites' &&
+                block.fields.sprites.value === 'Scene//Nested//Two');
             return {loaded: vm.extensionManager.isExtensionLoaded('containers'),
                 selection: named && named.fields.containers.value,
+                spriteSelection: sprite && sprite.fields.sprites.value,
+                worldX: vm.runtime.getOpcodeFunction('containers_worldProperty')(
+                    {TARGET: sprite.fields.sprites.value, PROPERTY: 'x'}, {target: vm.runtime.getTargetForStage()}),
                 transform: vm.runtime.spriteContainers.get('Scene').transform};
         }, saved.bytes);
         assert(loaded.loaded);
         assert.equal(loaded.selection, saved.selection);
+        assert.equal(loaded.spriteSelection, saved.spriteSelection);
+        assert.equal(loaded.worldX, 145);
         assert.equal(loaded.transform.x, 40);
+        const worldFields = await page.evaluate(() => {
+            const workspace = (window.Blockly || window.ScratchBlocks).getMainWorkspace();
+            return workspace.getAllBlocks().filter(block => block.type === 'containers_worldProperty')
+                .map(block => block.getFieldValue('PROPERTY'));
+        });
+        assert.deepEqual(worldFields.sort(), ['direction', 'size', 'x', 'x', 'x', 'y']);
         await page.locator('.scratchCategoryId-containers').click();
         await page.locator('[class*="stage-header_stage-size-toggle-group"]').getByRole('button',
             {name: /Switch to small stage|缩小舞台/})

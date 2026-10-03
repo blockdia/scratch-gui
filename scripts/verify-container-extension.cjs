@@ -75,7 +75,7 @@ const JSZip = require('@turbowarp/jszip');
         assert.deepEqual(menu.shape, menu.nativeShape, 'container delete has the same connections as native delete');
         assert.match(menu.texts, /将容器.*移到/);
         assert.match(menu.texts, /删除此容器克隆体/);
-        assert.match(menu.texts, /角色 自己 的世界 x 坐标/);
+        assert.match(menu.texts, /角色 自己 在舞台上的 x 坐标/);
         assert.deepEqual(menu.sprites, [['自己', '_myself_'], ['World//Nested//Two', 'World//Nested//Two'],
             ['Outside', 'Outside']]);
         console.log('PASS automatic loading on creation and old-project import, Chinese palette and live menus');

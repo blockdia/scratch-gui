@@ -210,7 +210,18 @@
         "containers.front": "最前面",
         "containers.back": "最后面",
         "containers.forward": "前移",
-        "containers.backward": "后移"
+        "containers.backward": "后移",
+        "containers.effect": "容器 [CONTAINER] 的 [EFFECT] 特效",
+        "containers.setEffect": "将容器 [CONTAINER] 的 [EFFECT] 特效设为 [VALUE]",
+        "containers.changeEffect": "将容器 [CONTAINER] 的 [EFFECT] 特效增加 [VALUE]",
+        "containers.clearEffects": "清除容器 [CONTAINER] 的图形特效",
+        "containers.color": "颜色",
+        "containers.fisheye": "鱼眼",
+        "containers.whirl": "漩涡",
+        "containers.pixelate": "像素化",
+        "containers.mosaic": "马赛克",
+        "containers.brightness": "亮度",
+        "containers.ghost": "虚像"
     },
     "zh-tw": {
         "blockdia.spriteInfo.moreProperties": "更多角色屬性",
@@ -318,7 +329,18 @@
         "containers.front": "最前面",
         "containers.back": "最後面",
         "containers.forward": "前移",
-        "containers.backward": "後移"
+        "containers.backward": "後移",
+        "containers.effect": "容器 [CONTAINER] 的 [EFFECT] 特效",
+        "containers.setEffect": "將容器 [CONTAINER] 的 [EFFECT] 特效設為 [VALUE]",
+        "containers.changeEffect": "將容器 [CONTAINER] 的 [EFFECT] 特效增加 [VALUE]",
+        "containers.clearEffects": "清除容器 [CONTAINER] 的圖形特效",
+        "containers.color": "顏色",
+        "containers.fisheye": "魚眼",
+        "containers.whirl": "漩涡",
+        "containers.pixelate": "像素化",
+        "containers.mosaic": "馬賽克",
+        "containers.brightness": "亮度",
+        "containers.ghost": "幻影"
     },
     "en": {
         "gui.actions.shortcuts": "Keyboard shortcuts",

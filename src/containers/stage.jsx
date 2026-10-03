@@ -232,9 +232,10 @@ class Stage extends React.Component {
             }
         }
         if (this.state.mouseDown && this.state.isDragging) {
-            // Editor drag style only updates the drag canvas, does full update at the end of drag
-            // Non-editor drag style just updates the sprite continuously.
-            if (this.props.useEditorDragStyle) {
+            // Editor drag style updates the preview; player drag style updates the sprite continuously.
+            if (!this.props.vm.runtime.getTargetById(this.state.dragId)) {
+                this.onStopDrag(-1, -1);
+            } else if (this.props.useEditorDragStyle) {
                 this.positionDragCanvas(mousePosition[0], mousePosition[1]);
             } else {
                 const spritePosition = this.getScratchCoords(mousePosition[0], mousePosition[1]);
@@ -434,21 +435,25 @@ class Stage extends React.Component {
             this.props.vm.stopDrag(dragId);
             this.setState({
                 isDragging: false,
+                mouseDown: false,
+                mouseDownPosition: null,
                 dragOffset: null,
                 dragId: null
             });
         };
         if (this.props.useEditorDragStyle) {
             // Need to sequence these actions to prevent flickering.
-            const spriteInfo = {visible: true};
-            // First update the sprite position if dropped in the stage.
-            if (mouseX > 0 && mouseX < this.rect.width &&
-                mouseY > 0 && mouseY < this.rect.height) {
-                const spritePosition = this.getScratchCoords(mouseX, mouseY);
-                [spriteInfo.x, spriteInfo.y] = this.getDraggedLocalPosition(spritePosition);
-                spriteInfo.force = true;
+            if (this.props.vm.runtime.getTargetById(dragId)) {
+                const spriteInfo = {visible: true};
+                // First update the sprite position if dropped in the stage.
+                if (mouseX > 0 && mouseX < this.rect.width &&
+                    mouseY > 0 && mouseY < this.rect.height) {
+                    const spritePosition = this.getScratchCoords(mouseX, mouseY);
+                    [spriteInfo.x, spriteInfo.y] = this.getDraggedLocalPosition(spritePosition);
+                    spriteInfo.force = true;
+                }
+                this.props.vm.postSpriteInfo(spriteInfo);
             }
-            this.props.vm.postSpriteInfo(spriteInfo);
             // Then clear the dragging canvas and stop drag (potentially slow if selecting sprite)
             this.clearDragCanvas();
             commonStopDragActions();
@@ -536,6 +541,7 @@ const mapDispatchToProps = dispatch => ({
     onDeactivateColorPicker: color => dispatch(deactivateColorPicker(color))
 });
 
+export {Stage};
 export default connect(
     mapStateToProps,
     mapDispatchToProps

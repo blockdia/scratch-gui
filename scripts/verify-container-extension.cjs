@@ -63,7 +63,7 @@ const JSZip = require('@turbowarp/jszip');
             const sprites = blocks.find(block => block.type === 'containers_menu_sprites').getField('sprites');
             const deletion = blocks.find(block => block.type === 'containers_deleteClone');
             const worldSetter = blocks.find(block => block.type === 'containers_setWorldProperty');
-            const deleteField = deletion.getInputTargetBlock('CONTAINER').getField('containers');
+            const deleteField = deletion.getInputTargetBlock('CONTAINER').getField('ancestorContainers');
             const nativeDeletion = workspace.newBlock('control_delete_this_clone');
             const shape = [Boolean(deletion.previousConnection), Boolean(deletion.nextConnection)];
             const nativeShape = [Boolean(nativeDeletion.previousConnection), Boolean(nativeDeletion.nextConnection)];
@@ -75,6 +75,7 @@ const JSZip = require('@turbowarp/jszip');
                 worldSetterHasTarget: Boolean(worldSetter.getInput('TARGET')),
                 texts: blocks.map(block => block.toString()).join('\n'),
                 deleteValue: deleteField.getValue(),
+                deleteOptions: deleteField.getOptions(),
                 shape,
                 nativeShape};
         });
@@ -84,8 +85,10 @@ const JSZip = require('@turbowarp/jszip');
         assert.deepEqual(menu.shape, [true, false]);
         assert.deepEqual(menu.shape, menu.nativeShape, 'container delete has the same connections as native delete');
         assert.match(menu.texts, /将 所在容器 移到/);
-        assert.match(menu.texts, /删除所在的 所在容器 的克隆体/);
+        assert.match(menu.texts, /删除我所在的 最内层 容器克隆体/);
         assert.equal(menu.deleteValue, '_mycontainer_');
+        assert.deepEqual(menu.deleteOptions, [['最内层', '_mycontainer_']],
+            'the innermost container is not listed twice');
         assert.match(menu.texts, /角色 自己 在舞台上的 x 坐标/);
         assert.match(menu.texts, /将在舞台上的 x 坐标 设为 0/);
         assert.deepEqual(menu.worldProperties, ['x', 'y', 'size', 'direction']);
@@ -160,8 +163,9 @@ const JSZip = require('@turbowarp/jszip');
                         const inputID = `${id}-${name}`;
                         inputs[name] = inputID;
                         const isContainer = name === 'CONTAINER';
-                        add(inputID, isContainer ? 'containers_menu_containers' : 'math_number', id, null, {},
-                            {[isContainer ? 'containers' : 'NUM']: value}, true);
+                        const menuName = opcode === 'containers_deleteClone' ? 'ancestorContainers' : 'containers';
+                        add(inputID, isContainer ? `containers_menu_${menuName}` : 'math_number', id, null, {},
+                            {[isContainer ? menuName : 'NUM']: value}, true);
                     }
                     add(id, opcode, parent, next, inputs, fields);
                 };
@@ -355,7 +359,7 @@ const JSZip = require('@turbowarp/jszip');
                                     block: 'delete-selection-input',
                                     shadow: dynamic ? null : 'delete-selection-input'}}});
                             nested.blocks.createBlock({id: 'delete-selection-input',
-                                opcode: dynamic ? 'data_variable' : 'containers_menu_containers',
+                                opcode: dynamic ? 'data_variable' : 'containers_menu_ancestorContainers',
                                 parent: 'nested-delete',
                                 next: null,
                                 topLevel: false,
@@ -363,7 +367,8 @@ const JSZip = require('@turbowarp/jszip');
                                 inputs: {},
                                 fields: dynamic ? {VARIABLE: {name: 'VARIABLE',
                                     value: 'delete-selection',
-                                    id: 'delete-selection'}} : {containers: {name: 'containers', value: selection}}});
+                                    id: 'delete-selection'}} : {ancestorContainers: {name: 'ancestorContainers',
+                                    value: selection}}});
                             const clones = containers.createClone('World');
                             const rootClone = clones.find(target => target.getName() === first.getName());
                             const nestedClone = clones.find(target => target.getName() === nested.getName());
@@ -434,9 +439,16 @@ const JSZip = require('@turbowarp/jszip');
         assert.deepEqual(await page.evaluate(() => {
             const workspace = (window.Blockly || window.ScratchBlocks).getMainWorkspace();
             const deletion = workspace.getAllBlocks().find(block => block.type === 'containers_deleteClone');
-            const field = deletion.getInputTargetBlock('CONTAINER').getField('containers');
+            const field = deletion.getInputTargetBlock('CONTAINER').getField('ancestorContainers');
             return [field.getValue(), field.getText()];
         }), ['World//Nested', 'World//Nested'], 'shared delete keeps its named path in that container');
+        assert.deepEqual(await page.evaluate(() => {
+            const workspace = (window.Blockly || window.ScratchBlocks).getMainWorkspace();
+            const deletion = workspace.getAllBlocks().find(block => block.type === 'containers_deleteClone');
+            return deletion.getInputTargetBlock('CONTAINER').getField('ancestorContainers')
+                .getOptions();
+        }), [['最内层', '_mycontainer_'], ['World', 'World']],
+        'nested deletion replaces the innermost name while preserving a saved named selection');
         await page.evaluate(() => vm.setEditingTarget(vm.runtime.getTargetForStage().id));
         assert.deepEqual(await sharedMenu(), {value: '_myself_', label: '自己'});
         await page.locator('.scratchCategoryId-containers').click();
@@ -446,11 +458,11 @@ const JSZip = require('@turbowarp/jszip');
             const field = workspace.getAllBlocks().find(block => block.type === 'containers_menu_sprites')
                 .getField('sprites');
             const deletion = workspace.getAllBlocks().find(block => block.type === 'containers_deleteClone');
-            const deleteField = deletion.getInputTargetBlock('CONTAINER').getField('containers');
+            const deleteField = deletion.getInputTargetBlock('CONTAINER').getField('ancestorContainers');
             return {sprites: field.getOptions(), deletion: [deleteField.getValue(), deleteField.getText()]};
         });
         assert.deepEqual(stageMenu.sprites.map(([, value]) => value), ['World//One', 'World//Nested//Two', 'Outside']);
-        assert.deepEqual(stageMenu.deletion, ['_mycontainer_', '所在容器'], 'stage keeps the relative delete default');
+        assert.deepEqual(stageMenu.deletion, ['_mycontainer_', '最内层'], 'stage keeps the relative delete default');
         await page.evaluate(() => vm.setEditingTarget(vm.runtime.getSpriteTargetByName('World//One').id));
         console.log('PASS sprite and stage menus, shared explicit targets and localized relative targets');
 
@@ -466,7 +478,7 @@ const JSZip = require('@turbowarp/jszip');
             vm.emitWorkspaceUpdate();
             const first = vm.runtime.getSpriteTargetByName('Scene//One');
             const selection = first.blocks.getBlock('named-CONTAINER').fields.containers.value;
-            const deleteSelection = first.blocks.getBlock('named-delete-CONTAINER').fields.containers.value;
+            const deleteSelection = first.blocks.getBlock('named-delete-CONTAINER').fields.ancestorContainers.value;
             const spriteSelection = first.blocks.getBlock('world-named-TARGET').fields.sprites.value;
             const blob = await vm.saveProjectSb3();
             return {selection,
@@ -492,12 +504,13 @@ const JSZip = require('@turbowarp/jszip');
                 block.fields.sprites.value === 'Scene//Nested//Two');
             const deletion = Object.values(first.blocks._blocks).find(block =>
                 block.opcode === 'containers_deleteClone' &&
-                first.blocks.getBlock(block.inputs.CONTAINER.block).fields.containers.value === 'Scene//Nested');
+                first.blocks.getBlock(block.inputs.CONTAINER.block).fields.ancestorContainers.value ===
+                    'Scene//Nested');
             return {loaded: vm.extensionManager.isExtensionLoaded('containers'),
                 selection: named && named.fields.containers.value,
                 spriteSelection: sprite && sprite.fields.sprites.value,
                 deleteSelection: deletion &&
-                    first.blocks.getBlock(deletion.inputs.CONTAINER.block).fields.containers.value,
+                    first.blocks.getBlock(deletion.inputs.CONTAINER.block).fields.ancestorContainers.value,
                 worldX: vm.runtime.getOpcodeFunction('containers_worldProperty')(
                     {TARGET: sprite.fields.sprites.value, PROPERTY: 'x'}, {target: vm.runtime.getTargetForStage()}),
                 transform: vm.runtime.spriteContainers.get('Scene').transform};

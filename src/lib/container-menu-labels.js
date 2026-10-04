@@ -5,9 +5,13 @@ export default (ScratchBlocks, getIntl) => {
         ['containers', '_mycontainer_', () => getIntl().formatMessage({
             id: 'containers.containingContainer', defaultMessage: 'my container'
         })],
+        ['ancestorContainers', '_mycontainer_', () => getIntl().formatMessage({
+            id: 'containers.innermostContainer', defaultMessage: 'innermost'
+        })],
         ['sprites', '_myself_', () => ScratchBlocks.ScratchMsgs.translate('CONTROL_CREATECLONEOF_MYSELF', 'myself')]
     ]) {
         const definition = ScratchBlocks.Blocks[`containers_menu_${menu}`];
+        if (!definition) continue;
         const init = definition.init;
         definition.init = function () {
             init.call(this);

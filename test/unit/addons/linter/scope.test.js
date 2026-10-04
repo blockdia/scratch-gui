@@ -10,10 +10,13 @@ const target = (name, blocks = [], extra = {}) => ({id: name,
     variables: {},
     blocks: {_blocks: Object.fromEntries(blocks.map(item => [item.id, item]))},
     ...extra});
-const reference = (opcode, key, value, menu = 'text') => [
-    block('operation', opcode, {inputs: {[key]: {block: 'menu', shadow: 'menu'}}}),
-    block('menu', menu, {parent: 'operation', shadow: true, fields: {[key]: {value}}})
-];
+const reference = (opcode, key, value, menu = 'text') => {
+    const field = menu.startsWith('containers_menu_') ? menu.slice('containers_menu_'.length) : key;
+    return [
+        block('operation', opcode, {inputs: {[key]: {block: 'menu', shadow: 'menu'}}}),
+        block('menu', menu, {parent: 'operation', shadow: true, fields: {[field]: {value}}})
+    ];
+};
 const scopeRules = ['invalid-scope', 'invalid-container', 'missing-target', 'invalid-component', 'invalid-argument'];
 const run = (targets, rules = scopeRules, context = {}) => {
     let coverage;
@@ -87,7 +90,8 @@ test.each(['property', 'setProperty', 'changeProperty', 'goToXY', 'setRotationSt
     'changeEffect', 'clearEffects', 'show', 'hide', 'isVisible', 'goToLayer', 'moveLayers',
     'createClone', 'deleteClone'])(
     'containers_%s checks menu shadows, definitions and membership', operation => {
-        const blocks = value => reference(`containers_${operation}`, 'CONTAINER', value, 'containers_menu_containers');
+        const menu = operation === 'deleteClone' ? 'ancestorContainers' : 'containers';
+        const blocks = value => reference(`containers_${operation}`, 'CONTAINER', value, `containers_menu_${menu}`);
         const context = {containers: [{path: 'Group'}, {path: 'Group//Nested'}]};
         const owner = value => target('Group//Nested//Cat', blocks(value));
         expect(run([owner('Missing')], ['invalid-container'], context).rows)
@@ -111,7 +115,8 @@ test.each(['property', 'setProperty', 'changeProperty', 'goToXY', 'setRotationSt
 
 test('stage can operate on named containers but cannot select its containing container or delete clones', () => {
     const context = {containers: [{path: 'Group'}]};
-    const blocks = (opcode, name) => reference(opcode, 'CONTAINER', name, 'containers_menu_containers');
+    const blocks = (opcode, name) => reference(opcode, 'CONTAINER', name,
+        opcode === 'containers_deleteClone' ? 'containers_menu_ancestorContainers' : 'containers_menu_containers');
     expect(run([target('Stage', blocks('containers_createClone', 'Group'))], scopeRules, context).rows).toEqual([]);
     expect(run([target('Stage', blocks('containers_hide', '_mycontainer_'))], scopeRules, context).rows)
         .toMatchObject([{reason: 'reason-invalid-container-self'}]);
@@ -121,14 +126,19 @@ test('stage can operate on named containers but cannot select its containing con
         ['invalid-container'], context).rows).toMatchObject([{reason: 'reason-invalid-container-self'}]);
 });
 
-test('container clone deletion only accepts own ancestry without assuming a clone currently exists', () => {
-    const context = {containers: [{path: 'A'}, {path: 'B'}, {path: 'A//Child'}]};
-    const make = name => target('A//Child//Cat', reference('containers_deleteClone', 'CONTAINER', name));
-    expect(run([make('B')], scopeRules, context).rows).toMatchObject([{reason: 'reason-invalid-container-ancestry'}]);
-    for (const name of ['A', 'A//Child', '_mycontainer_']) {
-        expect(run([make(name)], scopeRules, context).rows).toEqual([]);
+test.each(['text', 'containers_menu_containers', 'containers_menu_ancestorContainers'])(
+    'container clone deletion checks %s against own ancestry without requiring an existing clone', menu => {
+        const context = {containers: [{path: 'A'}, {path: 'B'}, {path: 'A//Child'}]};
+        const make = name => target('A//Child//Cat', reference('containers_deleteClone', 'CONTAINER', name, menu));
+        expect(run([make('B')], scopeRules, context).rows)
+            .toMatchObject([{reason: 'reason-invalid-container-ancestry'}]);
+        for (const name of ['A', 'A//Child', '_mycontainer_']) {
+            const result = run([make(name)], scopeRules, context);
+            expect(result.rows).toEqual([]);
+            expect(result.coverage).toEqual({limitations: [], unknownOpcodes: []});
+        }
     }
-});
+);
 
 test('omitted container metadata reports limited coverage rather than inventing missing definitions', () => {
     const result = run([target('Cat', reference('containers_hide', 'CONTAINER', 'A'))], scopeRules,

@@ -90,16 +90,25 @@ const inventory = (vmRoot, blocksRoot) => {
     }
     return Object.fromEntries(Object.entries(result).sort(([a], [b]) => a.localeCompare(b)));
 };
+const compare = (actual, vmVersion) => {
+    const missing = Object.keys(actual).filter(op => !expected[op]);
+    // Support the new menu while the GUI still consumes the published VM 0.4.0.
+    // Remove this single-version exception when the GUI updates its VM dependency.
+    const stale = Object.keys(expected).filter(op => !actual[op] &&
+        !(vmVersion === '0.4.0' && op === 'containers_menu_ancestorContainers'));
+    const changedScopes = Object.keys(actual).filter(op => expected[op] &&
+        ['filter', 'componentTypes'].some(key =>
+            JSON.stringify(actual[op][key]) !== JSON.stringify(expected[op][key])));
+    return {missing, stale, changedScopes};
+};
 module.exports = inventory;
+module.exports.compare = compare;
 if (require.main === module) {
     const vmRoot = process.argv[2] || path.dirname(require.resolve('scratch-vm/package.json'));
     const blocksRoot = process.argv[3] || path.dirname(require.resolve('scratch-blocks/package.json'));
     const actual = inventory(vmRoot, blocksRoot);
-    const missing = Object.keys(actual).filter(op => !expected[op]);
-    const stale = Object.keys(expected).filter(op => !actual[op]);
-    const changedScopes = Object.keys(actual).filter(op => expected[op] &&
-        ['filter', 'componentTypes'].some(key =>
-            JSON.stringify(actual[op][key]) !== JSON.stringify(expected[op][key])));
+    const vmVersion = JSON.parse(fs.readFileSync(path.join(vmRoot, 'package.json'), 'utf8')).version;
+    const {missing, stale, changedScopes} = compare(actual, vmVersion);
     if (missing.length || stale.length || changedScopes.length) {
         process.stderr.write(JSON.stringify({missing, stale, changedScopes}, null, 2));
         process.exitCode = 1;

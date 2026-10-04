@@ -2,7 +2,7 @@ import classNames from 'classnames';
 import PropTypes from 'prop-types';
 import React from 'react';
 import bindAll from 'lodash.bindall';
-import Popover from 'react-popover';
+import Popover from '../popover/popover.jsx';
 import {isRtl} from '@turbowarp/scratch-l10n';
 
 import Box from '../box/box.jsx';

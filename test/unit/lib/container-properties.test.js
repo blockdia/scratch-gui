@@ -4,7 +4,7 @@ import {IntlProvider} from 'react-intl';
 import ContainerProperties from '../../../src/containers/container-properties.jsx';
 import DirectionPicker from '../../../src/containers/direction-picker.jsx';
 
-jest.mock('react-popover', () => ({isOpen, body, children}) => (
+jest.mock('../../../src/components/popover/popover.jsx', () => ({isOpen, body, children}) => (
     <div>{children}{isOpen ? body : null}</div>
 ));
 jest.mock('../../../src/containers/direction-picker.jsx', () => () => <div />);

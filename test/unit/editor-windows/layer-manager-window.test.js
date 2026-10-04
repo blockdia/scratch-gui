@@ -26,15 +26,16 @@ afterEach(() => {
 });
 const fixture = (withContainers = false) => {
     const target = (id, order, extra = {}) => ({id, isOriginal: true, isStage: false, visible: true,
+        isEffectivelyVisible () { return this.visible; },
         getLayerOrder: () => order, getCostumes: () => [], getName: () => id, ...extra});
     const stage = target('stage', 0, {isStage: true});
     const a = target('a', 1, withContainers ? {getName: () => 'A//N//Sprite'} : {});
     const clone = target('clone', 2, {isOriginal: false});
     const runtime = new EventEmitter();
     runtime.targets = [stage, a, clone];
-    if (withContainers) runtime.spriteContainers = {serialize: () => [
-        {path: 'A', visible: true}, {path: 'A//N', visible: true}
-    ]};
+    runtime.spriteContainers = {getTargetContainers: member => withContainers && member === a ? [
+        {id: 'A', path: 'A', visible: true}, {id: 'A//N', path: 'A//N', visible: true}
+    ] : []};
     const vm = {runtime, editingTarget: a, setEditingTarget: jest.fn()};
     const model = createLayerModel(vm);
     const snapshot = jest.spyOn(model, 'snapshot');

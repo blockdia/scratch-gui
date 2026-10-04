@@ -99,16 +99,17 @@ export const renameEntries = (vm, kind, changes, targetId = vm.editingTarget && 
         else if (kind === 'COSTUME') target.renameCostume(entry.id, name);
         else target.renameSound(entry.id, name);
     };
-    const containers = kind === 'SPRITE' && vm.runtime.spriteContainers;
-    if (containers) containers.beginUpdate();
+    const isSprite = kind === 'SPRITE';
+    const containers = vm.runtime.spriteContainers;
+    if (isSprite) containers.beginUpdate();
     try {
-        if (containers && folderMove) {
+        if (isSprite && folderMove) {
             containers.move(folderMove.source, folderMove.destination, folderMove.dissolve);
         }
         changed.forEach(entry => rename(entry, unusedName('__blockdia_folder_move__', used)));
         changed.forEach((entry, index) => rename(entry, names[index]));
     } finally {
-        if (containers) containers.endUpdate();
+        if (isSprite) containers.endUpdate();
     }
     vm.emitTargetsUpdate();
     vm.emitWorkspaceUpdate();

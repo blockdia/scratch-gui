@@ -227,8 +227,7 @@ class FolderList extends React.Component {
     }
     menu (item, path) {
         const {intl, items, kind, vm} = this.props;
-        const containers = kind === 'SPRITE' && vm.runtime.spriteContainers;
-        const container = containers && path && containers.get(path);
+        const container = kind === 'SPRITE' && path && vm.runtime.spriteContainers.get(path);
         const current = path ? parentFolder(path) : splitItemName(item.fullName, kind).folder;
         const format = (message, values) => intl.formatMessage(message, values);
         const paths = folderPaths(items, kind === 'SPRITE');
@@ -236,7 +235,7 @@ class FolderList extends React.Component {
             (!path || !isWithin(folder, path)) &&
             (!path || !paths.includes(joinName(folder, splitName(path).basename))));
         return [
-            path && containers ? <MenuItem
+            path && kind === 'SPRITE' ? <MenuItem
                 key="container"
                 onClick={() => vm.setSpriteFolderContainer(path, !container)}
             >

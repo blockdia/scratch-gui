@@ -6,6 +6,7 @@ module.exports = {
     testMatch: ['<rootDir>/test/unit/lib/sprite-containers.test.js',
         '<rootDir>/test/containers/stage-drag.test.js',
         '<rootDir>/test/containers/container-events.test.js',
+        '<rootDir>/test/containers/folder-references.test.js',
         '<rootDir>/test/unit/lib/container-properties.test.js',
         '<rootDir>/test/unit/lib/container-native-messages.test.js',
         '<rootDir>/test/unit/lib/folders.test.js', '<rootDir>/test/unit/lib/folder-order.test.js',

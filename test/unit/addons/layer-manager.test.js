@@ -15,10 +15,11 @@ const fixture = () => {
         _drawableGroupById: new Map([[2, 'component'], [3, 'component']])});
     const runtime = Object.create(Runtime.prototype);
     Object.assign(runtime, {targets: [], executableTargets: [], requestRedraw: jest.fn(), emitProjectChanged: jest.fn()});
-    runtime.spriteContainers = {serialize: () => [], refreshExecutableOrder: () => {}};
+    runtime.spriteContainers = {getTargetContainers: () => [], refreshExecutableOrder: () => {}};
     const make = (id, drawableID, extra = {}) => Object.assign(Object.create(RenderedTarget.prototype), {
         id, drawableID, renderer, runtime, isOriginal: true, isStage: false, visible: true,
-        currentCostume: 0, getName: () => id, getCostumes: () => [], ...extra
+        currentCostume: 0, getName: () => id, getCostumes: () => [],
+        isEffectivelyVisible () { return this.visible; }, ...extra
     });
     const stage = make('stage', 0, {isStage: true});
     const a = make('a', 1);
@@ -30,6 +31,29 @@ const fixture = () => {
 };
 const order = vm => vm.runtime.targets.filter(t => !t.isStage)
     .sort((a, b) => a.getLayerOrder() - b.getLayerOrder()).map(t => t.id);
+
+test('layer rows use runtime instance membership and effective visibility', () => {
+    const vm = fixture();
+    vm.a.getName = () => 'A//one';
+    vm.a.isEffectivelyVisible = () => false;
+    vm.runtime.spriteContainers.getTargetContainers = target => target === vm.a ? [
+        {id: 'instance', path: 'A', visible: false, isClone: true}
+    ] : [];
+    const rows = createLayerModel(vm).snapshot().rows;
+    expect(rows.find(row => row.id === 'container:instance')).toMatchObject({isContainerClone: true});
+    expect(rows.find(row => row.id === 'a')).toMatchObject({
+        parent: 'container:instance', visible: false, hiddenByContainer: true
+    });
+});
+
+test('missing VM container APIs fail instead of falling back to sprite names or visibility', () => {
+    const vm = fixture();
+    vm.runtime.spriteContainers.getTargetContainers = null;
+    expect(() => createLayerModel(vm).snapshot()).toThrow(/getTargetContainers/);
+    vm.runtime.spriteContainers.getTargetContainers = () => [];
+    vm.a.isEffectivelyVisible = null;
+    expect(() => createLayerModel(vm).snapshot()).toThrow(/isEffectivelyVisible/);
+});
 
 test.each([
     ['a', null, ['b', 'c', 'a']],

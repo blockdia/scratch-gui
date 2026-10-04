@@ -1,13 +1,10 @@
 import getCostumeUrl from '../../../lib/get-costume-url';
-import {splitName} from '../../../lib/folders';
 
 export const containerLayerId = path => `container:${path}`;
 
 // Only containers affect render order. Ordinary folders stay in the displayed name.
 const readLayerRows = vm => {
     const manager = vm.runtime.spriteContainers;
-    const definitions = new Map(vm.runtime.spriteContainers ?
-        vm.runtime.spriteContainers.serialize().map(container => [container.path, container]) : []);
     const containers = new Map();
     const roots = [];
     const targets = vm.runtime.targets.filter(target => target.isStage ||
@@ -16,11 +13,7 @@ const readLayerRows = vm => {
     for (const target of targets) {
         let parent = null;
         const fullName = target.getName();
-        const folder = target.isStage ? '' : splitName(fullName).folder;
-        const parts = folder ? folder.split('//') : [];
-        const membership = manager && manager.getTargetContainers ? manager.getTargetContainers(target) :
-            parts.map((part, i) => parts.slice(0, i + 1).join('//')).filter(path => definitions.has(path))
-                .map(path => ({...definitions.get(path), id: path}));
+        const membership = manager.getTargetContainers(target);
         for (const entry of membership) {
             const {id, path} = entry;
             if (!containers.has(id)) {
@@ -46,8 +39,7 @@ const readLayerRows = vm => {
             parent.count++;
             parent.backId = target.id;
         }
-        const visible = typeof target.isEffectivelyVisible === 'function' ?
-            target.isEffectivelyVisible() : target.visible;
+        const visible = target.isEffectivelyVisible();
         (parent ? parent.children : roots).push({id: target.id,
             container: null,
             name: parent && fullName.startsWith(`${parent.fullName}//`) ?

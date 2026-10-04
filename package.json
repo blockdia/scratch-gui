@@ -30,6 +30,7 @@
     "test:integration": "jest --maxWorkers=4 test[\\\\/]integration",
     "test:lint": "eslint . --ext .js,.jsx scripts/*.cjs",
     "test:unit": "jest test[\\\\/]unit[\\\\/]addons test/unit/lib/pinned-scripts.test.js test/unit/lib/backpack-folder-drop.test.js test/unit/lib/folders.test.js test/unit/lib/folder-order.test.js test/unit/lib/hydrate-workspace-shadows.test.js test/unit/editor-windows test/unit/editor-actions",
+    "test:containers": "jest --runInBand --config test/containers-jest.config.js",
     "test:smoke": "jest --runInBand test[\\\\/]smoke",
     "watch": "webpack --colors --watch"
   },
@@ -99,8 +100,8 @@
     "scratch-audio": "github:TurboWarp/scratch-audio#develop",
     "scratch-blocks": "npm:@blockdia/scratch-blocks@^0.2.1",
     "scratch-paint": "npm:@blockdia/scratch-paint@^0.1.0",
-    "scratch-render": "npm:@blockdia/scratch-render@^0.2.0",
-    "scratch-vm": "npm:@blockdia/scratch-vm@^0.3.0",
+    "scratch-render": "npm:@blockdia/scratch-render@0.3.0",
+    "scratch-vm": "npm:@blockdia/scratch-vm@0.4.0",
     "style-loader": "^0.23.0",
     "text-encoding": "0.7.0",
     "to-style": "1.3.3",

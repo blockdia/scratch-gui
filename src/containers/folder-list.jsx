@@ -7,6 +7,7 @@ import {ContextMenuTrigger} from 'react-contextmenu';
 import {ContextMenu, MenuItem} from '../components/context-menu/context-menu.jsx';
 import Prompt from '../components/prompt/prompt.jsx';
 import SpriteTree from '../components/sprite-selector/sprite-tree.jsx';
+import ContainerProperties from './container-properties.jsx';
 import {getFolderPreview} from '../components/asset-panel/folder-thumbnail.jsx';
 import DragRecognizer from '../lib/drag-recognizer';
 import {updateAssetDrag} from '../reducers/asset-drag';
@@ -81,6 +82,10 @@ class FolderList extends React.Component {
             this.ref = node;
         };
         this.handleClosePrompt = () => this.setState({prompt: null});
+        this.handleToggleContainerVisibility = path => {
+            const container = this.props.vm.runtime.spriteContainers.get(path);
+            if (container) this.props.vm.setSpriteContainerVisible(path, !container.visible);
+        };
         this.handleSubmitPrompt = this.handleSubmitPrompt.bind(this);
         this.handleActiveFolderChange = path => setActiveFolder(this.props.vm, this.props.kind,
             path, this.props.targetId);
@@ -174,14 +179,16 @@ class FolderList extends React.Component {
                 entry.name !== this.dragEntries[i].name)) return;
         const plan = planFolderDrop(entries, kind, scope, drag, hit);
         if (!plan) return;
+        let folderMove = null;
         if (drag.dragType === 'FOLDER' && kind === 'SPRITE' && plan.changes.size) {
             const source = drag.payload.path;
             const member = entries.find(entry => plan.changes.has(entry.id));
             const suffixLength = member.name.length - source.length;
             const destination = plan.changes.get(member.id).slice(0, -suffixLength);
+            folderMove = {source, destination};
             this.setState({folderTransition: {source, destination, scope}});
         }
-        renameEntries(vm, kind, plan.changes, targetId);
+        renameEntries(vm, kind, plan.changes, targetId, folderMove);
         onDrop({...drag, dragType: kind, folderOrder: plan.order});
     }
     moveItem (item, folder) {
@@ -219,7 +226,8 @@ class FolderList extends React.Component {
         this.handleClosePrompt();
     }
     menu (item, path) {
-        const {intl, items, kind} = this.props;
+        const {intl, items, kind, vm} = this.props;
+        const container = kind === 'SPRITE' && path && vm.runtime.spriteContainers.get(path);
         const current = path ? parentFolder(path) : splitItemName(item.fullName, kind).folder;
         const format = (message, values) => intl.formatMessage(message, values);
         const paths = folderPaths(items, kind === 'SPRITE');
@@ -227,6 +235,12 @@ class FolderList extends React.Component {
             (!path || !isWithin(folder, path)) &&
             (!path || !paths.includes(joinName(folder, splitName(path).basename))));
         return [
+            path && kind === 'SPRITE' ? <MenuItem
+                key="container"
+                onClick={() => vm.setSpriteFolderContainer(path, !container)}
+            >
+                {format(container ? messages.toFolder : messages.toContainer)}
+            </MenuItem> : null,
             <MenuItem
                 key="name"
                 onClick={() => this.openPrompt(item, path)}
@@ -251,6 +265,21 @@ class FolderList extends React.Component {
     }
     render () {
         const {items, renderItem, selectedId, query, grid, assetMode, scope, kind, onDrag, intl} = this.props;
+        const tree = buildFolderTree(items, !assetMode);
+        const containers = kind === 'SPRITE' ? this.props.containers : {};
+        const annotate = nodes => nodes.forEach(node => {
+            if (node.type !== 'folder') return;
+            const container = Object.prototype.hasOwnProperty.call(containers, node.id) && containers[node.id];
+            if (container) {
+                node.container = true;
+                node.hidden = !container.visible;
+                node.label = intl.formatMessage(container.visible ? messages.container : messages.hiddenContainer);
+                node.visibilityLabel = intl.formatMessage(container.visible ?
+                    messages.hideContainer : messages.showContainer);
+            }
+            annotate(node.children);
+        });
+        annotate(tree);
         return (
             <div
                 ref={this.setRef}
@@ -259,7 +288,7 @@ class FolderList extends React.Component {
             >
                 <SpriteTree
                     key={scope}
-                    tree={buildFolderTree(items, !assetMode)}
+                    tree={tree}
                     grid={grid}
                     assetMode={assetMode}
                     selectedId={selectedId}
@@ -267,6 +296,13 @@ class FolderList extends React.Component {
                     dragPreview={this.state.preview}
                     dragging={this.props.drag.dragging}
                     onActiveFolderChange={this.handleActiveFolderChange}
+                    onToggleContainerVisibility={this.handleToggleContainerVisibility}
+                    renderContainerProperties={path => (<ContainerProperties
+                        vm={this.props.vm}
+                        path={path}
+                        container={containers[path]}
+                        disabled={this.props.drag.dragging}
+                    />)}
                     folderTransition={this.state.folderTransition && this.state.folderTransition.scope === scope ?
                         this.state.folderTransition : null}
                     renderSprite={(item, depth) => renderItem(item, item.index, depth, this.menu(item))}
@@ -319,6 +355,7 @@ FolderList.propTypes = {
     isRtl: PropTypes.bool,
     drag: PropTypes.object,
     vm: PropTypes.object,
+    containers: PropTypes.object,
     intl: intlShape,
     onDrag: PropTypes.func
 };
@@ -327,6 +364,7 @@ export {FolderList};
 export default injectIntl(connect((state, props) => ({
     isRtl: state.locales.isRtl,
     vm: state.scratchGui.vm,
+    containers: state.scratchGui.containers,
     drag: state.scratchGui.assetDrag,
     targetId: state.scratchGui.targets.editingTarget,
     scope: props.kind === 'SPRITE' ? (state.scratchGui.targets.stage || {}).id : state.scratchGui.targets.editingTarget

@@ -14,6 +14,16 @@ const postcssImport = require('postcss-import');
 const STATIC_PATH = process.env.STATIC_PATH || '/static';
 const {APP_NAME} = require('./src/lib/brand');
 
+// Exercise coordinated, unpublished VM/renderer changes in the local editor.
+const localPackages = process.env.BLOCKDIA_LOCAL_PACKAGES === '1';
+const localSources = ['scratch-vm', 'scratch-render'].map(name => path.resolve(__dirname, '..', name, 'src'));
+const localAliases = localPackages ? {
+    'scratch-vm$': localSources[0],
+    'scratch-vm/src': localSources[0],
+    'scratch-render$': localSources[1],
+    'scratch-render/src': localSources[1]
+} : {};
+
 const root = process.env.ROOT || '';
 if (root.length > 0 && !root.endsWith('/')) {
     throw new Error('If ROOT is defined, it must have a trailing slash.');
@@ -62,6 +72,7 @@ const base = {
         symlinks: false,
         modules: ['node_modules', path.resolve(__dirname, 'node_modules')],
         alias: {
+            ...localAliases,
             'text-encoding$': path.resolve(__dirname, 'src/lib/tw-text-encoder'),
             'scratch-render-fonts$': path.resolve(__dirname, 'src/lib/tw-scratch-render-fonts')
         }
@@ -72,6 +83,7 @@ const base = {
             loader: 'babel-loader',
             include: [
                 path.resolve(__dirname, 'src'),
+                ...(localPackages ? localSources : []),
                 /node_modules[\\/]scratch-[^\\/]+[\\/]src/,
                 /node_modules[\\/]pify/,
                 /node_modules[\\/]@vernier[\\/]godirect/

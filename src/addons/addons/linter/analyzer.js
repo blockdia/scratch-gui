@@ -313,7 +313,7 @@ export const analyzeProject = function* (targets, monitors = [], enabled = DEFAU
                         for (const nested of walk(index.blocks, start)) {
                             yield;
                             if (['procedures_return', 'procedures_call', 'control_stop',
-                                'control_delete_this_clone'].includes(nested.opcode) ||
+                                'control_delete_this_clone', 'containers_deleteClone'].includes(nested.opcode) ||
                                 !Object.prototype.hasOwnProperty.call(opcodeCoverage, nested.opcode) ||
                                 (own(context.extensions, nested.opcode))) endless = false;
                         }

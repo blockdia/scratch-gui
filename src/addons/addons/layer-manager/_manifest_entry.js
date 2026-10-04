@@ -1,7 +1,7 @@
 export default {
     editorOnly: true,
     name: 'Layer manager',
-    description: 'View and drag to reorder sprite and clone layers on the stage.',
+    description: 'View containers, sprites and clones in a layer tree. Drag to reorder layers within their container.',
     credits: [{name: 'LuYifei2011'}],
     dynamicDisable: true,
     enabledByDefault: false,

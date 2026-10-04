@@ -232,15 +232,17 @@ class Stage extends React.Component {
             }
         }
         if (this.state.mouseDown && this.state.isDragging) {
-            // Editor drag style only updates the drag canvas, does full update at the end of drag
-            // Non-editor drag style just updates the sprite continuously.
-            if (this.props.useEditorDragStyle) {
+            // Editor drag style updates the preview; player drag style updates the sprite continuously.
+            if (!this.props.vm.runtime.getTargetById(this.state.dragId)) {
+                this.onStopDrag(-1, -1);
+            } else if (this.props.useEditorDragStyle) {
                 this.positionDragCanvas(mousePosition[0], mousePosition[1]);
             } else {
                 const spritePosition = this.getScratchCoords(mousePosition[0], mousePosition[1]);
+                const position = this.getDraggedLocalPosition(spritePosition);
                 this.props.vm.postSpriteInfo({
-                    x: spritePosition[0] + this.state.dragOffset[0],
-                    y: -(spritePosition[1] + this.state.dragOffset[1]),
+                    x: position[0],
+                    y: position[1],
                     force: true
                 });
             }
@@ -386,6 +388,12 @@ class Stage extends React.Component {
         // positioned so that the pick location is at (0,0).
         this.dragCanvas.style.transform = `translate(${mouseX}px, ${mouseY}px)`;
     }
+    getDraggedLocalPosition (position) {
+        const target = this.props.vm.runtime.getTargetById(this.state.dragId);
+        const x = position[0] + this.state.dragOffset[0];
+        const y = -(position[1] + this.state.dragOffset[1]);
+        return target.worldToLocal ? target.worldToLocal(x, y) : [x, y];
+    }
     onStartDrag (x, y) {
         if (this.state.dragId) return;
         const drawableId = this.renderer.pick(x, y);
@@ -402,8 +410,9 @@ class Stage extends React.Component {
         target.goToFront();
 
         const [scratchMouseX, scratchMouseY] = this.getScratchCoords(x, y);
-        const offsetX = target.x - scratchMouseX;
-        const offsetY = -(target.y + scratchMouseY);
+        const position = target.getWorldPosition ? target.getWorldPosition() : [target.x, target.y];
+        const offsetX = position[0] - scratchMouseX;
+        const offsetY = -(position[1] + scratchMouseY);
 
         this.props.vm.startDrag(targetId);
         this.setState({
@@ -426,22 +435,25 @@ class Stage extends React.Component {
             this.props.vm.stopDrag(dragId);
             this.setState({
                 isDragging: false,
+                mouseDown: false,
+                mouseDownPosition: null,
                 dragOffset: null,
                 dragId: null
             });
         };
         if (this.props.useEditorDragStyle) {
             // Need to sequence these actions to prevent flickering.
-            const spriteInfo = {visible: true};
-            // First update the sprite position if dropped in the stage.
-            if (mouseX > 0 && mouseX < this.rect.width &&
-                mouseY > 0 && mouseY < this.rect.height) {
-                const spritePosition = this.getScratchCoords(mouseX, mouseY);
-                spriteInfo.x = spritePosition[0] + this.state.dragOffset[0];
-                spriteInfo.y = -(spritePosition[1] + this.state.dragOffset[1]);
-                spriteInfo.force = true;
+            if (this.props.vm.runtime.getTargetById(dragId)) {
+                const spriteInfo = {visible: true};
+                // First update the sprite position if dropped in the stage.
+                if (mouseX > 0 && mouseX < this.rect.width &&
+                    mouseY > 0 && mouseY < this.rect.height) {
+                    const spritePosition = this.getScratchCoords(mouseX, mouseY);
+                    [spriteInfo.x, spriteInfo.y] = this.getDraggedLocalPosition(spritePosition);
+                    spriteInfo.force = true;
+                }
+                this.props.vm.postSpriteInfo(spriteInfo);
             }
-            this.props.vm.postSpriteInfo(spriteInfo);
             // Then clear the dragging canvas and stop drag (potentially slow if selecting sprite)
             this.clearDragCanvas();
             commonStopDragActions();
@@ -529,6 +541,7 @@ const mapDispatchToProps = dispatch => ({
     onDeactivateColorPicker: color => dispatch(deactivateColorPicker(color))
 });
 
+export {Stage};
 export default connect(
     mapStateToProps,
     mapDispatchToProps

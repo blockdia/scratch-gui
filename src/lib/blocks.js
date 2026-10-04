@@ -133,15 +133,15 @@ export default function (vm) {
     };
 
     const cloneMenu = function () {
+        const menu = spriteMenu();
         if (vm.editingTarget && vm.editingTarget.isStage) {
-            const menu = spriteMenu();
             if (menu.length === 0) {
                 return [['', '']]; // Empty menu matches Scratch 2 behavior
             }
             return menu;
         }
         const myself = ScratchBlocks.ScratchMsgs.translate('CONTROL_CREATECLONEOF_MYSELF', 'myself');
-        return [[myself, '_myself_']].concat(spriteMenu());
+        return [[myself, '_myself_']].concat(menu);
     };
 
     const soundColors = ScratchBlocks.Colours.sounds;

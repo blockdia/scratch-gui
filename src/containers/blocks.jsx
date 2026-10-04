@@ -8,6 +8,8 @@ import PropTypes from 'prop-types';
 import React from 'react';
 import {intlShape, injectIntl, defineMessages} from 'react-intl';
 import VMScratchBlocks from '../lib/blocks';
+import preserveContainerMenuLabels from '../lib/container-menu-labels';
+import {withNativeContainerMessages} from '../lib/container-native-messages';
 import VM from 'scratch-vm';
 
 import log from '../lib/log.js';
@@ -104,7 +106,7 @@ const DroppableBlocks = DropAreaHOC([
 class Blocks extends React.Component {
     constructor (props) {
         super(props);
-        this.ScratchBlocks = VMScratchBlocks(props.vm, false);
+        this.ScratchBlocks = VMScratchBlocks(props.vm);
 
         window.ScratchBlocks = this.ScratchBlocks;
         AddonHooks.blockly = this.ScratchBlocks;
@@ -150,7 +152,7 @@ class Blocks extends React.Component {
         this.toolboxUpdateQueue = [];
     }
     componentDidMount () {
-        this.ScratchBlocks = VMScratchBlocks(this.props.vm, this.props.useCatBlocks);
+        this.ScratchBlocks = VMScratchBlocks(this.props.vm);
         this.ScratchBlocks.prompt = this.handlePromptStart;
         this.ScratchBlocks.statusButtonCallback = this.handleConnectionModalStart;
         this.ScratchBlocks.recordSoundCallback = this.handleOpenSoundRecorder;
@@ -333,7 +335,8 @@ class Blocks extends React.Component {
     }
     setLocale () {
         this.ScratchBlocks.ScratchMsgs.setLocale(this.props.locale);
-        this.props.vm.setLocale(this.props.locale, this.props.messages)
+        this.props.vm.setLocale(this.props.locale,
+            withNativeContainerMessages(this.ScratchBlocks, this.props.locale, this.props.messages))
             .then(() => {
                 if (this.unmounted) return;
                 this.workspace.getFlyout().setRecyclingEnabled(false);
@@ -607,6 +610,9 @@ class Blocks extends React.Component {
                 .map(fieldTypeName => categoryInfo.customFieldTypes[fieldTypeName].scratchBlocksDefinition));
         defineBlocks(categoryInfo.menus);
         defineBlocks(categoryInfo.blocks);
+        if (categoryInfo.id === 'containers') {
+            preserveContainerMenuLabels(this.ScratchBlocks, () => this.props.intl);
+        }
 
         // Update the toolbox with new blocks if possible
         const toolboxXML = this.getToolboxXML();

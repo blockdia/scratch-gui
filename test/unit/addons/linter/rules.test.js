@@ -33,6 +33,13 @@ const analyze = (targets, rules, context = {}) => {
     } while (!next.done);
     return next.value;
 };
+
+test.each(['_container_:A', '_mycontainer_'])('clone references treat %s as an ordinary sprite name', value => {
+    const sprite = target([block('clone', 'control_create_clone_of', {inputs: {CLONE_OPTION: input('choice')}}),
+        literal('choice', value)]);
+    expect(analyze([sprite], ['missing-target'])).toHaveLength(1);
+    expect(analyze([sprite, target([], {id: 'b', getName: () => value})], ['missing-target'])).toEqual([]);
+});
 const reference = (opcode, name, value) => [block('ref', opcode, {inputs: {[name]: input('value')}}), literal('value', value)];
 
 // Independent expected cases: do not enumerate the implementation's opcode sets for semantic coverage.
@@ -195,6 +202,15 @@ test('constant loops with possible exits are not described as nonterminating', (
     const a = target([block('loop', 'control_repeat_until', {inputs: {CONDITION: input('false'), SUBSTACK: input('exit')}}),
         literal('false', false), block('exit', 'control_stop', {fields: {STOP_OPTION: {value: 'this script'}}})]);
     expect(analyze([a], ['nonterminating-control'])).toEqual([]);
+});
+test('container clone deletion can end a constant loop, while hiding a container cannot', () => {
+    const makeLoop = opcode => target([
+        block('loop', 'control_repeat_until', {inputs: {CONDITION: input('false'), SUBSTACK: input('operation')}}),
+        literal('false', false), block('operation', opcode, {inputs: {CONTAINER: input('container')}}),
+        literal('container', '_mycontainer_')
+    ]);
+    expect(analyze([makeLoop('containers_deleteClone')], ['nonterminating-control'])).toEqual([]);
+    expect(analyze([makeLoop('containers_hide')], ['nonterminating-control'])).toHaveLength(1);
 });
 test('unknown addon callbacks do not block known-reference data checks', () => {
     const a = target([call('c', 'native')], {variables: {v: {id: 'v', name: 'v', type: ''}}});

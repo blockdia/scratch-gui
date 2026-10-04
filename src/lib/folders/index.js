@@ -1,4 +1,4 @@
-// Folder membership is part of the Scratch name; no project metadata is required.
+// Folder membership is part of the Scratch name. Container behavior is VM project metadata.
 export const SEPARATOR = '//';
 export const splitName = (name, nested = true) => {
     if (!nested) {
@@ -74,7 +74,7 @@ const reservedNames = ['_mouse_', '_stage_', '_edge_', '_myself_', '_random_'];
 const unusedName = (name, used, sprite = true) => {
     let candidate = name;
     let suffix = 2;
-    const base = name.replace(/\d+$/, '');
+    const base = candidate.replace(/\d+$/, '');
     const unavailable = value => used.has(value) || (sprite && (!value || reservedNames.includes(value)));
     while (unavailable(candidate)) {
         candidate = `${base}${suffix++}`;
@@ -85,7 +85,8 @@ const unusedName = (name, used, sprite = true) => {
 
 // Allocate all final names before calling VM APIs, then use temporary names to
 // avoid reference cascades when an old name equals another member's new name.
-export const renameEntries = (vm, kind, changes, targetId = vm.editingTarget && vm.editingTarget.id) => {
+export const renameEntries = (vm, kind, changes, targetId = vm.editingTarget && vm.editingTarget.id,
+    folderMove = null) => {
     const entries = getEntries(vm, kind, targetId);
     const changed = entries.filter(entry => changes.has(entry.id) && changes.get(entry.id) !== entry.name);
     if (!changed.length) return;
@@ -98,8 +99,18 @@ export const renameEntries = (vm, kind, changes, targetId = vm.editingTarget && 
         else if (kind === 'COSTUME') target.renameCostume(entry.id, name);
         else target.renameSound(entry.id, name);
     };
-    changed.forEach(entry => rename(entry, unusedName('__blockdia_folder_move__', used)));
-    changed.forEach((entry, index) => rename(entry, names[index]));
+    const isSprite = kind === 'SPRITE';
+    const containers = vm.runtime.spriteContainers;
+    if (isSprite) containers.beginUpdate();
+    try {
+        if (isSprite && folderMove) {
+            containers.move(folderMove.source, folderMove.destination, folderMove.dissolve);
+        }
+        changed.forEach(entry => rename(entry, unusedName('__blockdia_folder_move__', used)));
+        changed.forEach((entry, index) => rename(entry, names[index]));
+    } finally {
+        if (isSprite) containers.endUpdate();
+    }
     vm.emitTargetsUpdate();
     vm.emitWorkspaceUpdate();
     vm.runtime.emitProjectChanged();
@@ -116,7 +127,8 @@ export const moveFolder = (vm, kind, source, destination, targetId) => {
             changes.set(entry.id, joinName(destination, entry.name.slice(source.length + SEPARATOR.length)));
         }
     });
-    renameEntries(vm, kind, changes, targetId);
+    renameEntries(vm, kind, changes, targetId,
+        {source, destination, dissolve: destination === parentFolder(source)});
     return true;
 };
 

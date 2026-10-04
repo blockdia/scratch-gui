@@ -8,7 +8,8 @@ const literals = new Set(['text', 'math_number', 'math_integer', 'math_whole_num
     'math_angle', 'colour_picker', 'motion_goto_menu', 'motion_glideto_menu', 'motion_pointtowards_menu',
     'sensing_touchingobjectmenu', 'sensing_distancetomenu', 'control_create_clone_of_menu', 'sensing_of_object_menu',
     'looks_costume', 'looks_backdrops', 'sound_sounds_menu', 'event_broadcast_menu',
-    'components_menu_numericTargets', 'components_menu_toggleTargets', 'components_menu_numericProperties']);
+    'components_menu_numericTargets', 'components_menu_toggleTargets', 'components_menu_numericProperties',
+    'containers_menu_containers', 'containers_menu_sprites']);
 const math = {
     'abs': Math.abs,
     'floor': Math.floor,

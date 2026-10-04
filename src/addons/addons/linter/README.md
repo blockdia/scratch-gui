@@ -66,7 +66,7 @@ it explicitly with `npx eslint --no-ignore src/addons/addons/linter/*.{js,jsx}`.
 
 ## Expanded rule registry
 
-`rules.js` is the source of truth for the 19 rule switches, categories, severities
+`rules.js` is the source of truth for the 21 rule switches, categories, severities
 and defaults. Existing IDs are unchanged. Reference/structure checks are warnings
 and default on. New control-flow and cleanup suggestions default off; the existing
 unused-data suggestion stays on. The addon itself remains opt-in.
@@ -76,7 +76,9 @@ precise limits. The optional fourth analyzer argument provides `runtimeOptions`,
 `compilerOptions`, an `addonBlocks` map, `externalBroadcasts`, `extensions` and an
 `onCoverage` callback. Trusted extension descriptors are keyed by exact opcode and
 may declare `mayWait`, `targetInput: [inputName, allowedSentinels]`, or
-`dataAccess: 'dynamic'`; the analyzer never calls extension code to obtain them.
+`dataAccess: 'dynamic'`, and `targetTypes: ['sprite']` or `['stage']`; the analyzer never calls extension code to obtain them.
+The optional `containers` snapshot contains `{path}` definitions. Omitting it
+reports limited container coverage instead of treating every container as missing.
 The return value remains a diagnostic array. Diagnostics additionally carry a
 localized reason key and stable per-detail IDs.
 
@@ -84,6 +86,27 @@ Resource findings open the owning target's costume/sound editor and select the
 asset using a transient `EDITOR_SELECT_RESOURCE` UI request. This does not change
 the sprite's running costume. Resource identity includes its kind, name and asset
 ID; deletion or renaming makes old locations unavailable.
+
+## Target and container scope
+
+Scope checks distinguish the executing target from a named target selection.
+The stage cannot clone itself, execute sprite movement/visibility/size operations,
+or read its own sprite world properties, but can clone a named sprite and operate
+on named containers and components. VM-supported cross-target operations remain
+legal, including both click hats, costume/backdrop aliases and backdrop-and-wait.
+Extension `filter` and `componentTypes` declarations are statically inventoried;
+the analyzer consumes them, and the inventory check rejects declaration drift.
+
+Container references use project definitions, not folder names alone. Relative
+selections require membership, and deleting a container clone requires its path
+to be an ancestor of the executing sprite. Original sprites are not rejected
+just because a clone does not currently exist: clones reuse their scripts.
+Container definition changes invalidate the live results; animation, effects,
+visibility and runtime clone instances do not restart analysis.
+
+Component events reject load failures as well as incompatible types. Custom
+block parameters outside definitions are reported, while prototype parameter
+shadows and TurboWarp's legacy special reporters remain legal.
 
 ## Debug diagnostics
 

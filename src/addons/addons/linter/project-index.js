@@ -25,6 +25,7 @@ export const indexTarget = function* (target, context, limit) {
     const owners = new Map();
     const malformed = new Map();
     const redundantDefaults = new Map();
+    const signatureArguments = new Set();
     const incoming = new Map();
     const evaluator = createEvaluator(blocks, limit);
     for (const block of Object.values(blocks)) {
@@ -68,6 +69,10 @@ export const indexTarget = function* (target, context, limit) {
         if (!proto || proto.opcode !== 'procedures_prototype' || !mutation || typeof mutation.proccode !== 'string') {
             malformed.set(block.id, 'definition');
             continue;
+        }
+        for (const connection of Object.values(proto.inputs || {})) {
+            if (connection) signatureArguments.add(connection.block);
+            yield;
         }
         const ids = arrayMutation(mutation, 'argumentids');
         const names = arrayMutation(mutation, 'argumentnames');
@@ -149,6 +154,7 @@ export const indexTarget = function* (target, context, limit) {
         owners,
         malformed,
         redundantDefaults,
+        signatureArguments,
         incoming,
         broken,
         ...evaluator};

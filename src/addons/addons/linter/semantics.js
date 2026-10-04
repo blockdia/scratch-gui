@@ -1,5 +1,6 @@
 import Cast from 'scratch-vm/src/util/cast';
 import ComponentModel from 'scratch-vm/src/components/model';
+import opcodeCoverage from './opcode-coverage.json';
 import {fieldValue, UNKNOWN, own} from './constants';
 
 export const TARGET_INPUTS = {
@@ -9,7 +10,58 @@ export const TARGET_INPUTS = {
     sensing_touchingobject: ['TOUCHINGOBJECTMENU', ['_mouse_', '_edge_']],
     sensing_distanceto: ['DISTANCETOMENU', ['_mouse_']],
     control_create_clone_of: ['CLONE_OPTION', ['_myself_']],
-    sensing_of: ['OBJECT', ['_stage_']]
+    sensing_of: ['OBJECT', ['_stage_']],
+    containers_worldProperty: ['TARGET', ['_myself_']]
+};
+// Execution restrictions, not palette visibility: click hats and backdrop
+// operations intentionally work in both target types in the VM.
+export const scopeProblem = (block, target, input, extension) => {
+    const descriptor = own(opcodeCoverage, block.opcode) || extension || {};
+    const allowed = descriptor.targetTypes || descriptor.filter;
+    if (allowed && !allowed.includes(target.isStage ? 'stage' : 'sprite')) {
+        return allowed.includes('sprite') ? 'sprite' : 'stage';
+    }
+    if (target.isStage && ((block.opcode === 'control_create_clone_of' &&
+        input(block, 'CLONE_OPTION') === '_myself_') ||
+        (block.opcode === 'containers_worldProperty' && input(block, 'TARGET') === '_myself_'))) return 'self';
+    return null;
+};
+export const CONTAINER_OPERATIONS = new Set([
+    'containers_property', 'containers_setProperty', 'containers_changeProperty', 'containers_goToXY',
+    'containers_setRotationStyle', 'containers_effect', 'containers_setEffect', 'containers_changeEffect',
+    'containers_clearEffects', 'containers_show', 'containers_hide', 'containers_isVisible',
+    'containers_goToLayer', 'containers_moveLayers', 'containers_createClone', 'containers_deleteClone'
+]);
+// Match SpriteContainers.getTargetContainers for original targets. Clone instances
+// reuse these scripts and may have cloned ancestors; never reject an original
+// simply because it is not currently a clone.
+export const containingPaths = (target, paths) => {
+    if (target.isStage) return [];
+    const parts = target.getName().split('//');
+    if (parts.slice(0, -1).some(part => !part || part.endsWith('/'))) return [];
+    return parts.slice(0, -1).map((part, index) => parts.slice(0, index + 1).join('//'))
+        .filter(path => paths.has(path));
+};
+export const containerProblem = (block, target, paths, input, limit) => {
+    if (!CONTAINER_OPERATIONS.has(block.opcode)) return null;
+    const value = input(block, 'CONTAINER');
+    if (value === UNKNOWN) {
+        limit('dynamic-reference');
+        return null;
+    }
+    const name = Cast.toString(value);
+    if (name === '_mycontainer_' && target.isStage) return {detail: 'self', name};
+    if (!paths) {
+        limit('container-metadata');
+        return null;
+    }
+    const membership = containingPaths(target, paths);
+    if (name === '_mycontainer_') return membership.length ? null : {detail: 'self', name};
+    if (!paths.has(name)) return {detail: 'missing', name};
+    if (block.opcode === 'containers_deleteClone' && !membership.includes(name)) {
+        return {detail: 'ancestry', name};
+    }
+    return null;
 };
 export const WAIT_OPERATIONS = new Set([
     'control_wait', 'control_wait_until', 'motion_glidesecstoxy', 'motion_glideto',
@@ -75,8 +127,11 @@ export const propertyExists = (target, property) => {
         .some(variable => variable.type === '' && variable.name === property);
 };
 export const componentProblem = (block, target, targets, input) => {
-    if (block.opcode === 'components_whenClicked') return !target.component || target.component.type !== 'button';
-    if (block.opcode === 'components_whenStateChanged') return !target.component || target.component.type !== 'toggle';
+    const descriptor = own(opcodeCoverage, block.opcode);
+    if (descriptor && descriptor.componentTypes) {
+        return target.isStage || !target.component || Boolean(target.componentError) ||
+            !descriptor.componentTypes.includes(target.component.type);
+    }
     const numeric = ['components_targetProperty', 'components_changeTargetProperty', 'components_setTargetProperty'];
     const boolean = ['components_targetIsChecked', 'components_setTargetChecked'];
     if (!numeric.includes(block.opcode) && !boolean.includes(block.opcode)) return false;

@@ -1,6 +1,6 @@
 # Opcode audit and rule coverage
 
-The checked-in `opcode-coverage.json` inventories **325** core, compatibility,
+The checked-in `opcode-coverage.json` inventories **350** core, compatibility,
 editor helper, extension and extension-menu opcodes from the installed Blockdia
 VM/blocks packages. The sibling source check currently has the same inventory.
 This includes bundled but not normally registered speech recognition and example
@@ -8,6 +8,10 @@ blocks. It does not include arbitrary downloaded extension implementations.
 
 Each entry records its source, category, applicable rules, waiting and data-access
 behavior, target scope, static-analysis limitation and relevant test suites.
+The `scope` field describes the resource context; executable restrictions use
+`targetTypes` (audited core/legacy restrictions) and `filter` (extension declarations).
+`componentTypes` declares the component event types. These restrictions are
+consumed by the analyzer, and extension declaration changes fail the inventory check.
 Structural checks apply to every active block. A category without a specific
 behavior diagnostic is deliberate: for example, collision results, hardware
 connection state and camera measurements cannot be proven from project code.
@@ -29,6 +33,14 @@ positive case and a legal counterexample for new diagnostics.
 - References: all seven core target inputs and their distinct sentinels; component
   targets/capabilities; costume/backdrop/sound selectors and backdrop event hats;
   scoped scalar/list IDs; `sensing_of` built-ins and target-local scalar names.
+- Scope: sprite-only core operations and extension filters; stage/self versus
+  named-sprite cloning and world properties; container definitions, relative
+  membership and clone-deletion ancestry; failed component events and custom
+  block parameters outside definitions. Prototype parameter shadows, legacy
+  reporters and VM-supported cross-target aliases are legal. Dynamic references
+  and missing container snapshots report coverage limitations. `scope.test.js`
+  supplies independent positive/negative cases; model tests cover live membership
+  changes without rescanning animation or runtime clones.
 - Procedures: target-local definition/call signatures, argument IDs and VM default
   inputs, return-valued calls, parameter scope, legacy TurboWarp argument reporters,
   cyclic call graphs and registered VM addon callbacks. Extra default values and
@@ -50,7 +62,7 @@ positive case and a legal counterexample for new diagnostics.
 
 ## Meaning of coverage
 
-Inventory classification is 325/325, **not a promise to find every bug** and not a
+Inventory classification is 350/350, **not a promise to find every bug** and not a
 code-coverage percentage. Unknown blocks, dynamic references, addon callbacks and
 expression budgets are reported separately. Unknown callbacks qualify cleanup
 suggestions which they could invalidate. Pure-expression evaluation is bounded by

@@ -45,6 +45,10 @@ const reference = (opcode, name, value) => [block('ref', opcode, {inputs: {[name
 // Independent expected cases: do not enumerate the implementation's opcode sets for semantic coverage.
 const cases = [
     ['missing-target', target(reference('motion_goto', 'TO', 'absent')), target(reference('motion_goto', 'TO', '_mouse_'))],
+    ['invalid-scope', target([block('b', 'motion_movesteps')], {isStage: true}),
+        target([block('b', 'motion_movesteps')])],
+    ['invalid-container', target(reference('containers_hide', 'CONTAINER', '_mycontainer_'), {isStage: true}),
+        target([block('b', 'looks_hide')])],
     ['warp-wait', target([...procedure('p', 'wait', {warp: 'true'}), block('wait', 'translate_getTranslate')]),
         target([...procedure('p', 'move', {warp: 'true'}), block('move', 'motion_movesteps')])],
     ['unused-data', target([], {variables: {v: {id: 'v', name: 'v', type: ''}}}),
@@ -108,6 +112,13 @@ test('inventory detects new or removed opcodes against the actual installed VM a
         path.dirname(require.resolve('scratch-blocks/package.json')));
     expect(Object.keys(actual).sort()).toEqual(Object.keys(coverage).sort());
     expect(Object.values(coverage).every(entry => entry.category && entry.source)).toBe(true);
+    for (const [opcode, descriptor] of Object.entries(actual)) {
+        for (const key of ['filter', 'componentTypes']) expect(coverage[opcode][key]).toEqual(descriptor[key]);
+        if (descriptor.filter || coverage[opcode].targetTypes) {
+            expect(coverage[opcode].rules).toContain('invalid-scope');
+        }
+        if (descriptor.componentTypes) expect(coverage[opcode].rules).toContain('invalid-component');
+    }
 });
 test('constants use Scratch casts, case-insensitive comparison, modulo and bounded expression expansion', () => {
     const blocks = target([literal('a', 'HELLO'), literal('b', 'hello'),

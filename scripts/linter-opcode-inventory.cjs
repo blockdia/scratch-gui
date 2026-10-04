@@ -14,8 +14,8 @@ const visit = (node, fn) => {
 const name = node => node && (node.name || node.value);
 const inventory = (vmRoot, blocksRoot) => {
     const result = {};
-    const add = (opcode, source, kind) => {
-        if (!result[opcode]) result[opcode] = {source, kind};
+    const add = (opcode, source, kind, metadata = {}) => {
+        if (!result[opcode]) result[opcode] = {source, kind, ...metadata};
     };
     const inspect = (file, extension) => {
         const source = fs.readFileSync(path.join(vmRoot, file), 'utf8');
@@ -31,8 +31,30 @@ const inventory = (vmRoot, blocksRoot) => {
                     }
                 });
             }
-            if (extension && node.type === 'ObjectProperty' && name(node.key) === 'opcode' &&
-                node.value.type === 'StringLiteral') add(`${extension}_${node.value.value}`, file, 'extension');
+            if (extension && node.type === 'ObjectExpression') {
+                const prop = key => node.properties.find(item => name(item.key) === key);
+                const opcode = prop('opcode');
+                if (opcode && opcode.value.type === 'StringLiteral') {
+                    const metadata = {};
+                    for (const key of ['filter', 'componentTypes']) {
+                        const value = prop(key);
+                        if (!value) continue;
+                        if (value.value.type !== 'ArrayExpression') {
+                            throw new Error(`Audit dynamic ${key} in ${file}: ${opcode.value.value}`);
+                        }
+                        metadata[key] = value.value.elements.map(item => {
+                            if (item.type === 'StringLiteral') return item.value;
+                            if (key === 'filter' && item.type === 'MemberExpression' &&
+                                name(item.object) === 'TargetType' &&
+                                ['SPRITE', 'STAGE'].includes(name(item.property))) {
+                                return name(item.property).toLowerCase();
+                            }
+                            throw new Error(`Audit unknown ${key} in ${file}: ${opcode.value.value}`);
+                        });
+                    }
+                    add(`${extension}_${opcode.value.value}`, file, 'extension', metadata);
+                }
+            }
             if (extension && node.type === 'ObjectProperty' && name(node.key) === 'menus' &&
                 node.value.type === 'ObjectExpression') {
                 for (const prop of node.value.properties) add(`${extension}_menu_${name(prop.key)}`, file, 'menu');
@@ -75,8 +97,11 @@ if (require.main === module) {
     const actual = inventory(vmRoot, blocksRoot);
     const missing = Object.keys(actual).filter(op => !expected[op]);
     const stale = Object.keys(expected).filter(op => !actual[op]);
-    if (missing.length || stale.length) {
-        process.stderr.write(JSON.stringify({missing, stale}, null, 2));
+    const changedScopes = Object.keys(actual).filter(op => expected[op] &&
+        ['filter', 'componentTypes'].some(key =>
+            JSON.stringify(actual[op][key]) !== JSON.stringify(expected[op][key])));
+    if (missing.length || stale.length || changedScopes.length) {
+        process.stderr.write(JSON.stringify({missing, stale, changedScopes}, null, 2));
         process.exitCode = 1;
     } else process.stdout.write(`${Object.keys(actual).length} opcodes classified.\n`);
 }

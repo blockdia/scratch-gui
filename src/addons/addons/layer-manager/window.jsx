@@ -270,7 +270,6 @@ export default function createLayerWindow (vm, model) {
                 className="sa-layer-list"
                 ref={list}
                 role="tree"
-                aria-label={message('title')}
             >
                 {snapshot.rows.every(row => row.stage) ?
                     <div className="sa-layer-empty">{message('empty')}</div> : null}
@@ -292,12 +291,6 @@ export default function createLayerWindow (vm, model) {
                         aria-setsize={row.siblings}
                         aria-selected={selected === row.id}
                         aria-expanded={row.container ? !collapsed.has(row.id) : null}
-                        aria-label={row.stage ? message('stage') : [
-                            row.name,
-                            row.clone && message('clone', {number: row.clone}),
-                            row.container && message('container', {count: row.count}),
-                            !row.visible && message(row.hiddenByContainer ? 'hiddenByContainer' : 'hidden')
-                        ].filter(Boolean).join(', ')}
                         tabIndex={selected === row.id || (!selected && row === visibleRows[0]) ? 0 : -1}
                         onKeyDown={event => navigate(event, row)}
                     >
@@ -329,7 +322,7 @@ export default function createLayerWindow (vm, model) {
                         {row.container ? <button
                             type="button"
                             className="sa-layer-toggle"
-                            aria-label={message(collapsed.has(row.id) ? 'expand' : 'collapse', {name: row.name})}
+                            title={message(collapsed.has(row.id) ? 'expand' : 'collapse', {name: row.name})}
                             aria-expanded={!collapsed.has(row.id)}
                             disabled={Boolean(preview)}
                             onClick={() => toggle(row)}

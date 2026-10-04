@@ -114,7 +114,6 @@ const FolderRow = function ({depth, hasSelection, id, name, onToggle, open, spri
     return (
         <div
             aria-expanded={open}
-            aria-label={label ? `${name} (${label})` : name}
             className={classNames(styles.row, styles.folderRow, {
                 [styles.hoverable]: !dragging,
                 [styles.hasSelection]: hasSelection,
@@ -139,7 +138,6 @@ const FolderRow = function ({depth, hasSelection, id, name, onToggle, open, spri
                 type="button"
                 className={styles.visibilityButton}
                 title={visibilityLabel}
-                aria-label={visibilityLabel}
                 aria-pressed={!hidden}
                 disabled={dragging}
                 onClick={handleToggleVisibility}

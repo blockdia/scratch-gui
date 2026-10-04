@@ -80,7 +80,6 @@ const ContainerProperties = ({vm, path, container, disabled, intl}) => {
             body={<div
                 ref={popup}
                 role="dialog"
-                aria-label={title}
                 data-container-properties-popup={path}
                 className={infoStyles.propertiesPopup}
                 dir={isRtl(intl.locale) ? 'rtl' : 'ltr'}
@@ -98,7 +97,7 @@ const ContainerProperties = ({vm, path, container, disabled, intl}) => {
                         autoFocus={key === 'x'}
                         small
                         type="number"
-                        aria-label={key}
+                        name={key}
                         value={Math.round(transform[key])}
                         onSubmit={value => submit(key, value)}
                     />
@@ -134,7 +133,6 @@ const ContainerProperties = ({vm, path, container, disabled, intl}) => {
                 className={classNames(treeStyles.visibilityButton, treeStyles.propertiesButton)}
                 data-container-properties={path}
                 title={title}
-                aria-label={title}
                 aria-expanded={open}
                 aria-haspopup="dialog"
                 disabled={disabled}

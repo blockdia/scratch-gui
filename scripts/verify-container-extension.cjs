@@ -107,7 +107,7 @@ const JSZip = require('@turbowarp/jszip');
         // Container metadata must update the open inspector without a surrogate target update.
         await page.locator('[data-container-properties="World"]').click();
         const popup = page.locator('[data-container-properties-popup="World"]');
-        await popup.getByRole('spinbutton', {name: 'x', exact: true}).press('Tab');
+        await popup.locator('input[name="x"]').press('Tab');
         await page.evaluate(() => {
             window.containerEventCounts = {containers: 0, targets: 0};
             vm.on('containersUpdate', () => window.containerEventCounts.containers++);
@@ -117,7 +117,7 @@ const JSZip = require('@turbowarp/jszip');
                 {target: vm.editingTarget});
         });
         await page.waitForFunction(() => document.querySelector(
-            '[data-container-properties-popup="World"] input[aria-label="x"]').value === '37');
+            '[data-container-properties-popup="World"] input[name="x"]').value === '37');
         const counts = await page.evaluate(() => window.containerEventCounts);
         assert(counts.containers > 0);
         assert.equal(counts.targets, 0, 'container inspector does not depend on targetsUpdate');

@@ -1,6 +1,6 @@
 # Opcode audit and rule coverage
 
-The checked-in `opcode-coverage.json` inventories **350** core, compatibility,
+The checked-in `opcode-coverage.json` inventories **351** core, compatibility,
 editor helper, extension and extension-menu opcodes from the installed Blockdia
 VM/blocks packages. The sibling source check currently has the same inventory.
 This includes bundled but not normally registered speech recognition and example
@@ -62,7 +62,7 @@ positive case and a legal counterexample for new diagnostics.
 
 ## Meaning of coverage
 
-Inventory classification is 350/350, **not a promise to find every bug** and not a
+Inventory classification is 351/351, **not a promise to find every bug** and not a
 code-coverage percentage. Unknown blocks, dynamic references, addon callbacks and
 expression budgets are reported separately. Unknown callbacks qualify cleanup
 suggestions which they could invalidate. Pure-expression evaluation is bounded by

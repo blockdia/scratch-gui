@@ -188,3 +188,49 @@ test('a batched scan publishes the latest costume and keeps statically reference
     expect(model.snapshot().results.map(row => row.values.name).sort()).toEqual(['one', 'two']);
     model.setVisible(false);
 });
+
+test('container definition changes refresh references; animation and runtime clones do not rescan', () => {
+    const {vm, target} = fixture(0);
+    target.getName = () => 'Group//Cat';
+    target.blocks._blocks = {
+        hide: {id: 'hide', opcode: 'containers_hide', inputs: {CONTAINER: {block: 'menu'}}},
+        menu: {id: 'menu', opcode: 'containers_menu_containers', fields: {containers: {value: '_mycontainer_'}}}
+    };
+    let containers = [];
+    vm.runtime.spriteContainers = {serialize: () => containers};
+    const model = createLinterModel(vm, () => ['invalid-container']);
+    model.setVisible(true);
+    jest.runAllTimers();
+    expect(model.snapshot().results).toMatchObject([{reason: 'reason-invalid-container-self'}]);
+    containers = [{path: 'Group', visible: true}];
+    vm.emit('containersUpdate');
+    expect(model.snapshot().status).toBe('stale');
+    jest.runAllTimers();
+    expect(model.snapshot().results).toEqual([]);
+    const revision = model.snapshot().revision;
+    containers[0].visible = false;
+    containers[0].transform = {x: 42};
+    containers[0].effects = {ghost: 50};
+    vm.emit('containersUpdate');
+    expect(model.snapshot().revision).toBe(revision);
+    expect(jest.getTimerCount()).toBe(0);
+    vm.runtime.targets.push({...target, id: 'instance', isOriginal: false});
+    vm.emit('targetsUpdate');
+    expect(model.snapshot().revision).toBe(revision);
+    target.getName = () => 'Elsewhere//Cat';
+    vm.emit('targetsUpdate');
+    jest.runAllTimers();
+    expect(model.snapshot().results).toMatchObject([{reason: 'reason-invalid-container-self'}]);
+    target.blocks._blocks.menu.fields.containers.value = 'Group';
+    vm.emit('PROJECT_CHANGED');
+    jest.runAllTimers();
+    expect(model.snapshot().results).toEqual([]);
+    containers = [];
+    vm.emit('containersUpdate');
+    jest.runAllTimers();
+    expect(model.snapshot().results).toMatchObject([{reason: 'reason-invalid-container-missing'}]);
+    model.setVisible(false);
+    expect(vm.listenerCount('containersUpdate')).toBe(0);
+    vm.emit('containersUpdate');
+    expect(jest.getTimerCount()).toBe(0);
+});

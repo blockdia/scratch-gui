@@ -3,6 +3,8 @@ const rule = (id, type, name, enabled = true, severity = 'warning') =>
     ({id, type, name, enabled, severity});
 export const RULE_DEFINITIONS = [
     rule('missing-target', 'reference', 'Missing sprite references'),
+    rule('invalid-scope', 'reference', 'Blocks unavailable in this target'),
+    rule('invalid-container', 'reference', 'Invalid container references or operations'),
     rule('warp-wait', 'execution', 'Possible waits in custom blocks running without screen refresh'),
     rule('unused-data', 'cleanup', 'Unused variables and lists', true, 'info'),
     rule('missing-costume', 'reference', 'Missing costume or backdrop references'),

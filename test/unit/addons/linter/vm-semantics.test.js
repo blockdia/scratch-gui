@@ -58,12 +58,12 @@ test('real VM SB3 loading, names and variable ownership agree with the analyzer 
         meta: {semver: '3.0.0', vm: '0.2.0', agent: 'test'}});
         const before = vm.toJSON();
         const rows = analyze(vm.runtime.targets);
-        expect(rows.map(row => row.rule)).toEqual(['missing-target']);
+        expect(rows.map(row => row.rule)).toEqual(['missing-target', 'invalid-scope']);
         expect(rows[0].location.blockId).toBe('move');
         expect(vm.toJSON()).toBe(before);
         const stage = vm.runtime.getTargetForStage();
         stage.blocks._blocks.menu.fields.TO.value = '_mouse_';
-        expect(analyze(vm.runtime.targets)).toEqual([]);
+        expect(analyze(vm.runtime.targets).map(row => row.rule)).toEqual(['invalid-scope']);
     } finally {
         vm.quit();
     }

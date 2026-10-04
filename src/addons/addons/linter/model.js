@@ -7,12 +7,19 @@ const targetSignature = targets => JSON.stringify(targets.map(target => [target.
         [variable.id, variable.name, variable.type, variable.isCloud]),
     ['costume', 'sound'].map(kind => resources(target, kind).map(item => [item.name, item.assetId])),
     target.component && [target.component.type, target.component.parts], Boolean(target.componentError)]));
+// Only definitions affect static references. Runtime transforms, visibility,
+// effects and clone instances must not restart analysis every animation frame.
+const containerSnapshot = runtime => (runtime.spriteContainers ?
+    runtime.spriteContainers.serialize().map(container => ({path: container.path})) : null);
+const containerSignature = containers => JSON.stringify(containers && containers.map(container => container.path)
+    .sort());
 export const createLinterModel = (vm, getRules = () => DEFAULT_RULES, options = {}) => {
     let active = false;
     let revision = 0;
     let timer;
     let signature;
     let monitorSignature;
+    let containersSignature;
     let analyzedResults = [];
     let snapshot = {status: 'idle',
         results: [],
@@ -44,8 +51,10 @@ export const createLinterModel = (vm, getRules = () => DEFAULT_RULES, options = 
         const current = revision;
         const targets = originalTargets(vm.runtime);
         const monitors = visibleMonitors(vm.runtime);
+        const containers = containerSnapshot(vm.runtime);
         signature = targetSignature(targets);
         monitorSignature = JSON.stringify(monitors);
+        containersSignature = containerSignature(containers);
         publish({status: 'scanning',
             revision: current,
             targets: targets.map(target => ({id: target.id, name: target.getName(), isStage: target.isStage}))});
@@ -54,6 +63,7 @@ export const createLinterModel = (vm, getRules = () => DEFAULT_RULES, options = 
             runtimeOptions: {...vm.runtime.runtimeOptions},
             compilerOptions: {...vm.runtime.compilerOptions},
             addonBlocks: vm.runtime.addonBlocks || {},
+            containers,
             ...options.context,
             includeCurrentCostumes: true,
             onCoverage: value => {
@@ -115,6 +125,13 @@ export const createLinterModel = (vm, getRules = () => DEFAULT_RULES, options = 
             invalidate();
         }
     };
+    const containersChanged = () => {
+        const next = containerSignature(containerSnapshot(vm.runtime));
+        if (next !== containersSignature) {
+            containersSignature = next;
+            invalidate();
+        }
+    };
     const loaded = () => {
         publish({results: [], targets: []});
         scan();
@@ -133,6 +150,7 @@ export const createLinterModel = (vm, getRules = () => DEFAULT_RULES, options = 
             const method = active ? 'on' : 'removeListener';
             vm[method]('PROJECT_CHANGED', invalidate);
             vm[method]('targetsUpdate', targetsChanged);
+            vm[method]('containersUpdate', containersChanged);
             vm[method]('RUNTIME_OPTIONS_CHANGED', invalidate);
             vm[method]('COMPILER_OPTIONS_CHANGED', invalidate);
             vm[method]('EXTENSION_ADDED', invalidate);

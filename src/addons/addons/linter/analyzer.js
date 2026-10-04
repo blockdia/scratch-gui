@@ -3,7 +3,7 @@ import {DEFAULT_RULES, RULES, RULE_BY_ID} from './rules';
 import {fieldValue, UNKNOWN, own} from './constants';
 import {indexTarget, walk, procedureCode, broadcastName, normalizedBroadcast} from './project-index';
 import {TARGET_INPUTS, blockLocation, arrayMutation, resourceReference, resolveResource, resources,
-    propertyExists, componentProblem, stops, KNOWN_ADDON_BLOCKS} from './semantics';
+    propertyExists, componentProblem, scopeProblem, containerProblem, stops, KNOWN_ADDON_BLOCKS} from './semantics';
 import opcodeCoverage from './opcode-coverage.json';
 
 export {RULES, DEFAULT_RULES} from './rules';
@@ -43,6 +43,8 @@ export const analyzeProject = function* (targets, monitors = [], enabled = DEFAU
     const unknownOpcodes = new Set();
     const stage = targets.find(target => target.isStage);
     const names = new Set(targets.filter(target => !target.isStage).map(target => target.getName()));
+    const containerPaths = Array.isArray(context.containers) ?
+        new Set(context.containers.map(container => container.path)) : null;
     const used = new Set();
     const read = new Set();
     const written = new Set();
@@ -57,7 +59,9 @@ export const analyzeProject = function* (targets, monitors = [], enabled = DEFAU
         'invalid-argument-return-type', 'broadcast-flow-sender', 'broadcast-flow-receiver',
         'constant-control-condition', 'constant-control-repeat', 'constant-control-empty',
         'invalid-graph-orphan', 'invalid-graph-shadow', 'invalid-graph-parent',
-        'invalid-procedure-defaults', 'invalid-procedure-addon'
+        'invalid-procedure-defaults', 'invalid-procedure-addon', 'invalid-argument-parameter-outside',
+        'invalid-scope-sprite', 'invalid-scope-stage', 'invalid-scope-self',
+        'invalid-container-self', 'invalid-container-missing', 'invalid-container-ancestry'
     ]);
     const add = (rule, target, location, values = {}, detail = '', related = [], diagnostic = {}) => {
         if (!rules.has(rule)) return;
@@ -163,6 +167,14 @@ export const analyzeProject = function* (targets, monitors = [], enabled = DEFAU
                 });
                 // Valid forward connections still need semantic checks despite stale parent metadata.
                 if (!debug || reason === 'orphan' || reason === 'shadow' || !references.length) continue;
+            }
+            const scope = scopeProblem(block, target, index.input, extension);
+            if (scope) add('invalid-scope', target, location, {}, scope);
+            // Avoid two scope warnings for deleting a container clone from the stage.
+            if (!scope || !rules.has('invalid-scope')) {
+                const problem = containerProblem(block, target, containerPaths, index.input,
+                    limitation => limitations.add(limitation));
+                if (problem) add('invalid-container', target, location, {name: problem.name}, problem.detail);
             }
             const reference = own(TARGET_INPUTS, op) || (extension && extension.targetInput);
             if (reference) {
@@ -285,7 +297,11 @@ export const analyzeProject = function* (targets, monitors = [], enabled = DEFAU
                 const special = op === 'argument_reporter_boolean' ? ['is compiled?',
                     'is turbowarp?'] : ['last key pressed'];
                 const owners = index.owners.get(block.id);
-                if (owners && !special.includes(value.toLowerCase()) &&
+                // Prototype parameter shadows belong to a definition's signature,
+                // not its executable body. They are legal outside index.owners.
+                if (!owners && !index.signatureArguments.has(block.id) && !special.includes(value.toLowerCase())) {
+                    add('invalid-argument', target, location, {name: value}, 'parameter-outside');
+                } else if (owners && !special.includes(value.toLowerCase()) &&
                     [...owners].every(owner => owner.names && !owner.names.includes(value))) {
                     add('invalid-argument', target, location, {name: value}, 'parameter');
                 }

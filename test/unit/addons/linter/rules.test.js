@@ -3,7 +3,6 @@ import {RULE_DEFINITIONS} from '../../../../src/addons/addons/linter/rules';
 import {createEvaluator, UNKNOWN} from '../../../../src/addons/addons/linter/constants';
 import coverage from '../../../../src/addons/addons/linter/opcode-coverage.json';
 import inventory, {compare} from '../../../../scripts/linter-opcode-inventory.cjs';
-import vmPackage from 'scratch-vm/package.json';
 import path from 'path';
 
 const block = (id, opcode, extra = {}) => ({id, opcode, fields: {}, inputs: {}, next: null, ...extra});
@@ -111,8 +110,7 @@ test('every registered rule has independent positive and negative fixtures', () 
 test('inventory detects new or removed opcodes against the actual installed VM and blocks packages', () => {
     const actual = inventory(path.dirname(require.resolve('scratch-vm/package.json')),
         path.dirname(require.resolve('scratch-blocks/package.json')));
-    expect(compare(actual, vmPackage.version))
-        .toEqual({missing: [], stale: [], changedScopes: []});
+    expect(compare(actual)).toEqual({missing: [], stale: [], changedScopes: []});
     expect(Object.values(coverage).every(entry => entry.category && entry.source)).toBe(true);
     for (const [opcode, descriptor] of Object.entries(actual)) {
         for (const key of ['filter', 'componentTypes']) expect(coverage[opcode][key]).toEqual(descriptor[key]);
@@ -122,17 +120,15 @@ test('inventory detects new or removed opcodes against the actual installed VM a
         if (descriptor.componentTypes) expect(coverage[opcode].rules).toContain('invalid-component');
     }
 });
-test('only VM 0.4.0 may omit the new ancestor menu from the audited inventory', () => {
+test('inventory reports removed menus, new opcodes and changed scopes', () => {
     const actual = {...coverage};
     delete actual.containers_menu_ancestorContainers;
-    expect(compare(actual, '0.4.0')).toEqual({missing: [], stale: [], changedScopes: []});
     expect(compare(actual).stale).toEqual(['containers_menu_ancestorContainers']);
-    expect(compare(actual, '0.4.1').stale).toEqual(['containers_menu_ancestorContainers']);
     delete actual.containers_menu_containers;
     actual.unaudited_opcode = {};
     actual.containers_setWorldProperty = {...actual.containers_setWorldProperty, filter: ['stage']};
-    expect(compare(actual, '0.4.0')).toEqual({missing: ['unaudited_opcode'],
-        stale: ['containers_menu_containers'],
+    expect(compare(actual)).toEqual({missing: ['unaudited_opcode'],
+        stale: ['containers_menu_ancestorContainers', 'containers_menu_containers'],
         changedScopes: ['containers_setWorldProperty']});
 });
 test('constants use Scratch casts, case-insensitive comparison, modulo and bounded expression expansion', () => {

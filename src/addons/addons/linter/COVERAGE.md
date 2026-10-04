@@ -1,11 +1,8 @@
 # Opcode audit and rule coverage
 
 The checked-in `opcode-coverage.json` inventories **351** core, compatibility,
-editor helper, extension and extension-menu opcodes from the Blockdia VM/blocks
-packages and sibling sources. The installed VM 0.4.0 has 350 of these opcodes;
-the sibling VM adds `containers_menu_ancestorContainers`. Only VM 0.4.0 may omit
-that menu during inventory validation. Remove this exception when updating the
-GUI's VM dependency; all other additions, removals and scope changes still fail.
+editor helper, extension and extension-menu opcodes from the installed Blockdia
+VM/blocks packages. The sibling source check currently has the same inventory.
 This includes bundled but not normally registered speech recognition and example
 blocks. It does not include arbitrary downloaded extension implementations.
 
@@ -65,8 +62,7 @@ positive case and a legal counterexample for new diagnostics.
 
 ## Meaning of coverage
 
-Inventory classification is 351/351 for the sibling sources (350/350 for the
-installed VM 0.4.0), **not a promise to find every bug** and not a
+Inventory classification is 351/351, **not a promise to find every bug** and not a
 code-coverage percentage. Unknown blocks, dynamic references, addon callbacks and
 expression budgets are reported separately. Unknown callbacks qualify cleanup
 suggestions which they could invalidate. Pure-expression evaluation is bounded by

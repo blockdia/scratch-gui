@@ -255,7 +255,7 @@ class Blocks extends React.Component {
 
         // tw: Handle when extensions are added when Blocks isn't mounted
         for (const category of this.props.vm.runtime._blockInfo) {
-            this.handleExtensionAdded(category);
+            this.handleExtensionAdded(category, false);
         }
 
         gentlyRequestPersistentStorage();
@@ -372,6 +372,12 @@ class Blocks extends React.Component {
         const queue = this.toolboxUpdateQueue;
         this.toolboxUpdateQueue = [];
         queue.forEach(fn => fn());
+
+        if (this.pendingExtensionCategory) {
+            const category = this.pendingExtensionCategory;
+            this.pendingExtensionCategory = null;
+            this.handleCategorySelected(category);
+        }
     }
 
     withToolboxUpdates (fn) {
@@ -571,7 +577,7 @@ class Blocks extends React.Component {
             }
         }
     }
-    handleExtensionAdded (categoryInfo) {
+    handleExtensionAdded (categoryInfo, selectCategory = true) {
         const defineBlocks = blockInfoArray => {
             if (blockInfoArray && blockInfoArray.length > 0) {
                 const staticBlocksJson = [];
@@ -619,10 +625,16 @@ class Blocks extends React.Component {
         if (toolboxXML) {
             this.props.updateToolboxState(toolboxXML);
         }
+        if (selectCategory && (categoryInfo.id === 'containers' || categoryInfo.id === 'components')) {
+            // Auto-loaded extensions should navigate just like extensions added from the library.
+            // Keep the request until the toolbox is rendered, including when the Code tab is hidden.
+            this.pendingExtensionCategory = categoryInfo.id;
+            if (this.props.isVisible) this.requestToolboxUpdate();
+        }
     }
     handleBlocksInfoUpdate (categoryInfo) {
         // @todo Later we should replace this to avoid all the warnings from redefining blocks.
-        this.handleExtensionAdded(categoryInfo);
+        this.handleExtensionAdded(categoryInfo, false);
     }
     handleCategorySelected (categoryId) {
         const extension = extensionData.find(ext => ext.extensionId === categoryId);

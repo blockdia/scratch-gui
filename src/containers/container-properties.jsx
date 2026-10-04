@@ -2,7 +2,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import classNames from 'classnames';
-import Popover from 'react-popover';
+import Popover from '../components/popover/popover.jsx';
 import {injectIntl, intlShape, FormattedMessage} from 'react-intl';
 import {isRtl} from '@turbowarp/scratch-l10n';
 import Input from '../components/forms/input.jsx';
@@ -21,7 +21,6 @@ const stopPropagation = event => event.stopPropagation();
 const ContainerProperties = ({vm, path, container, disabled, intl}) => {
     const [open, setOpen] = React.useState(false);
     const button = React.useRef(null);
-    const popup = React.useRef(null);
     const cancelled = React.useRef(false);
     const close = React.useCallback(() => setOpen(false), []);
     React.useEffect(() => {
@@ -30,26 +29,6 @@ const ContainerProperties = ({vm, path, container, disabled, intl}) => {
     React.useEffect(() => {
         if (disabled || !container) close();
     }, [disabled, Boolean(container), close]);
-    React.useEffect(() => {
-        if (!open) return;
-        const ownerDocument = button.current.ownerDocument;
-        const onOutsidePointer = event => {
-            if (button.current.contains(event.target) || (popup.current && popup.current.contains(event.target))) {
-                return;
-            }
-            // Flush buffered inputs before unmounting. Capture also reaches clicks handled by Blockly.
-            if (popup.current && popup.current.contains(ownerDocument.activeElement)) {
-                ownerDocument.activeElement.blur();
-            }
-            close();
-        };
-        ownerDocument.addEventListener('mousedown', onOutsidePointer, true);
-        ownerDocument.addEventListener('touchstart', onOutsidePointer, true);
-        return () => {
-            ownerDocument.removeEventListener('mousedown', onOutsidePointer, true);
-            ownerDocument.removeEventListener('touchstart', onOutsidePointer, true);
-        };
-    }, [open, close]);
     const toggle = event => {
         event.stopPropagation();
         cancelled.current = false;
@@ -78,7 +57,6 @@ const ContainerProperties = ({vm, path, container, disabled, intl}) => {
     return (
         <Popover
             body={<div
-                ref={popup}
                 role="dialog"
                 data-container-properties-popup={path}
                 className={infoStyles.propertiesPopup}

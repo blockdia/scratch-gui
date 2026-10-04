@@ -3,7 +3,7 @@ import bindAll from 'lodash.bindall';
 import PropTypes from 'prop-types';
 import {connect} from 'react-redux';
 import {injectIntl, intlShape} from 'react-intl';
-import Popover from 'react-popover';
+import Popover from '../components/popover/popover.jsx';
 import {isRtl} from '@turbowarp/scratch-l10n';
 import VM from 'scratch-vm';
 import ComponentProperty from '../components/component-panel/component-property.jsx';

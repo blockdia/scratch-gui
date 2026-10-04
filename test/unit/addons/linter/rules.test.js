@@ -203,6 +203,15 @@ test('constant loops with possible exits are not described as nonterminating', (
         literal('false', false), block('exit', 'control_stop', {fields: {STOP_OPTION: {value: 'this script'}}})]);
     expect(analyze([a], ['nonterminating-control'])).toEqual([]);
 });
+test('container clone deletion can end a constant loop, while hiding a container cannot', () => {
+    const makeLoop = opcode => target([
+        block('loop', 'control_repeat_until', {inputs: {CONDITION: input('false'), SUBSTACK: input('operation')}}),
+        literal('false', false), block('operation', opcode, {inputs: {CONTAINER: input('container')}}),
+        literal('container', '_mycontainer_')
+    ]);
+    expect(analyze([makeLoop('containers_deleteClone')], ['nonterminating-control'])).toEqual([]);
+    expect(analyze([makeLoop('containers_hide')], ['nonterminating-control'])).toHaveLength(1);
+});
 test('unknown addon callbacks do not block known-reference data checks', () => {
     const a = target([call('c', 'native')], {variables: {v: {id: 'v', name: 'v', type: ''}}});
     const rows = analyze([a], ['invalid-procedure', 'unused-data'], {addonBlocks: {native: {}}});

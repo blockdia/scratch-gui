@@ -1,5 +1,6 @@
-// This integration suite intentionally resolves coordinated sibling VM sources.
+// Test published packages by default; match webpack's explicit local-source switch.
 const base = require('../package.json').jest;
+const localPackages = process.env.BLOCKDIA_LOCAL_PACKAGES === '1';
 module.exports = {
     ...base,
     rootDir: '..',
@@ -15,8 +16,10 @@ module.exports = {
         '<rootDir>/test/unit/editor-windows/layer-manager-window.test.js'],
     moduleNameMapper: {
         ...base.moduleNameMapper,
-        '^scratch-vm$': '<rootDir>/../scratch-vm/src/index.js',
-        '^scratch-vm/(.*)$': '<rootDir>/../scratch-vm/$1',
-        '^scratch-render/(.*)$': '<rootDir>/../scratch-render/$1'
+        ...(localPackages ? {
+            '^scratch-vm$': '<rootDir>/../scratch-vm/src/index.js',
+            '^scratch-vm/(.*)$': '<rootDir>/../scratch-vm/$1',
+            '^scratch-render/(.*)$': '<rootDir>/../scratch-render/$1'
+        } : {})
     }
 };

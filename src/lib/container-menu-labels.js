@@ -3,7 +3,7 @@
 export default (ScratchBlocks, getIntl) => {
     for (const [menu, relative, label] of [
         ['containers', '_mycontainer_', () => getIntl().formatMessage({
-            id: 'containers.containingContainer', defaultMessage: 'containing container'
+            id: 'containers.containingContainer', defaultMessage: 'my container'
         })],
         ['sprites', '_myself_', () => ScratchBlocks.ScratchMsgs.translate('CONTROL_CREATECLONEOF_MYSELF', 'myself')]
     ]) {

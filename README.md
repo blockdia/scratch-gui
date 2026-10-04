@@ -66,7 +66,7 @@ Then go to [http://localhost:8601/](http://localhost:8601/) - the playground out
 
 ## Components development
 
-The built-in Slider, Button, Toggle, and Progress Bar use the published Blockdia VM, renderer, and paint packages.
+The built-in Slider, Button, Toggle, and Progress Bar use the Blockdia VM and renderer from GitHub, and the published paint package.
 Install dependencies with `npm ci`, then start the editor:
 
 ```bash
@@ -95,8 +95,27 @@ fire change events on the destination target. Selected menu targets follow sprit
 Palette filtering preserves all opcode definitions and existing scripts. Numeric and checked-state operations
 are separated, and change-value blocks precede set-value blocks.
 
-The editor uses the published Blockdia VM, renderer, and paint packages from `package-lock.json`.
-No sibling repositories or local-source flags are required.
+The editor uses the Blockdia VM and renderer `develop` branches, with exact Git commits pinned in
+`package-lock.json`. The paint package still comes from npm. `npm ci` installs the locked dependencies;
+no sibling repositories or local-source flags are required.
+The GUI and its tests resolve the renderer's browser source entry; the Git dependency does not
+include the prebuilt Node bundle distributed in the npm package.
+
+To adopt newer VM and renderer commits, update both dependencies together, then review and commit
+the resulting `package-lock.json` after testing:
+
+```bash
+npm update scratch-vm scratch-render
+```
+
+For coordinated local changes, install dependencies in the sibling `scratch-vm` and `scratch-render`
+repositories, then start the GUI with their source directories enabled:
+
+```bash
+BLOCKDIA_LOCAL_PACKAGES=1 npm start
+```
+
+This local mode uses uncommitted VM and renderer source changes without updating the lockfile.
 
 Run the browser checks with a current Playwright installation:
 

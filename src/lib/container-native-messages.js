@@ -1,6 +1,7 @@
 // Container menu items that mean exactly what a built-in block's menu item means reuse
 // scratch-blocks' translations, so every locale matches the built-in blocks.
 const NATIVE_MESSAGES = {
+    'clones.myself': 'CONTROL_CREATECLONEOF_MYSELF',
     'containers.color': 'LOOKS_EFFECT_COLOR',
     'containers.fisheye': 'LOOKS_EFFECT_FISHEYE',
     'containers.whirl': 'LOOKS_EFFECT_WHIRL',

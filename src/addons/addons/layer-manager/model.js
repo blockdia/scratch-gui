@@ -75,13 +75,12 @@ export const visibleLayerRows = (rows, collapsed) => {
     });
 };
 
-// Keep clone identities and thumbnail caching outside the window's mount lifetime.
+// Sprite instance identities come from the VM; container display labels and thumbnails survive window mounts.
 export const createLayerModel = vm => {
     let stage;
     let previous;
     let generation = 0;
     let nextClone = 1;
-    let clones = new WeakMap();
     let containerClones = new Map();
     const thumbnails = new WeakMap();
     const snapshot = () => {
@@ -90,15 +89,9 @@ export const createLayerModel = vm => {
             stage = currentStage;
             generation++;
             nextClone = 1;
-            clones = new WeakMap();
             containerClones = new Map();
         }
         const targets = new Map(vm.runtime.targets.map(target => [target.id, target]));
-        // Allocate labels in creation order, independently of tree/render ordering.
-        for (const target of targets.values()) {
-            if (!target.isOriginal && !clones.has(target) && target.getLayerOrder() !== null &&
-                target.getLayerOrder() >= 0) clones.set(target, nextClone++);
-        }
         const rows = readLayerRows(vm).map(row => {
             if (row.container) {
                 if (row.isContainerClone && !containerClones.has(row.id)) containerClones.set(row.id, nextClone++);
@@ -109,7 +102,8 @@ export const createLayerModel = vm => {
             const asset = costume && costume.asset;
             if (asset && !thumbnails.has(asset)) thumbnails.set(asset, getCostumeUrl(asset));
             return {...row,
-                clone: target.isOriginal ? null : clones.get(target),
+                clone: target.isOriginal ? null : target.publicId.slice('@clone:'.length),
+                publicId: target.publicId || '',
                 thumbnail: asset ? thumbnails.get(asset) : null};
         });
         const liveContainers = new Set(rows.filter(row => row.isContainerClone).map(row => row.id));

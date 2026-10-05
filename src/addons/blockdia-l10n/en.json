@@ -196,5 +196,8 @@
     "linter/reason-invalid-container-ancestry": "Deleting a container clone only works from a member of that cloned container or a nested container. This script cannot delete an unrelated container instance.",
     "linter/invalid-argument-parameter-outside": "Parameter \"{name}\" is outside a custom block",
     "linter/reason-invalid-argument-parameter-outside": "This parameter has no enclosing custom block definition. The VM returns 0 here. Use it inside its definition, or replace it with a variable or value.",
-    "linter/limit-container-metadata": "Container definitions were not provided, so container references could not be checked."
+    "linter/limit-container-metadata": "Container definitions were not provided, so container references could not be checked.",
+    "layer-manager/copyId": "Copy ID",
+    "layer-manager/idCopied": "ID copied.",
+    "layer-manager/copyFailed": "Could not copy the ID."
 }

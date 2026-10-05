@@ -270,10 +270,22 @@ export default function (vm) {
                 sort(stageVariableOptions);
                 const stageVariableMenuItems = stageVariableOptions.map(variable => [variable, variable]);
                 if (sensingOfBlock.inputs.OBJECT.shadow !== sensingOfBlock.inputs.OBJECT.block) {
-                    // There's a block dropped on top of the menu. It'd be nice to evaluate it and
-                    // return the correct list, but that is tricky. Scratch2 just returns stage options
-                    // so just do that here too.
-                    return stageOptions.concat(stageVariableMenuItems);
+                    // Dynamic references may name a stage, sprite, or clone. Never evaluate the
+                    // reporter while opening a menu: it may itself create a clone.
+                    const variableNames = new Set(stageVariableOptions);
+                    for (const target of vm.runtime.targets) {
+                        if (!target.isOriginal || target.isStage) continue;
+                        for (const name of target.getAllVariableNamesInScopeByType('', true)) variableNames.add(name);
+                    }
+                    const variables = Array.from(variableNames);
+                    sort(variables);
+                    const options = spriteOptions.concat(stageOptions.filter(option =>
+                        !spriteOptions.some(spriteOption => spriteOption[1] === option[1])));
+                    const selected = sensingOfBlock.fields.PROPERTY.value;
+                    if (selected && !options.some(option => option[1] === selected) && !variableNames.has(selected)) {
+                        variables.push(selected);
+                    }
+                    return options.concat(variables.map(name => [name, name]));
                 }
                 const menuBlock = lookupBlocks.getBlock(sensingOfBlock.inputs.OBJECT.shadow);
                 const selectedItem = menuBlock.fields.OBJECT.value;
@@ -281,7 +293,7 @@ export default function (vm) {
                     return stageOptions.concat(stageVariableMenuItems);
                 }
                 // Get all the local variables (no lists) and add them to the menu.
-                const target = vm.runtime.getSpriteTargetByName(selectedItem);
+                const target = vm.runtime.resolveTargetReference(selectedItem);
                 let spriteVariableOptions = [];
                 // The target should exist, but there are ways for it not to (e.g. #4203).
                 if (target) {

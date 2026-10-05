@@ -90,6 +90,8 @@ export const renameEntries = (vm, kind, changes, targetId = vm.editingTarget && 
     const entries = getEntries(vm, kind, targetId);
     const changed = entries.filter(entry => changes.has(entry.id) && changes.get(entry.id) !== entry.name);
     if (!changed.length) return;
+    // Reject the entire transaction before temporary names or container paths can change.
+    if (kind === 'SPRITE' && changed.some(entry => /^@(clone|sprite):/.test(changes.get(entry.id)))) return false;
     const used = new Set(entries.filter(entry => !changed.includes(entry)).map(entry => entry.name));
     const names = changed.map(entry => unusedName(changes.get(entry.id), used, kind === 'SPRITE'));
     entries.forEach(entry => used.add(entry.name));
@@ -127,9 +129,8 @@ export const moveFolder = (vm, kind, source, destination, targetId) => {
             changes.set(entry.id, joinName(destination, entry.name.slice(source.length + SEPARATOR.length)));
         }
     });
-    renameEntries(vm, kind, changes, targetId,
-        {source, destination, dissolve: destination === parentFolder(source)});
-    return true;
+    return renameEntries(vm, kind, changes, targetId,
+        {source, destination, dissolve: destination === parentFolder(source)}) !== false;
 };
 
 export const reorderFolderItems = (vm, kind, order, targetId = vm.editingTarget && vm.editingTarget.id) => {

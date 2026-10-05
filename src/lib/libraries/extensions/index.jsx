@@ -57,6 +57,25 @@ import {APP_NAME} from '../../brand';
 
 export default [
     {
+        name: <FormattedMessage
+            defaultMessage="Clones"
+            description="Clone extension name"
+            id="clones.name"
+        />,
+        extensionId: 'clones',
+        iconURL: customExtensionIcon,
+        insetIconURL: customExtensionIcon,
+        description: (
+            <FormattedMessage
+                defaultMessage="Use IDs to select individual sprites and clones."
+                description="Clone extension description"
+                id="clones.description"
+            />
+        ),
+        tags: ['tw'],
+        featured: true
+    },
+    {
         name: (
             <FormattedMessage
                 defaultMessage="Music"

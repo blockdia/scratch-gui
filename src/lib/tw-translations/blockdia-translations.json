@@ -205,7 +205,17 @@
         "containers.effect": "[CONTAINER] 的 [EFFECT] 特效",
         "containers.setEffect": "将 [CONTAINER] 的 [EFFECT] 特效设定为 [VALUE]",
         "containers.changeEffect": "将 [CONTAINER] 的 [EFFECT] 特效增加 [VALUE]",
-        "containers.clearEffects": "清除 [CONTAINER] 的图形特效"
+        "containers.clearEffects": "清除 [CONTAINER] 的图形特效",
+        "clones.name": "克隆",
+        "clones.description": "使用 ID 精确选择角色本体和克隆体。",
+        "clones.id": "我的 ID",
+        "clones.targetId": "[TARGET] 本体的 ID",
+        "clones.cloneId": "@clone: [ID]",
+        "clones.isClone": "我是克隆体？",
+        "clones.exists": "ID [ID] 存在？",
+        "clones.createWithId": "以 ID @clone: [ID] 克隆 [TARGET]",
+        "clones.lastId": "刚创建的克隆 ID",
+        "clones.delete": "删除克隆体 [ID]"
     },
     "zh-tw": {
         "blockdia.spriteInfo.moreProperties": "更多角色屬性",
@@ -308,7 +318,17 @@
         "containers.effect": "[CONTAINER] 的圖像效果 [EFFECT]",
         "containers.setEffect": "[CONTAINER] 的圖像效果 [EFFECT] 設為 [VALUE]",
         "containers.changeEffect": "[CONTAINER] 的圖像效果 [EFFECT] 改變 [VALUE]",
-        "containers.clearEffects": "[CONTAINER] 的圖像效果清除"
+        "containers.clearEffects": "[CONTAINER] 的圖像效果清除",
+        "clones.name": "分身",
+        "clones.description": "使用 ID 精確選擇角色本體和分身。",
+        "clones.id": "我的 ID",
+        "clones.targetId": "[TARGET] 本體的 ID",
+        "clones.cloneId": "@clone: [ID]",
+        "clones.isClone": "我是分身？",
+        "clones.exists": "ID [ID] 存在？",
+        "clones.createWithId": "以 ID @clone: [ID] 建立 [TARGET] 的分身",
+        "clones.lastId": "剛建立的分身 ID",
+        "clones.delete": "刪除分身 [ID]"
     },
     "en": {
         "gui.actions.shortcuts": "Keyboard shortcuts",

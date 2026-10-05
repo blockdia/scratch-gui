@@ -25,12 +25,12 @@ afterEach(() => {
     global.window = previousWindow;
 });
 const fixture = (withContainers = false) => {
-    const target = (id, order, extra = {}) => ({id, isOriginal: true, isStage: false, visible: true,
+    const target = (id, order, extra = {}) => ({id, publicId: `@sprite:${id}`, isOriginal: true, isStage: false, visible: true,
         isEffectivelyVisible () { return this.visible; },
         getLayerOrder: () => order, getCostumes: () => [], getName: () => id, ...extra});
-    const stage = target('stage', 0, {isStage: true});
-    const a = target('a', 1, withContainers ? {getName: () => 'A//N//Sprite'} : {});
-    const clone = target('clone', 2, {isOriginal: false});
+    const stage = target('stage', 0, {isStage: true, publicId: '_stage_'});
+    const a = target('a', 1, withContainers ? {getName: () => 'A//N//Sprite', publicId: '@sprite:A//N//Sprite'} : {});
+    const clone = target('clone', 2, {isOriginal: false, publicId: '@clone:1'});
     const runtime = new EventEmitter();
     runtime.targets = [stage, a, clone];
     runtime.spriteContainers = {getTargetContainers: member => withContainers && member === a ? [

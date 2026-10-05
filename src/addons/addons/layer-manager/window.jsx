@@ -192,6 +192,14 @@ export default function createLayerWindow (vm, model) {
             setCollapsed(next);
         };
         const selectedRow = snapshot.rows.find(row => row.id === selected);
+        const copyId = async () => {
+            try {
+                await navigator.clipboard.writeText(selectedRow.publicId);
+                setNotice('idCopied');
+            } catch (error) {
+                setNotice('copyFailed');
+            }
+        };
         const siblings = snapshot.rows.filter(row => !row.stage && selectedRow && row.parent === selectedRow.parent);
         const index = siblings.findIndex(row => row.id === selected);
         const step = delta => {
@@ -264,6 +272,10 @@ export default function createLayerWindow (vm, model) {
                 >
                     {'↓ '}{message('backward')}
                 </button>
+                {selectedRow && selectedRow.publicId ? <button
+                    type="button"
+                    onClick={copyId}
+                >{message('copyId')}</button> : null}
             </div>
             <div className="sa-layer-boundary"><span>{message('front')}</span></div>
             <div
@@ -358,7 +370,9 @@ export default function createLayerWindow (vm, model) {
                                     className="sa-layer-name"
                                     title={row.fullName}
                                 >{row.stage ? message('stage') : row.name}</span>
-                                {row.clone ? <small>{message('clone', {number: row.clone})}</small> : null}
+                                {row.clone ? <small title={row.publicId}>
+                                    {message('clone', {number: row.clone})}
+                                </small> : row.publicId ? <small title={row.publicId}>{row.publicId}</small> : null}
                                 {row.container ? <small>{message('container', {count: row.count})}</small> : null}
                             </span>
                             {!row.stage && !row.visible ?

@@ -67,6 +67,17 @@ test('simultaneous renames preserve references when destination names overlap ol
     expect(references).toEqual(['B', 'A']);
 });
 
+test.each(['@clone:boss', '@sprite:1'])(
+    'reserved reference %s rejects the whole folder transaction before any mutation', reference => {
+    const {vm, references} = makeVM(['A//one', 'A//two']);
+    expect(moveFolder(vm, 'SPRITE', 'A', reference)).toBe(false);
+    expect(renameEntries(vm, 'SPRITE', new Map([['sprite-0', 'valid'], ['sprite-1', reference]])))
+        .toBe(false);
+    expect(vm.renameSprite).not.toHaveBeenCalled();
+    expect(vm.runtime.spriteContainers.move).not.toHaveBeenCalled();
+    expect(references).toEqual(['A//one', 'A//two']);
+});
+
 test('sprite folder moves require container metadata support before renaming members', () => {
     const {vm} = makeVM(['A//one']);
     vm.runtime.spriteContainers = null;

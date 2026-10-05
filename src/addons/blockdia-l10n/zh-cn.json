@@ -196,5 +196,8 @@
     "linter/reason-invalid-container-ancestry": "删除容器克隆只能由该克隆容器或其嵌套容器中的成员执行。此脚本不能删除不相关的容器实例。",
     "linter/invalid-argument-parameter-outside": "参数“{name}”位于自制积木定义之外",
     "linter/reason-invalid-argument-parameter-outside": "此参数不在任何自制积木定义内部，运行时只能读到 0。请将其放回对应定义内，或替换为变量或具体值。",
-    "linter/limit-container-metadata": "未提供容器定义，无法检查容器引用。"
+    "linter/limit-container-metadata": "未提供容器定义，无法检查容器引用。",
+    "layer-manager/copyId": "复制 ID",
+    "layer-manager/idCopied": "已复制 ID。",
+    "layer-manager/copyFailed": "无法复制 ID。"
 }

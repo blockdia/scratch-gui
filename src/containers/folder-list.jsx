@@ -188,7 +188,10 @@ class FolderList extends React.Component {
             folderMove = {source, destination};
             this.setState({folderTransition: {source, destination, scope}});
         }
-        renameEntries(vm, kind, plan.changes, targetId, folderMove);
+        if (renameEntries(vm, kind, plan.changes, targetId, folderMove) === false) {
+            this.setState({folderTransition: null});
+            return;
+        }
         onDrop({...drag, dragType: kind, folderOrder: plan.order});
     }
     moveItem (item, folder) {
@@ -205,7 +208,7 @@ class FolderList extends React.Component {
         if (source === destination) return;
         // Publish the state transition before VM updates expose the new names.
         this.setState({folderTransition: {source, destination, scope}});
-        moveFolder(vm, kind, source, destination, targetId);
+        if (!moveFolder(vm, kind, source, destination, targetId)) this.setState({folderTransition: null});
     }
     openPrompt (item, path) {
         this.setState({prompt: {item, path}, input: path ? splitName(path).basename : item.name, error: null});
@@ -218,6 +221,7 @@ class FolderList extends React.Component {
         const parent = kind === 'SPRITE' ?
             (prompt.path ? parentFolder(prompt.path) : splitName(prompt.item.fullName).folder) : '';
         const path = joinName(parent, name);
+        if (kind === 'SPRITE' && /^@(clone|sprite):/.test(path)) return this.setState({error: messages.invalid});
         if (path !== prompt.path && folderPaths(items, kind === 'SPRITE').includes(path)) {
             return this.setState({error: messages.exists});
         }

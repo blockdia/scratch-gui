@@ -105,8 +105,8 @@ test('snapshots form a render-ordered tree, preserve ordinary paths and inherit 
 test('runtime container instances have separate layer rows, labels and atomic movement', () => {
     const vm = fixture();
     const manager = vm.runtime.spriteContainers;
-    manager.cloneDefinitions.set('instance', {path: 'A', visible: true});
-    manager.cloneDefinitions.set('nested-instance', {path: 'A//N', visible: true});
+    manager.cloneDefinitions.set('instance', {path: 'A', publicId: '@container-clone:boss', visible: true});
+    manager.cloneDefinitions.set('nested-instance', {path: 'A//N', publicId: '@container-clone:7', visible: true});
     const clone = vm.runtime.targets.find(target => target.id === 'clone');
     const component = vm.runtime.targets.find(target => target.id === 'component');
     clone._containerClonePaths = ['instance', 'nested-instance'];
@@ -120,7 +120,7 @@ test('runtime container instances have separate layer rows, labels and atomic mo
     const nestedId = containerLayerId('nested-instance');
     expect(rows.find(row => row.id === instanceId)).toMatchObject({name: 'A', parent: null,
         count: 2, isContainerClone: true});
-    expect(rows.find(row => row.id === instanceId).clone).toBeGreaterThan(0);
+    expect(rows.find(row => row.id === instanceId)).toMatchObject({clone: 'boss', publicId: '@container-clone:boss'});
     expect(rows.find(row => row.id === nestedId)).toMatchObject({name: 'N', parent: instanceId});
     expect(rows.find(row => row.id === 'clone')).toMatchObject({name: 'First', parent: nestedId});
     expect(rows.find(row => row.id === 'component')).toMatchObject({name: 'Slider', parent: nestedId});

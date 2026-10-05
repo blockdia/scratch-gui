@@ -37,10 +37,12 @@ test('layer rows use runtime instance membership and effective visibility', () =
     vm.a.getName = () => 'A//one';
     vm.a.isEffectivelyVisible = () => false;
     vm.runtime.spriteContainers.getTargetContainers = target => target === vm.a ? [
-        {id: 'instance', path: 'A', visible: false, isClone: true}
+        {id: 'instance', publicId: '@container-clone:boss', path: 'A', visible: false, isClone: true}
     ] : [];
     const rows = createLayerModel(vm).snapshot().rows;
-    expect(rows.find(row => row.id === 'container:instance')).toMatchObject({isContainerClone: true});
+    expect(rows.find(row => row.id === 'container:instance')).toMatchObject({
+        isContainerClone: true, publicId: '@container-clone:boss', clone: 'boss'
+    });
     expect(rows.find(row => row.id === 'a')).toMatchObject({
         parent: 'container:instance', visible: false, hiddenByContainer: true
     });

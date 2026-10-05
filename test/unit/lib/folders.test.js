@@ -67,7 +67,7 @@ test('simultaneous renames preserve references when destination names overlap ol
     expect(references).toEqual(['B', 'A']);
 });
 
-test.each(['@clone:boss', '@sprite:1'])(
+test.each(['@clone:boss', '@sprite:1', '@container:A', '@container-clone:boss'])(
     'reserved reference %s rejects the whole folder transaction before any mutation', reference => {
     const {vm, references} = makeVM(['A//one', 'A//two']);
     expect(moveFolder(vm, 'SPRITE', 'A', reference)).toBe(false);

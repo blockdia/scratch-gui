@@ -91,7 +91,8 @@ export const renameEntries = (vm, kind, changes, targetId = vm.editingTarget && 
     const changed = entries.filter(entry => changes.has(entry.id) && changes.get(entry.id) !== entry.name);
     if (!changed.length) return;
     // Reject the entire transaction before temporary names or container paths can change.
-    if (kind === 'SPRITE' && changed.some(entry => /^@(clone|sprite):/.test(changes.get(entry.id)))) return false;
+    if (kind === 'SPRITE' && changed.some(entry =>
+        /^@(clone|sprite|container|container-clone):/.test(changes.get(entry.id)))) return false;
     const used = new Set(entries.filter(entry => !changed.includes(entry)).map(entry => entry.name));
     const names = changed.map(entry => unusedName(changes.get(entry.id), used, kind === 'SPRITE'));
     entries.forEach(entry => used.add(entry.name));

@@ -60,7 +60,8 @@ const JSZip = require('@turbowarp/jszip');
             const blocks = workspace.getFlyout().getWorkspace()
                 .getAllBlocks();
             const field = blocks.find(block => block.type === 'containers_menu_containers').getField('containers');
-            const sprites = blocks.find(block => block.type === 'containers_menu_sprites').getField('sprites');
+            const sprites = blocks.find(block => block.type === 'containers_menu_positionTargets')
+                .getField('positionTargets');
             const deletion = blocks.find(block => block.type === 'containers_deleteClone');
             const worldSetter = blocks.find(block => block.type === 'containers_setWorldProperty');
             const deleteField = deletion.getInputTargetBlock('CONTAINER').getField('ancestorContainers');
@@ -89,11 +90,12 @@ const JSZip = require('@turbowarp/jszip');
         assert.equal(menu.deleteValue, '_mycontainer_');
         assert.deepEqual(menu.deleteOptions, [['最内层', '_mycontainer_']],
             'the innermost container is not listed twice');
-        assert.match(menu.texts, /角色 自己 在舞台上的 x 坐标/);
+        assert.match(menu.texts, /鼠标指针 在 所在容器 中的 x 坐标/);
         assert.match(menu.texts, /将在舞台上的 x 坐标 设为 0/);
         assert.deepEqual(menu.worldProperties, ['x', 'y', 'size', 'direction']);
         assert.equal(menu.worldSetterHasTarget, false);
-        assert.deepEqual(menu.sprites, [['自己', '_myself_'], ['World//Nested//Two', 'World//Nested//Two'],
+        assert.deepEqual(menu.sprites, [['鼠标指针', '_mouse_'], ['自己', '_myself_'],
+            ['World//Nested//Two', 'World//Nested//Two'],
             ['Outside', 'Outside']]);
         await page.waitForFunction(() => {
             const workspace = (window.Blockly || window.ScratchBlocks).getMainWorkspace();
@@ -205,8 +207,12 @@ const JSZip = require('@turbowarp/jszip');
                     const id = `world-${PROPERTY}`;
                     first.createVariable(id, id, '');
                     add(`read-${id}`, 'data_setvariableto', null, null, {VALUE: id}, {VARIABLE: id});
-                    add(`${id}-TARGET`, 'containers_menu_sprites', id, null, {}, {sprites: '_myself_'}, true);
-                    add(id, 'containers_worldProperty', `read-${id}`, null, {TARGET: `${id}-TARGET`}, {PROPERTY});
+                    add(`${id}-TARGET`, 'containers_menu_positionTargets', id, null, {},
+                        {positionTargets: '_myself_'}, true);
+                    add(`${id}-SPACE`, 'containers_menu_coordinateSpaces', id, null, {},
+                        {coordinateSpaces: '//'}, true);
+                    add(id, 'containers_targetProperty', `read-${id}`, null,
+                        {TARGET: `${id}-TARGET`, SPACE: `${id}-SPACE`}, {PROPERTY});
                     Object.assign(first.blocks.getBlock(`read-${id}`), {x: 660,
                         y: 40 +
                         (['x', 'y', 'direction', 'size'].indexOf(PROPERTY) * 80)});
@@ -217,10 +223,14 @@ const JSZip = require('@turbowarp/jszip');
                     const id = `world-${selection}`;
                     first.createVariable(id, id, '');
                     add(`read-${id}`, 'data_setvariableto', null, null, {VALUE: id}, {VARIABLE: id});
-                    add(`${id}-TARGET`, selection === 'named' ? 'containers_menu_sprites' : 'data_variable',
-                        id, null, {}, selection === 'named' ? {sprites: second.getName()} : {VARIABLE: 'world-target'},
+                    add(`${id}-TARGET`, selection === 'named' ? 'containers_menu_positionTargets' : 'data_variable',
+                        id, null, {},
+                        selection === 'named' ? {positionTargets: second.getName()} : {VARIABLE: 'world-target'},
                         selection === 'named');
-                    add(id, 'containers_worldProperty', `read-${id}`, null, {TARGET: `${id}-TARGET`}, {PROPERTY: 'x'});
+                    add(`${id}-SPACE`, 'containers_menu_coordinateSpaces', id, null, {},
+                        {coordinateSpaces: '//'}, true);
+                    add(id, 'containers_targetProperty', `read-${id}`, null,
+                        {TARGET: `${id}-TARGET`, SPACE: `${id}-SPACE`}, {PROPERTY: 'x'});
                     Object.assign(first.blocks.getBlock(`read-${id}`), {x: 660,
                         y: selection === 'named' ? 510 : 600});
                 }
@@ -420,7 +430,7 @@ const JSZip = require('@turbowarp/jszip');
             const stage = vm.runtime.getTargetForStage();
             const share = (id, target) => vm.shareBlocksToTarget([
                 {...first.blocks.getBlock(id), parent: null, topLevel: true, x: 40, y: 40},
-                first.blocks.getBlock(`${id}-TARGET`)
+                first.blocks.getBlock(`${id}-TARGET`), first.blocks.getBlock(`${id}-SPACE`)
             ], target.id, first.id);
             await share('world-named', other);
             await share('world-x', stage);
@@ -431,11 +441,17 @@ const JSZip = require('@turbowarp/jszip');
         });
         const sharedMenu = () => page.evaluate(() => {
             const workspace = (window.Blockly || window.ScratchBlocks).getMainWorkspace();
-            const field = workspace.getAllBlocks().find(block => block.type === 'containers_menu_sprites')
-                .getField('sprites');
+            const field = workspace.getAllBlocks().find(block => block.type === 'containers_menu_positionTargets')
+                .getField('positionTargets');
             return {value: field.getValue(), label: field.getText()};
         });
         assert.deepEqual(await sharedMenu(), {value: 'World//Nested//Two', label: 'World//Nested//Two'});
+        assert.equal(await page.evaluate(() => {
+            const workspace = (window.Blockly || window.ScratchBlocks).getMainWorkspace();
+            const field = workspace.getAllBlocks().find(block => block.type === 'containers_menu_positionTargets')
+                .getField('positionTargets');
+            return field.getOptions().some(([, value]) => value === 'World//Nested//Two');
+        }), false, 'sharing preserves an explicit name without reintroducing it into the menu');
         assert.deepEqual(await page.evaluate(() => {
             const workspace = (window.Blockly || window.ScratchBlocks).getMainWorkspace();
             const deletion = workspace.getAllBlocks().find(block => block.type === 'containers_deleteClone');
@@ -455,13 +471,14 @@ const JSZip = require('@turbowarp/jszip');
         const stageMenu = await page.evaluate(() => {
             const workspace = (window.Blockly || window.ScratchBlocks).getMainWorkspace().getFlyout()
                 .getWorkspace();
-            const field = workspace.getAllBlocks().find(block => block.type === 'containers_menu_sprites')
-                .getField('sprites');
+            const field = workspace.getAllBlocks().find(block => block.type === 'containers_menu_positionTargets')
+                .getField('positionTargets');
             const deletion = workspace.getAllBlocks().find(block => block.type === 'containers_deleteClone');
             const deleteField = deletion.getInputTargetBlock('CONTAINER').getField('ancestorContainers');
             return {sprites: field.getOptions(), deletion: [deleteField.getValue(), deleteField.getText()]};
         });
-        assert.deepEqual(stageMenu.sprites.map(([, value]) => value), ['World//One', 'World//Nested//Two', 'Outside']);
+        assert.deepEqual(stageMenu.sprites.map(([, value]) => value),
+            ['_mouse_', '_myself_', 'World//One', 'World//Nested//Two', 'Outside']);
         assert.deepEqual(stageMenu.deletion, ['_mycontainer_', '最内层'], 'stage keeps the relative delete default');
         await page.evaluate(() => vm.setEditingTarget(vm.runtime.getSpriteTargetByName('World//One').id));
         console.log('PASS sprite and stage menus, shared explicit targets and localized relative targets');
@@ -479,7 +496,7 @@ const JSZip = require('@turbowarp/jszip');
             const first = vm.runtime.getSpriteTargetByName('Scene//One');
             const selection = first.blocks.getBlock('named-CONTAINER').fields.containers.value;
             const deleteSelection = first.blocks.getBlock('named-delete-CONTAINER').fields.ancestorContainers.value;
-            const spriteSelection = first.blocks.getBlock('world-named-TARGET').fields.sprites.value;
+            const spriteSelection = first.blocks.getBlock('world-named-TARGET').fields.positionTargets.value;
             const blob = await vm.saveProjectSb3();
             return {selection,
                 deleteSelection,
@@ -500,19 +517,20 @@ const JSZip = require('@turbowarp/jszip');
                 block.opcode === 'containers_menu_containers' &&
                 block.fields.containers.value === 'Scene//Nested');
             const sprite = Object.values(first.blocks._blocks).find(block =>
-                block.opcode === 'containers_menu_sprites' &&
-                block.fields.sprites.value === 'Scene//Nested//Two');
+                block.opcode === 'containers_menu_positionTargets' &&
+                block.fields.positionTargets.value === 'Scene//Nested//Two');
             const deletion = Object.values(first.blocks._blocks).find(block =>
                 block.opcode === 'containers_deleteClone' &&
                 first.blocks.getBlock(block.inputs.CONTAINER.block).fields.ancestorContainers.value ===
                     'Scene//Nested');
             return {loaded: vm.extensionManager.isExtensionLoaded('containers'),
                 selection: named && named.fields.containers.value,
-                spriteSelection: sprite && sprite.fields.sprites.value,
+                spriteSelection: sprite && sprite.fields.positionTargets.value,
                 deleteSelection: deletion &&
                     first.blocks.getBlock(deletion.inputs.CONTAINER.block).fields.ancestorContainers.value,
-                worldX: vm.runtime.getOpcodeFunction('containers_worldProperty')(
-                    {TARGET: sprite.fields.sprites.value, PROPERTY: 'x'}, {target: vm.runtime.getTargetForStage()}),
+                worldX: vm.runtime.getOpcodeFunction('containers_targetProperty')(
+                    {TARGET: sprite.fields.positionTargets.value, PROPERTY: 'x', SPACE: '//'},
+                    {target: vm.runtime.getTargetForStage()}),
                 transform: vm.runtime.spriteContainers.get('Scene').transform};
         }, saved.bytes);
         assert(loaded.loaded);
@@ -523,7 +541,7 @@ const JSZip = require('@turbowarp/jszip');
         assert.equal(loaded.transform.x, 40);
         const worldFields = await page.evaluate(() => {
             const workspace = (window.Blockly || window.ScratchBlocks).getMainWorkspace();
-            return workspace.getAllBlocks().filter(block => block.type === 'containers_worldProperty')
+            return workspace.getAllBlocks().filter(block => block.type === 'containers_targetProperty')
                 .map(block => block.getFieldValue('PROPERTY'));
         });
         assert.deepEqual(worldFields.sort(), ['direction', 'size', 'x', 'x', 'x', 'y']);

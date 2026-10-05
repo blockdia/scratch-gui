@@ -8,7 +8,8 @@ export default (ScratchBlocks, getIntl) => {
         ['ancestorContainers', '_mycontainer_', () => getIntl().formatMessage({
             id: 'containers.innermostContainer', defaultMessage: 'innermost'
         })],
-        ['sprites', '_myself_', () => ScratchBlocks.ScratchMsgs.translate('CONTROL_CREATECLONEOF_MYSELF', 'myself')]
+        ['positionTargets', '_myself_', () =>
+            ScratchBlocks.ScratchMsgs.translate('CONTROL_CREATECLONEOF_MYSELF', 'myself')]
     ]) {
         const definition = ScratchBlocks.Blocks[`containers_menu_${menu}`];
         if (!definition) continue;

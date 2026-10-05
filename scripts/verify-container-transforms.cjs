@@ -321,6 +321,118 @@ const near = (actual, expected, tolerance = 0.01) => actual.forEach((n, i) =>
         assert.equal(await button.count(), 0, 'ordinary folders have no container property button');
         assert.deepEqual(errors, []);
         console.log('PASS native rotation styles, mirrored picking and small-stage property popup');
+
+        await page.evaluate(() => vm.extensionManager.loadExtensionURL('pen'));
+        for (const enabled of [false, true]) {
+            const trails = await page.evaluate(compilerEnabled => {
+                vm.stopAll();
+                const runtime = vm.runtime;
+                const target = runtime.getSpriteTargetByName('A//N//Box');
+                vm.setEditingTarget(runtime.getSpriteTargetByName('Outside').id);
+                const run = (opcode, args = {}) => runtime.getOpcodeFunction(opcode)(args, {target});
+                run('pen_penUp');
+                run('pen_clear');
+                for (const member of runtime.targets) if (!member.isStage) member.setVisible(false);
+                vm.setSpriteFolderContainer('A', true);
+                vm.setSpriteContainerTransform('A',
+                    {x: 0, y: 0, size: 100, direction: 90, rotationStyle: 'all around'});
+                vm.setSpriteContainerTransform('A//N',
+                    {x: 10, y: 20, size: 100, direction: 90, rotationStyle: 'all around'});
+                target.setXY(20, 10);
+                run('pen_setPenColorToColor', {COLOR: '#0044ff'});
+                run('pen_setPenSizeTo', {SIZE: 6});
+                const renderer = vm.renderer;
+                const originalLine = renderer.penLine;
+                const lines = [];
+                renderer.penLine = function (id, attributes, ...coordinates) {
+                    lines.push(coordinates);
+                    return originalLine.call(this, id, attributes, ...coordinates);
+                };
+                try {
+                    for (const id of target.blocks.getScripts()) target.blocks.deleteBlock(id);
+                    const add = (id, opcode, parent, next, inputs = {}, fields = {}, shadow = false) =>
+                        target.blocks.createBlock({id,
+                            opcode,
+                            parent,
+                            next,
+                            inputs,
+                            fields,
+                            topLevel: !parent,
+                            shadow,
+                            x: 0,
+                            y: 0});
+                    add('pen-flag', 'event_whenflagclicked', null, 'pen-down');
+                    add('pen-down', 'pen_penDown', 'pen-flag', 'pen-transform-0');
+                    const changes = [['A', 'x', 80], ['A', 'direction', 180], ['A', 'size', 150],
+                        ['A//N', 'x', 20]];
+                    changes.forEach(([container, property, value], index) => {
+                        const id = `pen-transform-${index}`;
+                        add(id, 'containers_setProperty', index ? `pen-transform-${index - 1}` : 'pen-down',
+                            index === changes.length - 1 ? 'pen-up' : `pen-transform-${index + 1}`,
+                            {CONTAINER: {name: 'CONTAINER', block: `${id}-container`, shadow: `${id}-container`},
+                                VALUE: {name: 'VALUE', block: `${id}-value`, shadow: `${id}-value`}},
+                            {PROPERTY: {name: 'PROPERTY', value: property}});
+                        add(`${id}-container`, 'containers_menu_containers', id, null, {},
+                            {containers: {name: 'containers', value: container}}, true);
+                        add(`${id}-value`, 'math_number', id, null, {},
+                            {NUM: {name: 'NUM', value: String(value)}}, true);
+                    });
+                    add('pen-up', 'pen_penUp', 'pen-transform-3', null);
+                    vm.setCompilerOptions({enabled: compilerEnabled});
+                    const threads = runtime.startHats('event_whenflagclicked', null, target);
+                    for (let i = 0; i < 5; i++) runtime._step();
+                    const scriptLines = lines.slice();
+                    const sample = (x, y) => renderer.extractColor((0.5 + (x / 480)) * renderer.canvas.clientWidth,
+                        (0.5 - (y / 360)) * renderer.canvas.clientHeight, 1).color;
+                    vm.setSpriteContainerTransform('A', {x: 90});
+                    const afterPenUp = lines.length;
+                    run('pen_penDown');
+                    vm.setSpriteContainerTransform('A', {x: 90});
+                    runtime.spriteContainers.sync();
+                    const [clone] = runtime.spriteContainers.createClone('A//N');
+                    const afterClone = lines.length;
+                    const instance = runtime.spriteContainers.getContainingContainer(clone).id;
+                    vm.setSpriteContainerTransform(instance, {x: 40});
+                    const afterCloneMove = lines.slice();
+                    vm.setSpriteContainerTransform('A', {x: 110});
+                    const colors = [sample(70, 30), sample(110, 0)];
+                    run('pen_penUp');
+                    renderer.draw();
+                    return {scriptLines,
+                        afterPenUp,
+                        afterClone,
+                        afterCloneMove,
+                        lines,
+                        colors,
+                        compiled: Boolean(threads[0].isCompiled),
+                        local: [target.x, target.y]};
+                } finally {
+                    renderer.penLine = originalLine;
+                    vm.stopAll();
+                    target.blocks.deleteBlock('pen-flag');
+                }
+            }, enabled);
+            assert.equal(trails.compiled, enabled);
+            near(trails.local, [20, 10]);
+            const expected = [[30, 30, 110, 30], [110, 30, 110, -30],
+                [110, -30, 125, -45], [125, -45, 125, -60]];
+            assert.equal(trails.scriptLines.length, expected.length);
+            trails.scriptLines.forEach((line, index) => near(line, expected[index]));
+            assert.equal(trails.afterPenUp, 4);
+            assert.equal(trails.afterClone, 4, 'unchanged matrices and clone initialization leave no trails');
+            assert.equal(trails.afterCloneMove.length, 5);
+            near(trails.afterCloneMove[4], [135, -60, 135, -90]);
+            assert.equal(trails.lines.length, 7);
+            near(trails.lines[5], [135, -60, 155, -60]);
+            near(trails.lines[6], [135, -90, 155, -90]);
+            for (const color of trails.colors) {
+                assert.ok(color.b > 240 && color.r < 10 && color.g < 80,
+                    `existing blue pen pixels remain on the stage: ${JSON.stringify(color)}`);
+            }
+        }
+        await page.screenshot({path: `/tmp/blockdia-container-pen${screenshotSuffix}.png`});
+        assert.deepEqual(errors, []);
+        console.log('PASS container pen trails, nested/cloned members, interpreter/compiler, pixels; PAGE_ERRORS []');
     } finally {
         await browser.close();
     }

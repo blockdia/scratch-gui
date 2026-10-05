@@ -11,7 +11,7 @@ export const TARGET_INPUTS = {
     sensing_distanceto: ['DISTANCETOMENU', ['_mouse_']],
     control_create_clone_of: ['CLONE_OPTION', ['_myself_']],
     sensing_of: ['OBJECT', ['_stage_']],
-    containers_worldProperty: ['TARGET', ['_myself_']]
+    containers_targetProperty: ['TARGET', ['_myself_', '_mouse_']]
 };
 // Execution restrictions, not palette visibility: click hats and backdrop
 // operations intentionally work in both target types in the VM.
@@ -23,7 +23,7 @@ export const scopeProblem = (block, target, input, extension) => {
     }
     if (target.isStage && ((block.opcode === 'control_create_clone_of' &&
         input(block, 'CLONE_OPTION') === '_myself_') ||
-        (block.opcode === 'containers_worldProperty' && input(block, 'TARGET') === '_myself_'))) return 'self';
+        (block.opcode === 'containers_targetProperty' && input(block, 'TARGET') === '_myself_'))) return 'self';
     return null;
 };
 export const CONTAINER_OPERATIONS = new Set([

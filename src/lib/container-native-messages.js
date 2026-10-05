@@ -19,7 +19,9 @@ const NATIVE_MESSAGES = {
     'containers.all around': 'MOTION_SETROTATIONSTYLE_ALLAROUND',
     'containers.left-right': 'MOTION_SETROTATIONSTYLE_LEFTRIGHT',
     'containers.don\'t rotate': 'MOTION_SETROTATIONSTYLE_DONTROTATE',
-    'containers.myself': 'CONTROL_CREATECLONEOF_MYSELF'
+    'containers.myself': 'CONTROL_CREATECLONEOF_MYSELF',
+    'containers.mouse': 'MOTION_GOTO_POINTER',
+    'containers.stage': 'SENSING_OF_STAGE'
 };
 
 /**

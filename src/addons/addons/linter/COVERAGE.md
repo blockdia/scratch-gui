@@ -1,8 +1,8 @@
 # Opcode audit and rule coverage
 
-The checked-in `opcode-coverage.json` inventories **351** core, compatibility,
-editor helper, extension and extension-menu opcodes from the installed Blockdia
-VM/blocks packages. The sibling source check currently has the same inventory.
+The checked-in `opcode-coverage.json` inventories **356** core, compatibility,
+editor helper, extension and extension-menu opcodes from the Blockdia
+VM/blocks source. Use the sibling source directories while changes are unpublished.
 This includes bundled but not normally registered speech recognition and example
 blocks. It does not include arbitrary downloaded extension implementations.
 

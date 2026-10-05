@@ -72,7 +72,7 @@ test.each(['pen_clear', 'looks_switchbackdroptoandwait', 'looks_switchbackdropto
 
 test.each([
     ['control_create_clone_of', 'CLONE_OPTION', 'control_create_clone_of_menu'],
-    ['containers_worldProperty', 'TARGET', 'containers_menu_sprites']
+    ['containers_targetProperty', 'TARGET', 'containers_menu_positionTargets']
 ])('%s distinguishes myself, a named sprite, a missing sprite and a dynamic selection', (opcode, key, menu) => {
     const make = value => reference(opcode, key, value, menu);
     expect(run([target('Stage', make('_myself_'))]).rows).toMatchObject([{reason: 'reason-invalid-scope-self'}]);
@@ -84,6 +84,11 @@ test.each([
     const result = run([target('Stage', dynamic)]);
     expect(result.rows).toEqual([]);
     expect(result.coverage.limitations).toContain('dynamic-reference');
+});
+
+test('container mouse queries are valid on sprites and stage', () => {
+    const blocks = reference('containers_targetProperty', 'TARGET', '_mouse_', 'containers_menu_positionTargets');
+    for (const name of ['Stage', 'Cat']) expect(run([target(name, blocks)]).rows).toEqual([]);
 });
 
 test.each(['property', 'setProperty', 'changeProperty', 'goToXY', 'setRotationStyle', 'effect', 'setEffect',

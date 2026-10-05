@@ -1,4 +1,5 @@
 import {BLOCKS_THREE} from '.';
+import {injectExtensionCategoryArtwork, injectExtensionBlockArtwork} from '../extension-artwork';
 
 const getBlockIconURI = extensionIcons => {
     if (!extensionIcons) return null;
@@ -19,14 +20,15 @@ const DEFAULT_EXTENSION_PRIMARY = '#0fbd8c';
 
 /**
  * Applies extension color theme to categories.
- * No changes are applied if called with the default theme, allowing extensions to provide their own colors.
+ * GUI-owned artwork is applied for every theme; default-theme colors remain unchanged.
  * These colors are not seen if the category provides a blockIconURI.
- * @param {Array.<object>} dynamicBlockXML - XML for each category of extension blocks, returned from getBlocksXML
+ * @param {Array.<object>} categories - XML for each category of extension blocks, returned from getBlocksXML
  * in the vm runtime.
  * @param {Theme} theme - Theme name
  * @returns {Array.<object>} Dynamic block XML updated with colors.
  */
-const injectExtensionCategoryTheme = (dynamicBlockXML, theme) => {
+const injectExtensionCategoryTheme = (categories, theme) => {
+    const dynamicBlockXML = injectExtensionCategoryArtwork(categories);
     // Minor optimization -- don't do anything at all for the default theme.
     if (theme.blocks === BLOCKS_THREE) return dynamicBlockXML;
 
@@ -89,12 +91,13 @@ const injectBlockIcons = (blockInfoJson, theme) => {
 
 /**
  * Applies extension color theme to static block json.
- * No changes are applied if called with the default theme, allowing extensions to provide their own colors.
- * @param {object} blockInfoJson - Static block json
+ * GUI-owned artwork is applied for every theme; default-theme colors remain unchanged.
+ * @param {object} block - Static block json
  * @param {Theme} theme - Theme name
  * @returns {object} Block info json with updated colors. The original blockInfoJson is not modified.
  */
-const injectExtensionBlockTheme = (blockInfoJson, theme) => {
+const injectExtensionBlockTheme = (block, theme) => {
+    const blockInfoJson = injectExtensionBlockArtwork(block);
     // Minor optimization -- don't do anything at all for the default theme.
     if (theme.blocks === BLOCKS_THREE) return blockInfoJson;
 

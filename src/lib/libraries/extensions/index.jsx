@@ -1,6 +1,9 @@
 import React from 'react';
 import {FormattedMessage} from 'react-intl';
 
+import clonesIconURL from './clones/clones.svg';
+import clonesInsetIconURL from './clones/clones-small.svg';
+
 import musicIconURL from './music/music.png';
 import musicInsetIconURL from './music/music-small.svg';
 
@@ -63,8 +66,8 @@ export default [
             id="clones.name"
         />,
         extensionId: 'clones',
-        iconURL: customExtensionIcon,
-        insetIconURL: customExtensionIcon,
+        iconURL: clonesIconURL,
+        insetIconURL: clonesInsetIconURL,
         description: (
             <FormattedMessage
                 defaultMessage="Use IDs to select individual sprites and clones."

@@ -18,6 +18,7 @@ export const parentFolder = path => splitName(path).folder;
 export const isWithin = (path, folder) => path === folder || path.startsWith(`${folder}${SEPARATOR}`);
 export const validFolderName = name => Boolean(name.trim()) && !name.includes(SEPARATOR) &&
     !name.startsWith('/') && !name.endsWith('/');
+export const hasReservedSpritePrefix = name => /^@(clone|sprite|container|container-clone):/.test(name);
 
 export const buildFolderTree = (items, nested = true) => {
     const roots = [];
@@ -92,7 +93,7 @@ export const renameEntries = (vm, kind, changes, targetId = vm.editingTarget && 
     if (!changed.length) return;
     // Reject the entire transaction before temporary names or container paths can change.
     if (kind === 'SPRITE' && changed.some(entry =>
-        /^@(clone|sprite|container|container-clone):/.test(changes.get(entry.id)))) return false;
+        hasReservedSpritePrefix(changes.get(entry.id)))) return false;
     const used = new Set(entries.filter(entry => !changed.includes(entry)).map(entry => entry.name));
     const names = changed.map(entry => unusedName(changes.get(entry.id), used, kind === 'SPRITE'));
     entries.forEach(entry => used.add(entry.name));

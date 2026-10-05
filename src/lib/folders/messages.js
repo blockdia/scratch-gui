@@ -31,7 +31,9 @@ export default defineMessages({
     root: {id: 'blockdia.folders.root', defaultMessage: 'Top level', description: 'Root folder destination'},
     name: {id: 'blockdia.folders.name', defaultMessage: 'Folder name', description: 'Folder name prompt'},
     invalid: {id: 'blockdia.folders.invalid',
-        defaultMessage: 'Name can\'t be empty, contain //, or start or end with /.',
+        defaultMessage: 'Name can\'t be empty, contain //, or start or end with /. ' +
+            'Sprite folder paths also can\'t start with the reserved prefixes ' +
+            '@clone:, @sprite:, @container:, or @container-clone:.',
         description: 'Invalid folder name'},
     exists: {id: 'blockdia.folders.exists',
         defaultMessage: 'A folder with this name already exists here.',

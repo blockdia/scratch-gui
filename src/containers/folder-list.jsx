@@ -11,8 +11,8 @@ import ContainerProperties from './container-properties.jsx';
 import {getFolderPreview} from '../components/asset-panel/folder-thumbnail.jsx';
 import DragRecognizer from '../lib/drag-recognizer';
 import {updateAssetDrag} from '../reducers/asset-drag';
-import {buildFolderTree, folderPaths, splitName, splitItemName, joinName, parentFolder, isWithin,
-    validFolderName, getEntries, renameEntries, moveFolder, setActiveFolder} from '../lib/folders';
+import {buildFolderTree, folderPaths, splitName, splitItemName, joinName, parentFolder, isWithin, validFolderName,
+    hasReservedSpritePrefix, getEntries, renameEntries, moveFolder, setActiveFolder} from '../lib/folders';
 import {dragSourceKey, planFolderDrop} from '../lib/folders/drag';
 import messages from '../lib/folders/messages';
 import styles from '../components/sprite-selector/sprite-tree.css';
@@ -221,7 +221,7 @@ class FolderList extends React.Component {
         const parent = kind === 'SPRITE' ?
             (prompt.path ? parentFolder(prompt.path) : splitName(prompt.item.fullName).folder) : '';
         const path = joinName(parent, name);
-        if (kind === 'SPRITE' && /^@(clone|sprite):/.test(path)) return this.setState({error: messages.invalid});
+        if (kind === 'SPRITE' && hasReservedSpritePrefix(path)) return this.setState({error: messages.invalid});
         if (path !== prompt.path && folderPaths(items, kind === 'SPRITE').includes(path)) {
             return this.setState({error: messages.exists});
         }

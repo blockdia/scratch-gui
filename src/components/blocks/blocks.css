@@ -74,6 +74,22 @@
     border-left: 1px solid $ui-black-transparent;
 }
 
+/* Reveal long blocks over the workspace without resizing the flyout or its
+   scrollbar. Keep the clip rectangle's height so scrolling stays clipped. */
+@media (hover: hover) {
+    .blocks :global(.blocklyFlyout:hover) {
+        overflow: visible;
+    }
+
+    .blocks :global(.blocklyFlyout:hover #blocklyBlockMenuClipRect) {
+        width: calc(100% + 100vw);
+    }
+
+    [dir="rtl"] .blocks :global(.blocklyFlyout:hover #blocklyBlockMenuClipRect) {
+        x: -100vw;
+    }
+}
+
 
 .blocks :global(.blocklyBlockDragSurface) {
     /*

@@ -2,6 +2,8 @@
 /* global vm */
 const {chromium} = require(process.env.COMPONENTS_PLAYWRIGHT_PATH || 'playwright');
 const assert = require('assert/strict');
+const invalidSuffixes = ['123', '001', ' boss', 'boss ', '   ', '\t\n',
+    '@clone:boss', '@sprite:boss', '@container:boss', '@container-clone:boss'];
 
 (async () => {
     const browser = await chromium.launch({headless: true, executablePath: process.env.COMPONENTS_CHROME_PATH});
@@ -26,7 +28,7 @@ const assert = require('assert/strict');
                 .join('\n');
         });
         assert.match(palette, /我的 ID/);
-        assert.match(palette, /刚创建的克隆 ID/);
+        assert.match(palette, /刚创建的克隆体 ID/);
         assert.doesNotMatch(palette, /并返回 ID/);
         assert.match(palette, /以 ID @clone: boss 克隆 自己/);
         assert.match(palette, /本体的 ID/);
@@ -49,10 +51,9 @@ const assert = require('assert/strict');
         let menus = await readMenus();
         assert.deepEqual(menus.creation, menus.native);
         assert.deepEqual(menus.creation.map(item => item[1]), ['_myself_']);
-        assert(!menus.originals.some(item => item[1] === '_myself_'));
+        assert.deepEqual(menus.originals, menus.native);
         const originalMenuName = await page.evaluate(() => vm.editingTarget.getName());
         const expectedOriginalId = `@sprite:${originalMenuName}`;
-        assert.deepEqual(menus.originals.map(item => item[1]), [originalMenuName]);
         const menuFixture = await page.evaluate(async () => {
             const original = vm.editingTarget.id;
             await vm.duplicateSprite(original);
@@ -61,11 +62,12 @@ const assert = require('assert/strict');
         menus = await readMenus();
         assert.deepEqual(menus.creation, menus.native);
         assert.deepEqual(menus.creation.map(item => item[1]), ['_myself_', originalMenuName]);
-        assert.deepEqual(menus.originals.map(item => item[1]), [originalMenuName, menuFixture.duplicateName]);
+        assert.deepEqual(menus.originals, menus.native);
         await page.evaluate(() => vm.setEditingTarget(vm.runtime.getTargetForStage().id));
         menus = await readMenus();
         assert.deepEqual(menus.creation, menus.native);
         assert.deepEqual(menus.creation.map(item => item[1]), [originalMenuName, menuFixture.duplicateName]);
+        assert.deepEqual(menus.originals, menus.native);
         await page.waitForFunction(() => {
             const blocks = (window.Blockly || window.ScratchBlocks).getMainWorkspace().getFlyout()
                 .getWorkspace()
@@ -87,9 +89,9 @@ const assert = require('assert/strict');
                 .getValue() === '_myself_';
         });
         await page.locator('.scratchCategoryId-clones').click();
-        console.log('PASS native clone menu parity, explicit original menu and stage default');
+        console.log('PASS native clone and original ID menu parity, including stage default');
         for (const enabled of [false, true]) {
-            const result = await page.evaluate(compiler => {
+            const result = await page.evaluate(({compiler, invalidSuffixes: suffixes}) => {
                 vm.stopAll();
                 vm.setCompilerOptions({enabled: compiler});
                 const runtime = vm.runtime;
@@ -275,16 +277,28 @@ const assert = require('assert/strict');
                 run('native-create');
                 const nativeResult = source.variables.result.value;
                 const nativeRegistered = runtime.resolveTargetReference(nativeResult) !== null;
-                add('invalid-create', 'clones_createWithId', {TARGET: 'invalid-self', ID: 'invalid-id'},
-                    {}, null, 'save-invalid');
-                text('invalid-self', '_myself_', 'invalid-create');
-                text('invalid-id', '@clone:invalid', 'invalid-create');
-                add('save-invalid', 'data_setvariableto', {VALUE: 'invalid-last'},
-                    {VARIABLE: 'result'}, 'invalid-create');
-                add('invalid-last', 'clones_lastId', {}, {}, 'save-invalid');
-                run('invalid-create');
-                const invalidResult = source.variables.result.value;
-                const invalidRegistered = runtime.resolveTargetReference(invalidResult) !== null;
+                add('empty-create', 'clones_createWithId', {TARGET: 'empty-self', ID: 'empty-id'});
+                text('empty-self', '_myself_', 'empty-create');
+                text('empty-id', '', 'empty-create');
+                run('empty-create');
+                const emptyResult = runtime.lastCloneId;
+                const emptyAutomatic = /^@clone:\d+$/.test(emptyResult) &&
+                    runtime.resolveTargetReference(emptyResult) !== null;
+                const invalidResults = suffixes.map((suffix, index) => {
+                    const id = `invalid-${index}`;
+                    add(id, 'clones_createWithId', {TARGET: `${id}-self`, ID: `${id}-suffix`},
+                        {}, null, `${id}-save`);
+                    text(`${id}-self`, '_myself_', id);
+                    text(`${id}-suffix`, suffix, id);
+                    add(`${id}-save`, 'data_setvariableto', {VALUE: `${id}-last`}, {VARIABLE: 'result'}, id);
+                    add(`${id}-last`, 'clones_lastId', {}, {}, `${id}-save`);
+                    const count = runtime._cloneCounter;
+                    const invalidCompiled = run(id);
+                    return {suffix,
+                        compiled: invalidCompiled,
+                        result: source.variables.result.value,
+                        cloneCountDelta: runtime._cloneCounter - count};
+                });
                 // Restore one clone for the UI example without losing the runtime assertions above.
                 for (const target of runtime.targets.slice()) if (!target.isOriginal) runtime.disposeTarget(target);
                 run('create');
@@ -317,8 +331,9 @@ const assert = require('assert/strict');
                     procedureResult,
                     crossTargetResult,
                     nativeAutomatic: /^@clone:\d+$/.test(nativeResult) && nativeRegistered,
-                    invalidAutomatic: /^@clone:\d+$/.test(invalidResult) && invalidRegistered};
-            }, enabled);
+                    emptyAutomatic,
+                    invalidResults};
+            }, {compiler: enabled, invalidSuffixes});
             assert.deepEqual(result, {compiled: enabled,
                 reference: '@clone:boss',
                 originalId: expectedOriginalId,
@@ -346,7 +361,9 @@ const assert = require('assert/strict');
                 procedureResult: '@clone:procedure-boss',
                 crossTargetResult: '@clone:procedure-boss',
                 nativeAutomatic: true,
-                invalidAutomatic: true});
+                emptyAutomatic: true,
+                invalidResults: invalidSuffixes.map(suffix =>
+                    ({suffix, compiled: enabled, result: '', cloneCountDelta: 0}))});
             console.log('PASS', enabled ? 'compiler' : 'interpreter',
                 'global ID, stack creation, custom procedures, native clones, invalid IDs and exact target slots');
         }
@@ -377,24 +394,24 @@ const assert = require('assert/strict');
                         <value name="VALUE"><block type="clones_lastId"/></value>
                     </block></next>
                 </block>
-                <block type="clones_lastId" id="clone-demo-last" x="330" y="210"/>
-                <block type="sensing_of" id="clone-demo-property" x="35" y="130">
+                <block type="clones_lastId" id="clone-demo-last" x="35" y="520"/>
+                <block type="sensing_of" id="clone-demo-property" x="35" y="200">
                     <field name="PROPERTY">x position</field>
                     <value name="OBJECT"><shadow type="sensing_of_object_menu">
                         <field name="OBJECT">_stage_</field></shadow>
                         <block type="data_variable"><field name="VARIABLE" id="ref">ref</field></block></value>
                 </block>
-                <block type="sensing_touchingobject" x="35" y="210">
+                <block type="sensing_touchingobject" x="35" y="280">
                     <value name="TOUCHINGOBJECTMENU"><block type="clones_targetId" id="clone-demo-original">
                         <value name="TARGET"><shadow type="clones_menu_originalTargets">
                             <field name="originalTargets">${vm.editingTarget.getName()}</field></shadow></value>
                     </block></value>
                 </block>
-                <block type="clones_isClone" id="clone-demo-is-clone" x="330" y="280"/>
-                <block type="clones_cloneId" id="clone-demo-id-string" x="330" y="340">
+                <block type="clones_isClone" id="clone-demo-is-clone" x="35" y="590"/>
+                <block type="clones_cloneId" id="clone-demo-id-string" x="35" y="660">
                     <value name="ID"><shadow type="text"><field name="TEXT">boss</field></shadow></value>
                 </block>
-                <block type="control_start_as_clone" x="35" y="290"><next>
+                <block type="control_start_as_clone" x="35" y="360"><next>
                     <block type="looks_say"><value name="MESSAGE"><block type="clones_id"/></value></block>
                 </next></block>
             </xml>`;
@@ -480,7 +497,7 @@ const assert = require('assert/strict');
         });
         await panel.getByRole('button', {name: '复制 ID', exact: true}).click();
         assert.equal(await page.evaluate(() => window.copiedCloneId), '@clone:boss');
-        await panel.locator(`small[title="${expectedOriginalId}"]`).click();
+        await panel.locator(`[data-layer-id="${menuFixture.original}"]`).click();
         await panel.getByRole('button', {name: '复制 ID', exact: true}).click();
         assert.equal(await page.evaluate(() => window.copiedCloneId), expectedOriginalId);
         await page.screenshot({path: `/tmp/blockdia-clone-references${
@@ -512,7 +529,7 @@ const assert = require('assert/strict');
         if (!await panel.isVisible()) {
             await page.getByRole('button', {name: '图层管理器', exact: true}).click();
         }
-        await panel.locator('small[title="@sprite:关卡//敌人"]').waitFor({state: 'visible'});
+        await panel.locator('[title="关卡//敌人 (@sprite:关卡//敌人)"]').waitFor({state: 'visible'});
         await panel.getByRole('button', {name: '复制 ID', exact: true}).click();
         assert.equal(await page.evaluate(() => window.copiedCloneId), '@sprite:关卡//敌人');
         await page.evaluate(async () => {

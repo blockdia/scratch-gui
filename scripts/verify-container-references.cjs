@@ -3,6 +3,8 @@
 // Run against BLOCKDIA_LOCAL_PACKAGES=1; checks both VM execution modes and the actual editor UI.
 const {chromium} = require(process.env.COMPONENTS_PLAYWRIGHT_PATH || 'playwright');
 const assert = require('assert/strict');
+const invalidSuffixes = ['123', '001', ' boss', 'boss ', '   ', '\t\n',
+    '@clone:boss', '@sprite:boss', '@container:boss', '@container-clone:boss'];
 
 (async () => {
     const browser = await chromium.launch({headless: true, executablePath: process.env.COMPONENTS_CHROME_PATH});
@@ -33,12 +35,12 @@ const assert = require('assert/strict');
             .getAllBlocks()
             .map(block => block.toString())
             .join('\n'));
-        for (const label of ['刚创建的容器克隆 ID', '父容器 ID', '本体 ID', '容器 ID @container-clone:boss 存在',
-            '以 ID @container-clone: boss 克隆', '删除容器克隆 @container-clone:boss']) {
+        for (const label of ['刚创建的容器克隆体 ID', '父容器 ID', '本体 ID', '容器 ID @container-clone:boss 存在',
+            '以 ID @container-clone: boss 克隆', '删除容器克隆体 @container-clone:boss']) {
             assert(palette.includes(label), label);
         }
         for (const enabled of [false, true]) {
-            const result = await page.evaluate(compiler => {
+            const result = await page.evaluate(({compiler, invalidSuffixes: suffixes}) => {
                 vm.stopAll();
                 vm.setCompilerOptions({enabled: compiler});
                 const runtime = vm.runtime;
@@ -140,6 +142,27 @@ const assert = require('assert/strict');
                 const exists = query('containers_exists', {ID: ref});
                 const unknown = query('containers_property', {CONTAINER: '@container-clone:missing', PROPERTY: 'x'});
                 const constructed = query('containers_cloneId', {ID: 'boss'});
+                add(stage, 'empty-create', 'containers_createWithId', {CONTAINER: 'empty-target', ID: 'empty-id'});
+                text(stage, 'empty-target', '@container:Boss//Weapon', 'empty-create');
+                text(stage, 'empty-id', '', 'empty-create');
+                run('empty-create');
+                const emptyResult = query('containers_lastId', {});
+                const emptyAutomatic = /^@container-clone:\d+$/.test(emptyResult) &&
+                    containers.resolveReference(emptyResult) !== null;
+                containers.deleteClone(containers.resolveReference(emptyResult));
+                const invalidResults = suffixes.map((suffix, index) => {
+                    const id = `invalid-${index}`;
+                    add(stage, id, 'containers_createWithId', {CONTAINER: `${id}-target`, ID: `${id}-suffix`});
+                    text(stage, `${id}-target`, '@container:Boss', id);
+                    text(stage, `${id}-suffix`, suffix, id);
+                    const count = runtime._cloneCounter;
+                    const invalidCompiled = run(id);
+                    return {suffix,
+                        compiled: invalidCompiled,
+                        result: query('containers_lastId', {}),
+                        memberResult: runtime.lastCloneId,
+                        cloneCountDelta: runtime._cloneCounter - count};
+                });
                 run('call');
                 const duplicateResult = stage.variables.ref.value;
                 const duplicateCount = runtime._cloneCounter;
@@ -165,11 +188,13 @@ const assert = require('assert/strict');
                     exists,
                     unknown,
                     constructed,
+                    emptyAutomatic,
+                    invalidResults,
                     duplicateResult,
                     duplicateCount,
                     continued,
                     deleted};
-            }, enabled);
+            }, {compiler: enabled, invalidSuffixes});
             assert.deepEqual(result, {compiled: enabled,
                 ref: '@container-clone:boss',
                 hats: {body: '@container-clone:boss',
@@ -184,6 +209,9 @@ const assert = require('assert/strict');
                 exists: true,
                 unknown: 0,
                 constructed: '@container-clone:boss',
+                emptyAutomatic: true,
+                invalidResults: invalidSuffixes.map(suffix =>
+                    ({suffix, compiled: enabled, result: '', memberResult: '', cloneCountDelta: 0})),
                 duplicateResult: '',
                 duplicateCount: 2,
                 continued: 'continued',
@@ -251,7 +279,7 @@ const assert = require('assert/strict');
         });
         await panel.getByRole('button', {name: '复制 ID', exact: true}).click();
         assert.equal(await page.evaluate(() => window.copiedContainerId), '@container-clone:boss');
-        await panel.locator('small[title="@container:Boss"]').click();
+        await panel.locator('[data-layer-id="container:Boss"]').click();
         await panel.getByRole('button', {name: '复制 ID', exact: true}).click();
         assert.equal(await page.evaluate(() => window.copiedContainerId), '@container:Boss');
         await page.screenshot({path: `/tmp/blockdia-container-references${

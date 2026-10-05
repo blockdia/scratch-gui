@@ -1,4 +1,10 @@
 {
+    "linter/limit-runtime-clone": "克隆体是否存在、ID 是否冲突、创建顺序及克隆数量限制只能在作品运行时确定。",
+    "linter/reason-invalid-clone-id-reference": "此操作需要以 {prefix} 开头的完整克隆体 ID，后缀不能为空、不能有首尾空白，也不能以另一个保留前缀开头。",
+    "linter/invalid-clone-id-reference": "克隆体引用“{name}”无效",
+    "linter/reason-invalid-clone-id-suffix": "请输入 ID 后缀：不能有首尾空白、不能只含数字，也不能以保留的 ID 前缀开头。留空可自动分配 ID。",
+    "linter/invalid-clone-id-suffix": "自定义克隆体 ID“{name}”无效",
+    "linter/rule-invalid-clone-id": "无效的克隆体 ID",
     "gamepad/config-header": "此注释包含第三方工具或网站（例如 https://editor.blockdia.com/）中的游戏手柄支持配置\n请勿手动编辑",
     "debugger/title": "调试器",
     "debugger/compiler-warning": "禁用编译器时，调试器的运行效果最佳。",
@@ -45,7 +51,7 @@
     "linter/missing-target": "角色“{name}”不存在",
     "linter/warp-wait": "自制积木“{procedure}”中有可能等待的操作",
     "linter/unused-data": "{type, select, list {列表} other {变量}}“{name}”没有被积木使用",
-    "linter/reason-missing-target": "作品中没有名为“{name}”的角色。请检查拼写，或重新选择角色。",
+    "linter/reason-missing-target": "没有角色匹配名称或公开 ID“{name}”。请检查拼写和 ID 前缀，或重新选择角色。",
     "linter/reason-warp-wait": "此自制积木设置了运行时不刷新屏幕，但该操作或调用的自制积木可能等待。",
     "linter/reason-unused-data": "没有积木使用它，也没有在舞台上显示它。删除前请确认是否还需要保留。",
     "linter/related": "关联位置（{count}）",
@@ -196,5 +202,8 @@
     "linter/reason-invalid-container-ancestry": "删除容器克隆只能由该克隆容器或其嵌套容器中的成员执行。此脚本不能删除不相关的容器实例。",
     "linter/invalid-argument-parameter-outside": "参数“{name}”位于自制积木定义之外",
     "linter/reason-invalid-argument-parameter-outside": "此参数不在任何自制积木定义内部，运行时只能读到 0。请将其放回对应定义内，或替换为变量或具体值。",
-    "linter/limit-container-metadata": "未提供容器定义，无法检查容器引用。"
+    "linter/limit-container-metadata": "未提供容器定义，无法检查容器引用。",
+    "layer-manager/copyId": "复制 ID",
+    "layer-manager/idCopied": "已复制 ID。",
+    "layer-manager/copyFailed": "无法复制 ID。"
 }

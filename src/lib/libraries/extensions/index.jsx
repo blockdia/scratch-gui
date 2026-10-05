@@ -1,6 +1,9 @@
 import React from 'react';
 import {FormattedMessage} from 'react-intl';
 
+import clonesIconURL from './clones/clones.svg';
+import clonesInsetIconURL from './clones/clones-small.svg';
+
 import musicIconURL from './music/music.png';
 import musicInsetIconURL from './music/music-small.svg';
 
@@ -380,6 +383,25 @@ export default [
         ),
         tags: ['tw'],
         incompatibleWithScratch: true,
+        featured: true
+    },
+    {
+        name: <FormattedMessage
+            defaultMessage="Clones"
+            description="Clone extension name"
+            id="clones.name"
+        />,
+        extensionId: 'clones',
+        iconURL: clonesIconURL,
+        insetIconURL: clonesInsetIconURL,
+        description: (
+            <FormattedMessage
+                defaultMessage="Use IDs to select individual sprites and clones."
+                description="Clone extension description"
+                id="clones.description"
+            />
+        ),
+        tags: ['tw'],
         featured: true
     },
     {

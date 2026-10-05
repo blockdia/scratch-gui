@@ -136,6 +136,7 @@ export default async function ({ addon, console, msg }) {
           sprite: name,
         });
         original = target.sprite.clones[0];
+        if (target.publicId) name += ` (${target.publicId})`;
       }
       return {
         exists: true,

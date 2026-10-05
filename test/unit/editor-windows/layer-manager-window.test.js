@@ -25,16 +25,17 @@ afterEach(() => {
     global.window = previousWindow;
 });
 const fixture = (withContainers = false) => {
-    const target = (id, order, extra = {}) => ({id, isOriginal: true, isStage: false, visible: true,
+    const target = (id, order, extra = {}) => ({id, publicId: `@sprite:${id}`, isOriginal: true, isStage: false, visible: true,
         isEffectivelyVisible () { return this.visible; },
         getLayerOrder: () => order, getCostumes: () => [], getName: () => id, ...extra});
-    const stage = target('stage', 0, {isStage: true});
-    const a = target('a', 1, withContainers ? {getName: () => 'A//N//Sprite'} : {});
-    const clone = target('clone', 2, {isOriginal: false});
+    const stage = target('stage', 0, {isStage: true, publicId: '_stage_'});
+    const a = target('a', 1, withContainers ? {getName: () => 'A//N//Sprite', publicId: '@sprite:A//N//Sprite'} : {});
+    const clone = target('clone', 2, {isOriginal: false, publicId: '@clone:1'});
     const runtime = new EventEmitter();
     runtime.targets = [stage, a, clone];
     runtime.spriteContainers = {getTargetContainers: member => withContainers && member === a ? [
-        {id: 'A', path: 'A', visible: true}, {id: 'A//N', path: 'A//N', visible: true}
+        {id: 'A', path: 'A', publicId: '@container:A', visible: true},
+        {id: 'A//N', path: 'A//N', publicId: '@container:A//N', visible: true}
     ] : []};
     const vm = {runtime, editingTarget: a, setEditingTarget: jest.fn()};
     const model = createLayerModel(vm);
@@ -119,5 +120,32 @@ test('Escape cancels a pending drag and a project replacement resets selection',
     renderer.act(() => { vm.runtime.emit('PROJECT_LOADED'); });
     expect(root.root.findAllByProps({className: 'sa-layer-handle'})).toHaveLength(0);
     expect(root.root.findByProps({className: 'sa-layer-select'}).props['aria-pressed']).toBe(true);
+    renderer.act(() => root.unmount());
+});
+
+test('original IDs stay in tooltips while sprite and container clones keep inline labels', () => {
+    const {root, vm} = fixture(true);
+    const originalMembership = vm.runtime.spriteContainers.getTargetContainers;
+    vm.runtime.spriteContainers.getTargetContainers = target => target.isOriginal ? originalMembership(target) : [
+        {id: 'instance', path: 'A', publicId: '@container-clone:boss', isClone: true, visible: true}
+    ];
+    renderer.act(() => { jest.advanceTimersByTime(100); });
+    const item = id => root.root.findByProps({'data-layer-id': id});
+    const labels = id => item(id).findByProps({className: 'sa-layer-label'}).findAllByType('small')
+        .map(label => label.children.join(''));
+    for (const [id, fullName, publicId] of [
+        ['a', 'A//N//Sprite', '@sprite:A//N//Sprite'],
+        ['stage', 'stage', '_stage_'],
+        ['container:A//N', 'A//N', '@container:A//N']
+    ]) {
+        expect(item(id).findByProps({className: 'sa-layer-name'}).props.title).toBe(`${fullName} (${publicId})`);
+        expect(labels(id).join(' ')).not.toContain(publicId);
+        renderer.act(() => item(id).findByProps({className: 'sa-layer-select'}).props.onClick());
+        expect(root.root.findByProps({className: 'sa-layer-actions'}).findAllByType('button')
+            .some(button => button.children.join('') === englishAddonMessages['addons.layer-manager.copyId']))
+            .toBe(true);
+    }
+    expect(labels('clone')).toContain('Clone #1');
+    expect(labels('container:instance')).toContain('Clone #boss');
     renderer.act(() => root.unmount());
 });

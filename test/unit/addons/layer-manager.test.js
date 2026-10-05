@@ -21,10 +21,10 @@ const fixture = () => {
         currentCostume: 0, getName: () => id, getCostumes: () => [],
         isEffectivelyVisible () { return this.visible; }, ...extra
     });
-    const stage = make('stage', 0, {isStage: true});
-    const a = make('a', 1);
+    const stage = make('stage', 0, {isStage: true, publicId: '_stage_'});
+    const a = make('a', 1, {publicId: '@sprite:a'});
     const b = make('b', 2);
-    const c = make('c', 4, {isOriginal: false, visible: false});
+    const c = make('c', 4, {isOriginal: false, publicId: '@clone:1', visible: false});
     runtime.targets = [stage, a, b, c];
     runtime.executableTargets = [a, b, c];
     return {runtime, renderer, editingTarget: a, a, b, c, stage};
@@ -37,10 +37,12 @@ test('layer rows use runtime instance membership and effective visibility', () =
     vm.a.getName = () => 'A//one';
     vm.a.isEffectivelyVisible = () => false;
     vm.runtime.spriteContainers.getTargetContainers = target => target === vm.a ? [
-        {id: 'instance', path: 'A', visible: false, isClone: true}
+        {id: 'instance', publicId: '@container-clone:boss', path: 'A', visible: false, isClone: true}
     ] : [];
     const rows = createLayerModel(vm).snapshot().rows;
-    expect(rows.find(row => row.id === 'container:instance')).toMatchObject({isContainerClone: true});
+    expect(rows.find(row => row.id === 'container:instance')).toMatchObject({
+        isContainerClone: true, publicId: '@container-clone:boss', clone: 'boss'
+    });
     expect(rows.find(row => row.id === 'a')).toMatchObject({
         parent: 'container:instance', visible: false, hiddenByContainer: true
     });
@@ -86,25 +88,27 @@ test('snapshots include hidden clones and keep clone numbers stable across order
     const initial = model.snapshot();
     expect(model.snapshot()).toBe(initial);
     expect(initial.rows.map(r => r.id)).toEqual(['c', 'b', 'a', 'stage']);
-    expect(initial.rows[0]).toMatchObject({clone: 1, visible: false});
+    expect(initial.rows[0]).toMatchObject({clone: '1', publicId: '@clone:1', visible: false});
+    expect(initial.rows.find(row => row.id === 'a')).toMatchObject({clone: null, publicId: '@sprite:a'});
+    expect(initial.rows.find(row => row.id === 'stage').publicId).toBe('_stage_');
     moveLayer(vm, 'c', 'a');
-    expect(model.snapshot().rows.find(r => r.id === 'c').clone).toBe(1);
+    expect(model.snapshot().rows.find(r => r.id === 'c').clone).toBe('1');
     vm.runtime.targets = [vm.stage, vm.a, vm.b];
     expect(model.snapshot().rows).toHaveLength(3);
     expect(moveLayer(vm, 'c', null)).toBe(false);
     vm.runtime.targets = fixture().runtime.targets;
     expect(model.snapshot().generation).toBe(initial.generation + 1);
-    expect(model.snapshot().rows[0].clone).toBe(1);
+    expect(model.snapshot().rows[0].clone).toBe('1');
 });
 
 test('clone numbers follow creation order even when the first snapshot sorts them in reverse', () => {
     const vm = fixture();
     const newest = Object.assign(Object.create(Object.getPrototypeOf(vm.c)), vm.c, {
-        id: 'new-clone', drawableID: 5
+        id: 'new-clone', drawableID: 5, publicId: '@clone:2'
     });
     vm.runtime.targets.push(newest);
     vm.renderer._drawList.push(5);
     const rows = createLayerModel(vm).snapshot().rows;
-    expect(rows[0]).toMatchObject({id: 'new-clone', clone: 2});
-    expect(rows[1]).toMatchObject({id: 'c', clone: 1});
+    expect(rows[0]).toMatchObject({id: 'new-clone', clone: '2'});
+    expect(rows[1]).toMatchObject({id: 'c', clone: '1'});
 });

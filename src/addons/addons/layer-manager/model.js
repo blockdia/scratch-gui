@@ -21,6 +21,7 @@ const readLayerRows = vm => {
                 const node = {id: containerLayerId(id),
                     container: id,
                     fullName: path,
+                    publicId: entry.publicId,
                     name: parent && path.startsWith(`${parent.fullName}//`) ?
                         path.slice(parent.fullName.length + 2) : path,
                     isContainerClone: Boolean(entry.isClone),
@@ -75,47 +76,34 @@ export const visibleLayerRows = (rows, collapsed) => {
     });
 };
 
-// Keep clone identities and thumbnail caching outside the window's mount lifetime.
+// Sprite and container identities come from the VM; thumbnails survive window mounts.
 export const createLayerModel = vm => {
     let stage;
     let previous;
     let generation = 0;
-    let nextClone = 1;
-    let clones = new WeakMap();
-    let containerClones = new Map();
     const thumbnails = new WeakMap();
     const snapshot = () => {
         const currentStage = vm.runtime.targets.find(target => target.isStage);
         if (stage !== currentStage) {
             stage = currentStage;
             generation++;
-            nextClone = 1;
-            clones = new WeakMap();
-            containerClones = new Map();
         }
         const targets = new Map(vm.runtime.targets.map(target => [target.id, target]));
-        // Allocate labels in creation order, independently of tree/render ordering.
-        for (const target of targets.values()) {
-            if (!target.isOriginal && !clones.has(target) && target.getLayerOrder() !== null &&
-                target.getLayerOrder() >= 0) clones.set(target, nextClone++);
-        }
         const rows = readLayerRows(vm).map(row => {
             if (row.container) {
-                if (row.isContainerClone && !containerClones.has(row.id)) containerClones.set(row.id, nextClone++);
-                return {...row, clone: containerClones.get(row.id) || null, thumbnail: null};
+                return {...row,
+                    clone: row.isContainerClone ? row.publicId.slice('@container-clone:'.length) : null,
+                    thumbnail: null};
             }
             const target = targets.get(row.id);
             const costume = target.getCostumes()[target.currentCostume];
             const asset = costume && costume.asset;
             if (asset && !thumbnails.has(asset)) thumbnails.set(asset, getCostumeUrl(asset));
             return {...row,
-                clone: target.isOriginal ? null : clones.get(target),
+                clone: target.isOriginal ? null : target.publicId.slice('@clone:'.length),
+                publicId: target.publicId || '',
                 thumbnail: asset ? thumbnails.get(asset) : null};
         });
-        const liveContainers = new Set(rows.filter(row => row.isContainerClone).map(row => row.id));
-        for (const id of containerClones.keys()) {
-            if (!liveContainers.has(id)) containerClones.delete(id);
-        }
         const editing = vm.editingTarget && vm.editingTarget.id;
         if (previous && previous.generation === generation && previous.editing === editing &&
             previous.rows.length === rows.length && rows.every((row, index) =>

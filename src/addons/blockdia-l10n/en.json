@@ -1,4 +1,10 @@
 {
+    "linter/limit-runtime-clone": "Clone existence, ID collisions, creation order and clone limits can only be checked while the project runs.",
+    "linter/reason-invalid-clone-id-reference": "This operation requires a complete clone ID beginning with {prefix}, followed by a nonempty suffix without leading or trailing whitespace or another reserved prefix.",
+    "linter/invalid-clone-id-reference": "Invalid clone reference “{name}”",
+    "linter/reason-invalid-clone-id-suffix": "The ID suffix must not have leading or trailing whitespace, consist only of digits, or begin with a reserved ID prefix. Leave it empty to assign an automatic ID.",
+    "linter/invalid-clone-id-suffix": "Invalid custom clone ID “{name}”",
+    "linter/rule-invalid-clone-id": "Invalid clone IDs",
     "gamepad/config-header": "This comment contains configuration for gamepad support in third-party tools or websites such as https://editor.blockdia.com/\nDo not edit by hand",
     "debugger/title": "Debugger",
     "debugger/compiler-warning": "The debugger works best when the compiler is disabled.",
@@ -45,7 +51,7 @@
     "linter/missing-target": "Sprite \"{name}\" does not exist",
     "linter/warp-wait": "Custom block \"{procedure}\" contains an operation that may wait",
     "linter/unused-data": "{type, select, list {List} other {Variable}} \"{name}\" is not used by any blocks",
-    "linter/reason-missing-target": "There is no sprite named \"{name}\" in this project. Check the spelling or select a sprite again.",
+    "linter/reason-missing-target": "No sprite matches the name or public ID “{name}”. Check the spelling and ID prefix, or select a sprite again.",
     "linter/reason-warp-wait": "This custom block runs without screen refresh, but this operation or a called custom block may wait.",
     "linter/reason-unused-data": "No blocks use this item, and it is not displayed on the stage. Check whether you want to keep it before deleting it.",
     "linter/related": "Related locations ({count})",
@@ -196,5 +202,8 @@
     "linter/reason-invalid-container-ancestry": "Deleting a container clone only works from a member of that cloned container or a nested container. This script cannot delete an unrelated container instance.",
     "linter/invalid-argument-parameter-outside": "Parameter \"{name}\" is outside a custom block",
     "linter/reason-invalid-argument-parameter-outside": "This parameter has no enclosing custom block definition. The VM returns 0 here. Use it inside its definition, or replace it with a variable or value.",
-    "linter/limit-container-metadata": "Container definitions were not provided, so container references could not be checked."
+    "linter/limit-container-metadata": "Container definitions were not provided, so container references could not be checked.",
+    "layer-manager/copyId": "Copy ID",
+    "layer-manager/idCopied": "ID copied.",
+    "layer-manager/copyFailed": "Could not copy the ID."
 }

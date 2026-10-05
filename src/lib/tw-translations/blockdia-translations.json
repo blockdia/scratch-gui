@@ -202,9 +202,9 @@
         "containers.parentId": "容器 [CONTAINER] 的父容器 ID",
         "containers.cloneId": "@container-clone: [ID]",
         "containers.exists": "容器 ID [ID] 存在？",
-        "containers.lastId": "刚创建的容器克隆 ID",
+        "containers.lastId": "刚创建的容器克隆体 ID",
         "containers.createWithId": "以 ID @container-clone: [ID] 克隆 [CONTAINER]",
-        "containers.deleteById": "删除容器克隆 [ID]",
+        "containers.deleteById": "删除容器克隆体 [ID]",
         "containers.createClone": "克隆 [CONTAINER]",
         "containers.deleteClone": "删除我所在的 [CONTAINER] 容器克隆体",
         "containers.innermostContainer": "最内层",
@@ -222,7 +222,7 @@
         "clones.isClone": "我是克隆体？",
         "clones.exists": "ID [ID] 存在？",
         "clones.createWithId": "以 ID @clone: [ID] 克隆 [TARGET]",
-        "clones.lastId": "刚创建的克隆 ID",
+        "clones.lastId": "刚创建的克隆体 ID",
         "clones.delete": "删除克隆体 [ID]"
     },
     "zh-tw": {

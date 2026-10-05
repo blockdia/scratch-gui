@@ -10,8 +10,45 @@ export const TARGET_INPUTS = {
     sensing_touchingobject: ['TOUCHINGOBJECTMENU', ['_mouse_', '_edge_']],
     sensing_distanceto: ['DISTANCETOMENU', ['_mouse_']],
     control_create_clone_of: ['CLONE_OPTION', ['_myself_']],
+    clones_createWithId: ['TARGET', ['_myself_']],
+    clones_targetId: ['TARGET', ['_myself_', '_stage_']],
     sensing_of: ['OBJECT', ['_stage_']],
     containers_targetProperty: ['TARGET', ['_myself_', '_mouse_']]
+};
+const reservedReference = value => /^@(sprite|clone|container|container-clone):/.test(value);
+// Clone instances are deliberately not read from the live VM: they can appear or
+// disappear after a scan, and all instances share their original's scripts.
+export const cloneReference = (value, prefix) => value.startsWith(prefix) &&
+    value.length > prefix.length && value.trim() === value &&
+    !reservedReference(value.slice(prefix.length)) && value.slice(prefix.length).trim() === value.slice(prefix.length);
+export const staticTarget = (value, targets) => {
+    if (value === UNKNOWN) return UNKNOWN;
+    const name = Cast.toString(value);
+    if (cloneReference(name, '@clone:')) return UNKNOWN;
+    if (name.startsWith('@sprite:')) {
+        return targets.find(target => !target.isStage && target.getName() === name.slice('@sprite:'.length)) || null;
+    }
+    if (reservedReference(name)) return null;
+    return targets.find(target => !target.isStage && target.getName() === name) || null;
+};
+export const cloneIdProblem = (block, input, limit) => {
+    const create = ['clones_createWithId', 'containers_createWithId'].includes(block.opcode);
+    const remove = ['clones_delete', 'containers_deleteById'].includes(block.opcode);
+    if (!create && !remove) return null;
+    const value = input(block, 'ID');
+    if (value === UNKNOWN) {
+        limit('dynamic-reference');
+        return null;
+    }
+    const name = Cast.toString(value);
+    if (create) {
+        if (name.trim() !== name || /^\d+$/.test(name) || reservedReference(name)) return {name, detail: 'suffix'};
+    } else {
+        const prefix = block.opcode === 'clones_delete' ? '@clone:' : '@container-clone:';
+        if (!cloneReference(name, prefix)) return {name, detail: 'reference', prefix};
+    }
+    limit('runtime-clone');
+    return null;
 };
 // Execution restrictions, not palette visibility: click hats and backdrop
 // operations intentionally work in both target types in the VM.
@@ -21,7 +58,8 @@ export const scopeProblem = (block, target, input, extension) => {
     if (allowed && !allowed.includes(target.isStage ? 'stage' : 'sprite')) {
         return allowed.includes('sprite') ? 'sprite' : 'stage';
     }
-    if (target.isStage && ((block.opcode === 'control_create_clone_of' &&
+    if (target.isStage && ((block.opcode === 'clones_createWithId' && input(block, 'TARGET') === '_myself_') ||
+        (block.opcode === 'control_create_clone_of' &&
         input(block, 'CLONE_OPTION') === '_myself_') ||
         (block.opcode === 'containers_targetProperty' && input(block, 'TARGET') === '_myself_'))) return 'self';
     return null;
@@ -30,7 +68,8 @@ export const CONTAINER_OPERATIONS = new Set([
     'containers_property', 'containers_setProperty', 'containers_changeProperty', 'containers_goToXY',
     'containers_setRotationStyle', 'containers_effect', 'containers_setEffect', 'containers_changeEffect',
     'containers_clearEffects', 'containers_show', 'containers_hide', 'containers_isVisible',
-    'containers_goToLayer', 'containers_moveLayers', 'containers_createClone', 'containers_deleteClone'
+    'containers_goToLayer', 'containers_moveLayers', 'containers_createClone', 'containers_deleteClone',
+    'containers_createWithId', 'containers_id', 'containers_originalId', 'containers_parentId'
 ]);
 // Match SpriteContainers.getTargetContainers for original targets. Clone instances
 // reuse these scripts and may have cloned ancestors; never reject an original
@@ -49,14 +88,23 @@ export const containerProblem = (block, target, paths, input, limit) => {
         limit('dynamic-reference');
         return null;
     }
-    const name = Cast.toString(value);
-    if (name === '_mycontainer_' && target.isStage) return {detail: 'self', name};
+    let name = Cast.toString(value);
+    const self = name === '_mycontainer_';
+    // The legacy ancestry-only deletion block accepts paths, not public IDs.
+    if (block.opcode === 'containers_deleteClone' && reservedReference(name)) return {detail: 'ancestry', name};
+    if (cloneReference(name, '@container-clone:')) {
+        limit('runtime-clone');
+        return null;
+    }
+    if (name.startsWith('@container:')) name = name.slice('@container:'.length);
+    else if (reservedReference(name)) return {detail: 'missing', name};
+    if (self && target.isStage) return {detail: 'self', name};
     if (!paths) {
         limit('container-metadata');
         return null;
     }
     const membership = containingPaths(target, paths);
-    if (name === '_mycontainer_') return membership.length ? null : {detail: 'self', name};
+    if (self) return membership.length ? null : {detail: 'self', name};
     if (!paths.has(name)) return {detail: 'missing', name};
     if (block.opcode === 'containers_deleteClone' && !membership.includes(name)) {
         return {detail: 'ancestry', name};
@@ -126,7 +174,7 @@ export const propertyExists = (target, property) => {
     return builtins.includes(property) || Object.values(target.variables || {})
         .some(variable => variable.type === '' && variable.name === property);
 };
-export const componentProblem = (block, target, targets, input) => {
+export const componentProblem = (block, target, targets, input, limit = () => {}) => {
     const descriptor = own(opcodeCoverage, block.opcode);
     if (descriptor && descriptor.componentTypes) {
         return target.isStage || !target.component || Boolean(target.componentError) ||
@@ -136,8 +184,11 @@ export const componentProblem = (block, target, targets, input) => {
     const boolean = ['components_targetIsChecked', 'components_setTargetChecked'];
     if (!numeric.includes(block.opcode) && !boolean.includes(block.opcode)) return false;
     const name = input(block, 'TARGET');
-    if (name === UNKNOWN) return false;
-    const owner = name === '_myself_' ? target : targets.find(item => !item.isStage && item.getName() === String(name));
+    const owner = name === '_myself_' ? target : staticTarget(name, targets);
+    if (owner === UNKNOWN) {
+        limit(name === UNKNOWN ? 'dynamic-reference' : 'runtime-clone');
+        return false;
+    }
     if (!owner || !owner.component || owner.componentError) return true;
     const property = boolean.includes(block.opcode) ? 'checked' : input(block, 'PROPERTY');
     if (property === UNKNOWN) return false;

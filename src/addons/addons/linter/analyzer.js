@@ -3,7 +3,8 @@ import {DEFAULT_RULES, RULES, RULE_BY_ID} from './rules';
 import {fieldValue, UNKNOWN, own} from './constants';
 import {indexTarget, walk, procedureCode, broadcastName, normalizedBroadcast} from './project-index';
 import {TARGET_INPUTS, blockLocation, arrayMutation, resourceReference, resolveResource, resources,
-    propertyExists, componentProblem, scopeProblem, containerProblem, stops, KNOWN_ADDON_BLOCKS} from './semantics';
+    propertyExists, componentProblem, scopeProblem, containerProblem, staticTarget, cloneIdProblem,
+    stops, KNOWN_ADDON_BLOCKS} from './semantics';
 import opcodeCoverage from './opcode-coverage.json';
 
 export {RULES, DEFAULT_RULES} from './rules';
@@ -42,7 +43,6 @@ export const analyzeProject = function* (targets, monitors = [], enabled = DEFAU
     const limitations = new Set();
     const unknownOpcodes = new Set();
     const stage = targets.find(target => target.isStage);
-    const names = new Set(targets.filter(target => !target.isStage).map(target => target.getName()));
     const containerPaths = Array.isArray(context.containers) ?
         new Set(context.containers.map(container => container.path)) : null;
     const used = new Set();
@@ -61,7 +61,8 @@ export const analyzeProject = function* (targets, monitors = [], enabled = DEFAU
         'invalid-graph-orphan', 'invalid-graph-shadow', 'invalid-graph-parent',
         'invalid-procedure-defaults', 'invalid-procedure-addon', 'invalid-argument-parameter-outside',
         'invalid-scope-sprite', 'invalid-scope-stage', 'invalid-scope-self',
-        'invalid-container-self', 'invalid-container-missing', 'invalid-container-ancestry'
+        'invalid-container-self', 'invalid-container-missing', 'invalid-container-ancestry',
+        'invalid-clone-id-suffix', 'invalid-clone-id-reference'
     ]);
     const add = (rule, target, location, values = {}, detail = '', related = [], diagnostic = {}) => {
         if (!rules.has(rule)) return;
@@ -180,10 +181,21 @@ export const analyzeProject = function* (targets, monitors = [], enabled = DEFAU
             if (reference) {
                 const value = index.input(block, reference[0]);
                 if (value === UNKNOWN) limitations.add('dynamic-reference');
-                else if (!reference[1].includes(String(value)) && !names.has(String(value))) {
-                    add('missing-target', target, location, {name: String(value)});
+                else if (!reference[1].includes(String(value))) {
+                    const resolved = staticTarget(value, targets);
+                    if (resolved === UNKNOWN) limitations.add('runtime-clone');
+                    else if (!resolved) {
+                        add('missing-target', target, location, {name: String(value)});
+                    }
                 }
             }
+            const cloneProblem = cloneIdProblem(block, index.input, limitation => limitations.add(limitation));
+            if (cloneProblem) {
+                add('invalid-clone-id', target, location,
+                    {name: cloneProblem.name, prefix: cloneProblem.prefix || ''}, cloneProblem.detail);
+            }
+            if (['clones_id', 'clones_isClone', 'clones_lastId', 'clones_exists',
+                'containers_lastId', 'containers_exists'].includes(op)) limitations.add('runtime-clone');
             const resource = resourceReference(block, target, stage, index.input);
             if (resource && resource.owner) {
                 const resolved = resolveResource(resource);
@@ -220,9 +232,9 @@ export const analyzeProject = function* (targets, monitors = [], enabled = DEFAU
             if (op === 'sensing_of') {
                 const object = index.input(block, 'OBJECT');
                 const property = fieldValue(block, 'PROPERTY');
-                const candidates = targets.filter(candidate => object === UNKNOWN ||
-                    (String(object) === '_stage_' ? candidate.isStage :
-                        !candidate.isStage && candidate.getName() === String(object)));
+                const resolved = object === '_stage_' ? stage : staticTarget(object, targets);
+                const candidates = resolved === UNKNOWN ? targets.filter(candidate =>
+                    object === UNKNOWN || !candidate.isStage) : resolved ? [resolved] : [];
                 for (const candidate of candidates) {
                     for (const variable of Object.values(candidate.variables || {})) {
                         if (variable.type === '' && (typeof property === 'undefined' || variable.name === property)) {
@@ -231,12 +243,15 @@ export const analyzeProject = function* (targets, monitors = [], enabled = DEFAU
                         yield;
                     }
                 }
-                if (typeof property !== 'undefined' && candidates.length &&
+                if ((resolved !== UNKNOWN || object === UNKNOWN) &&
+                    typeof property !== 'undefined' && candidates.length &&
                     candidates.every(candidate => !propertyExists(candidate, property))) {
                     add('invalid-property', target, location, {name: String(property)});
                 }
             }
-            if (componentProblem(block, target, targets, index.input)) add('invalid-component', target, location);
+            if (componentProblem(block, target, targets, index.input, limitation => limitations.add(limitation))) {
+                add('invalid-component', target, location);
+            }
             if (['event_broadcast', 'event_broadcastandwait', 'event_whenbroadcastreceived'].includes(op)) {
                 const name = normalizedBroadcast(broadcastName(index, block));
                 if (name === UNKNOWN) {
@@ -329,7 +344,8 @@ export const analyzeProject = function* (targets, monitors = [], enabled = DEFAU
                         for (const nested of walk(index.blocks, start)) {
                             yield;
                             if (['procedures_return', 'procedures_call', 'control_stop',
-                                'control_delete_this_clone', 'containers_deleteClone'].includes(nested.opcode) ||
+                                'control_delete_this_clone', 'containers_deleteClone',
+                                'clones_delete', 'containers_deleteById'].includes(nested.opcode) ||
                                 !Object.prototype.hasOwnProperty.call(opcodeCoverage, nested.opcode) ||
                                 (own(context.extensions, nested.opcode))) endless = false;
                         }

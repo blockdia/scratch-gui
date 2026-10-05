@@ -49,6 +49,8 @@ const cases = [
         target([block('b', 'motion_movesteps')])],
     ['invalid-container', target(reference('containers_hide', 'CONTAINER', '_mycontainer_'), {isStage: true}),
         target([block('b', 'looks_hide')])],
+    ['invalid-clone-id', target(reference('clones_createWithId', 'ID', '123')),
+        target(reference('clones_createWithId', 'ID', 'boss'))],
     ['warp-wait', target([...procedure('p', 'wait', {warp: 'true'}), block('wait', 'translate_getTranslate')]),
         target([...procedure('p', 'move', {warp: 'true'}), block('move', 'motion_movesteps')])],
     ['unused-data', target([], {variables: {v: {id: 'v', name: 'v', type: ''}}}),

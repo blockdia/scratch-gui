@@ -66,7 +66,7 @@ it explicitly with `npx eslint --no-ignore src/addons/addons/linter/*.{js,jsx}`.
 
 ## Expanded rule registry
 
-`rules.js` is the source of truth for the 21 rule switches, categories, severities
+`rules.js` is the source of truth for the 22 rule switches, categories, severities
 and defaults. Existing IDs are unchanged. Reference/structure checks are warnings
 and default on. New control-flow and cleanup suggestions default off; the existing
 unused-data suggestion stays on. The addon itself remains opt-in.
@@ -98,11 +98,21 @@ Extension `filter` and `componentTypes` declarations are statically inventoried;
 the analyzer consumes them, and the inventory check rejects declaration drift.
 
 Container references use project definitions, not folder names alone. Relative
-selections require membership, and deleting a container clone requires its path
-to be an ancestor of the executing sprite. Original sprites are not rejected
+selections require membership, and the ancestry-only container deletion block
+requires its path to be an ancestor of the executing sprite. The separate
+delete-by-ID block can address any runtime container clone. Original sprites are not rejected
 just because a clone does not currently exist: clones reuse their scripts.
 Container definition changes invalidate the live results; animation, effects,
 visibility and runtime clone instances do not restart analysis.
+
+Public original references (`@sprite:` and `@container:`) are resolved against
+the project, including property and component checks. The clone-ID rule validates
+custom creation suffixes and full deletion references; an empty creation suffix
+requests an automatic ID. ID string constructors are evaluated without executing
+blocks. Runtime clone existence, identity and collisions are reported as unknown,
+so an existence predicate or a reference to a future clone is not a missing-target
+warning. Property reads through clone IDs conservatively retain possible variable
+uses without guessing their owner.
 
 Component events reject load failures as well as incompatible types. Custom
 block parameters outside definitions are reported, while prototype parameter

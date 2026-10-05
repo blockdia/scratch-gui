@@ -10,7 +10,7 @@ const literals = new Set(['text', 'math_number', 'math_integer', 'math_whole_num
     'looks_costume', 'looks_backdrops', 'sound_sounds_menu', 'event_broadcast_menu',
     'components_menu_numericTargets', 'components_menu_toggleTargets', 'components_menu_numericProperties',
     'containers_menu_containers', 'containers_menu_ancestorContainers', 'containers_menu_positionTargets',
-    'containers_menu_coordinateSpaces']);
+    'containers_menu_coordinateSpaces', 'clones_menu_targets', 'clones_menu_originalTargets']);
 const math = {
     'abs': Math.abs,
     'floor': Math.floor,
@@ -28,6 +28,8 @@ const math = {
     '10 ^': n => Math.pow(10, n)
 };
 const pure = {
+    clones_cloneId: ['ID', id => `@clone:${Cast.toString(id)}`],
+    containers_cloneId: ['ID', id => `@container-clone:${Cast.toString(id)}`],
     operator_add: ['NUM1', 'NUM2', (a, b) => Cast.toNumber(a) + Cast.toNumber(b)],
     operator_subtract: ['NUM1', 'NUM2', (a, b) => Cast.toNumber(a) - Cast.toNumber(b)],
     operator_multiply: ['NUM1', 'NUM2', (a, b) => Cast.toNumber(a) * Cast.toNumber(b)],

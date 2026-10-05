@@ -59,12 +59,21 @@ positive case and a legal counterexample for new diagnostics.
   exits, and non-finite arithmetic. Scratch coercions, comparisons and mathematical
   behavior are tested against real VM helpers. General loop termination, races,
   runtime list bounds and mutable-variable propagation are deliberately excluded.
-- Public clone IDs: sprite/container ID reporters, string constructors, creation,
-  deletion and target menus are classified and receive structural checks. These
-  operations do not wait or directly access project variables/lists. The inventory
-  does not claim reference, custom-ID, clone-limit or runtime-existence diagnostics
-  for these new blocks; ID constructors are not constant-folded. Existing target
-  and container diagnostics still use names/paths and do not resolve public IDs.
+- Public clone IDs: target, property and component checks resolve `@sprite:` IDs;
+  container checks resolve `@container:` IDs and validate containing-container
+  membership. Clone creation checks sources and disallows stage self-cloning.
+  The `invalid-clone-id` rule checks creation suffixes and deletion ID namespaces,
+  including whitespace, numeric-only custom IDs and reserved prefixes. Empty
+  creation suffixes remain valid automatic allocation requests. ID constructors
+  are constant-folded without invoking the VM, then checked by their consumers.
+  Property reads through public IDs count toward variable use, and clone deletion
+  is a possible exit when checking loops. The legacy ancestry-only deletion block
+  still accepts paths rather than public IDs. `clone-references.test.js` covers
+  legal/invalid cases, rule disabling, stable locations, side-effect freedom and
+  comparisons with VM ID allocation and string-construction behavior.
+  Live clone existence, ownership, ID collisions, creation order and clone limits
+  remain runtime limitations; scans never assume that an absent live clone cannot
+  be created later. Existence predicates may intentionally query missing IDs.
 
 ## Meaning of coverage
 

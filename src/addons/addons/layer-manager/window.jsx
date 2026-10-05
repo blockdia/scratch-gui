@@ -368,11 +368,11 @@ export default function createLayerWindow (vm, model) {
                             <span className="sa-layer-label">
                                 <span
                                     className="sa-layer-name"
-                                    title={row.fullName}
+                                    title={row.publicId ? `${row.fullName} (${row.publicId})` : row.fullName}
                                 >{row.stage ? message('stage') : row.name}</span>
                                 {row.clone ? <small title={row.publicId}>
                                     {message('clone', {number: row.clone})}
-                                </small> : row.publicId ? <small title={row.publicId}>{row.publicId}</small> : null}
+                                </small> : null}
                                 {row.container ? <small>{message('container', {count: row.count})}</small> : null}
                             </span>
                             {!row.stage && !row.visible ?

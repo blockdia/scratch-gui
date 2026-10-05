@@ -1,6 +1,6 @@
 # Opcode audit and rule coverage
 
-The checked-in `opcode-coverage.json` inventories **356** core, compatibility,
+The checked-in `opcode-coverage.json` inventories **374** core, compatibility,
 editor helper, extension and extension-menu opcodes from the Blockdia
 VM/blocks source. Use the sibling source directories while changes are unpublished.
 This includes bundled but not normally registered speech recognition and example
@@ -59,10 +59,16 @@ positive case and a legal counterexample for new diagnostics.
   exits, and non-finite arithmetic. Scratch coercions, comparisons and mathematical
   behavior are tested against real VM helpers. General loop termination, races,
   runtime list bounds and mutable-variable propagation are deliberately excluded.
+- Public clone IDs: sprite/container ID reporters, string constructors, creation,
+  deletion and target menus are classified and receive structural checks. These
+  operations do not wait or directly access project variables/lists. The inventory
+  does not claim reference, custom-ID, clone-limit or runtime-existence diagnostics
+  for these new blocks; ID constructors are not constant-folded. Existing target
+  and container diagnostics still use names/paths and do not resolve public IDs.
 
 ## Meaning of coverage
 
-Inventory classification is 351/351, **not a promise to find every bug** and not a
+Inventory classification is 374/374, **not a promise to find every bug** and not a
 code-coverage percentage. Unknown blocks, dynamic references, addon callbacks and
 expression budgets are reported separately. Unknown callbacks qualify cleanup
 suggestions which they could invalidate. Pure-expression evaluation is bounded by

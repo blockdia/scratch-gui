@@ -41,6 +41,53 @@ translation loader. Existing DOM content created with `msg()` retains its startu
 text unless the addon explicitly refreshes it. React window components belong in
 their own addon directory (for example `addons/debugger/window.jsx`).
 
+## Debugger defaults
+
+The debugger is enabled by default, with its window initially closed. Project diagnostics mark the toolbar button
+as unread without opening the window. Explicitly saved addon enable/disable preferences take precedence.
+`show_blocks` defaults to false and requires reloading the editor when changed. It hides the four debugger blocks
+from the palette while retaining their VM registration, existing project blocks and execution behavior.
+The addon API's `addBlock(..., {hidden: true})` forwards the VM's existing palette visibility option.
+Disabling the debugger requires reloading the page; it has no dynamic teardown/reload support. Its VM subscription
+and settings listener share the page lifetime and remain active while the debugger window is hidden or closed.
+
+Native clones, clones with IDs and whole-container clones share the existing `log_failed_clone_creation` switch
+and clone-limit wording. The switch immediately controls the log view, unread indicators and exports; other
+diagnostics such as invalid IDs remain visible. VM history is independent of this display preference.
+All limits reuse the upstream localized message. During webpack builds, `scripts/loaders/addon-translations.js`
+replaces the literal `300` in `debugger/log-msg-clone-cap` with `{limit}`, for both English and lazy locale chunks.
+Upstream JSON files stay unchanged; the debugger simply supplies `sprite` and `limit` to the formatter.
+The build fails if this message contains neither `{limit}` nor exactly one literal `300`, preventing silent drift
+when upstream wording changes. Locale files missing the message keep the normal English fallback.
+
+The shared VM cache retains the latest 1000 records, down from the old debugger's 200000. Consecutive identical
+messages share one record with a repeat count. Old records are evicted when the cache is full and cannot be exported.
+Shift-click **Export** to customize the format: `{sprite}` (sprite name), `{content}` (message), `{type}` (level),
+`{count}` (repeat count), `{source}` (origin), and `{code}` (diagnostic code). Repeats also receive a `×count` suffix.
+
+### Manual log integration checks
+
+The GUI CI runs unit tests, including the logger adapter, settings and all available clone-limit translations.
+The browser scripts below are manual integration checks against coordinated GUI/VM/renderer sources; they are not
+CI coverage. Install sibling dependencies and provide a Playwright installation with Chromium first.
+
+In terminal 1, from scratch-gui:
+
+```sh
+BLOCKDIA_LOCAL_PACKAGES=1 PORT=8630 npm start -- --host 127.0.0.1
+```
+
+After the editor has compiled, in terminal 2:
+
+```sh
+node scripts/verify-runtime-logs.cjs
+node scripts/verify-clone-limit-logs.cjs
+```
+
+The scripts default to `http://127.0.0.1:8630/editor.html`. Set `COMPONENTS_EDITOR_URL` to use another server,
+`COMPONENTS_PLAYWRIGHT_PATH` to use a Playwright module outside node_modules, or `COMPONENTS_CHROME_PATH` to use
+an existing browser executable. Without the browser override, Playwright uses its installed Chromium.
+
 ## Block search and keyboard editing
 
 [`keyboard-editing`](addons/keyboard-editing/README.md) is an independently enabled addon controlled by the Edit menu

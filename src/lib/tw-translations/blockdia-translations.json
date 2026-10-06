@@ -204,6 +204,8 @@
         "containers.exists": "容器 ID [ID] 存在？",
         "containers.lastId": "刚创建的容器克隆体 ID",
         "containers.createWithId": "以 ID @container-clone: [ID] 克隆 [CONTAINER]",
+        "containers.invalidCloneId": "无法创建容器克隆体：ID「{id}」不能包含首尾空白、仅由数字组成，或以保留的引用前缀开头。",
+        "containers.cloneIdInUse": "无法创建容器克隆体：ID「@container-clone:{id}」已被使用。",
         "containers.deleteById": "删除容器克隆体 [ID]",
         "containers.createClone": "克隆 [CONTAINER]",
         "containers.deleteClone": "删除我所在的 [CONTAINER] 容器克隆体",
@@ -312,7 +314,12 @@
         "stretch.partBorder": "组件部件 [PART] 的九宫格 [BORDER] 边距",
         "stretch.noParts": "无组件部件",
         "clipping.maskRegion": "显示方式",
-        "stretch.setPerspective": "将 [TARGET] 的透视四角偏移设为 左上 x: [TLX] % y: [TLY] % 右上 x: [TRX] % y: [TRY] % 左下 x: [BLX] % y: [BLY] % 右下 x: [BRX] % y: [BRY] %"
+        "stretch.setPerspective": "将 [TARGET] 的透视四角偏移设为 左上 x: [TLX] % y: [TLY] % 右上 x: [TRX] % y: [TRY] % 左下 x: [BLX] % y: [BLY] % 右下 x: [BRX] % y: [BRY] %",
+        "clones.invalidId": "无法创建克隆体：ID「{id}」不能包含首尾空白、仅由数字组成，或以保留的引用前缀开头。",
+        "clones.idInUse": "无法创建克隆体：ID「@clone:{id}」已被使用。",
+        "clones.limit": "无法创建“{sprite}”的克隆体，不能创建超过{limit}个克隆体。",
+        "clones.cannotCloneStage": "无法克隆舞台。",
+        "clones.targetNotFound": "无法创建克隆体：目标「{target}」不存在。"
     },
     "zh-tw": {
         "blockdia.spriteInfo.moreProperties": "更多角色屬性",
@@ -414,6 +421,8 @@
         "containers.exists": "容器 ID [ID] 存在？",
         "containers.lastId": "剛建立的容器分身 ID",
         "containers.createWithId": "以 ID @container-clone: [ID] 建立 [CONTAINER] 的分身",
+        "containers.invalidCloneId": "無法建立容器分身：ID「{id}」不能包含開頭或結尾的空白、僅由數字組成，或以保留的參照前綴開頭。",
+        "containers.cloneIdInUse": "無法建立容器分身：ID「@container-clone:{id}」已被使用。",
         "containers.deleteById": "刪除容器分身 [ID]",
         "containers.createClone": "建立 [CONTAINER] 的分身",
         "containers.deleteClone": "刪除我所在的 [CONTAINER] 容器分身",
@@ -522,7 +531,12 @@
         "stretch.partBorder": "元件部件 [PART] 的九宮格 [BORDER] 邊距",
         "stretch.noParts": "無元件部件",
         "clipping.maskRegion": "顯示方式",
-        "stretch.setPerspective": "將 [TARGET] 的透視四角偏移設為 左上 x: [TLX] % y: [TLY] % 右上 x: [TRX] % y: [TRY] % 左下 x: [BLX] % y: [BLY] % 右下 x: [BRX] % y: [BRY] %"
+        "stretch.setPerspective": "將 [TARGET] 的透視四角偏移設為 左上 x: [TLX] % y: [TLY] % 右上 x: [TRX] % y: [TRY] % 左下 x: [BLX] % y: [BLY] % 右下 x: [BRX] % y: [BRY] %",
+        "clones.invalidId": "無法建立分身：ID「{id}」不能包含開頭或結尾的空白、僅由數字組成，或以保留的參照前綴開頭。",
+        "clones.idInUse": "無法建立分身：ID「@clone:{id}」已被使用。",
+        "clones.limit": "創建{sprite}的分身時失敗，分身的創建不能超過 {limit} 個。",
+        "clones.cannotCloneStage": "無法建立舞台的分身。",
+        "clones.targetNotFound": "無法建立分身：目標「{target}」不存在。"
     },
     "en": {
         "gui.actions.shortcuts": "Keyboard shortcuts",

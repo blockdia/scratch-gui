@@ -1,4 +1,5 @@
 {
+    "debugger/export-format-help": "可用預留位置：{placeholders}。",
     "gamepad/config-header": "這個註解包含第三方工具或網站（如 https://editor.blockdia.com/）中的遊戲手把設定。\n請勿手動修改",
     "debugger/title": "偵錯工具",
     "debugger/compiler-warning": "停用編譯器時，偵錯工具的運作效果最佳。",

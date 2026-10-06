@@ -10,7 +10,7 @@ jest.mock('../../../src/components/popover/popover.jsx', () => ({isOpen, body, c
 jest.mock('../../../src/containers/direction-picker.jsx', () => () => <div />);
 
 const fixture = () => {
-    const vm = {setSpriteContainerTransform: jest.fn(), setSpriteContainerStretch: jest.fn()};
+    const vm = {setSpriteContainerTransform: jest.fn()};
     const focus = jest.fn();
     const ownerDocument = {addEventListener: jest.fn(), removeEventListener: jest.fn()};
     const render = (props = {}) => (<IntlProvider locale="en">
@@ -30,7 +30,7 @@ test('property button opens a popup with native buffered fields and no per-conta
     open();
     expect(button().props['aria-expanded']).toBe(true);
     const fields = root.root.findAllByType('input');
-    expect(fields.map(input => input.props.value)).toEqual([0, 0, 100, 100, 100]);
+    expect(fields.map(input => input.props.value)).toEqual([0, 0, 100]);
     renderer.act(() => fields[0].props.onChange({target: {value: '12.5'}}));
     expect(vm.setSpriteContainerTransform).not.toHaveBeenCalled();
     renderer.act(() => fields[0].props.onBlur());
@@ -63,7 +63,7 @@ test('native rounded display and default numeric step preserve fractional submit
     }}})));
     open();
     const fields = root.root.findAllByType('input');
-    expect(fields.map(input => input.props.value)).toEqual([13, -12, 123, 100, 100]);
+    expect(fields.map(input => input.props.value)).toEqual([13, -12, 123]);
     expect(fields.every(input => typeof input.props.step === 'undefined')).toBe(true);
     const picker = root.root.findByType(DirectionPicker);
     expect(picker.props.direction).toBe(112);
@@ -79,23 +79,12 @@ test('folder changes and dragging close the popup, and fresh container props upd
     const {root, open, render} = fixture();
     open();
     renderer.act(() => root.update(render({container: {transform: {x: 35, size: 150}}})));
-    expect(root.root.findAllByType('input').map(input => input.props.value)).toEqual([35, 0, 150, 100, 100]);
+    expect(root.root.findAllByType('input').map(input => input.props.value)).toEqual([35, 0, 150]);
     renderer.act(() => root.update(render({disabled: true})));
     expect(root.root.findAllByProps({role: 'dialog'})).toHaveLength(0);
     renderer.act(() => root.update(render()));
     open();
     renderer.act(() => root.update(render({path: 'B'})));
     expect(root.root.findAllByProps({role: 'dialog'})).toHaveLength(0);
-    renderer.act(() => root.unmount());
-});
-
-test('axis stretch is independent from the native size field', () => {
-    const {vm, root, open} = fixture();
-    open();
-    const field = root.root.findAllByType('input').find(input => input.props.name === 'stretch-x');
-    renderer.act(() => field.props.onChange({target: {value: '-150'}}));
-    renderer.act(() => field.props.onBlur());
-    expect(vm.setSpriteContainerStretch).toHaveBeenCalledWith('A', {x: -150, y: 100});
-    expect(vm.setSpriteContainerTransform).not.toHaveBeenCalled();
     renderer.act(() => root.unmount());
 });

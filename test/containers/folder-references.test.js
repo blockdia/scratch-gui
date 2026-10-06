@@ -18,7 +18,7 @@ test('resolved VM preserves asset references, component bindings and serialized 
     const target = createTarget('Actors//Hero');
     vm.editingTarget = target;
     // Component binding updates are part of RenderedTarget.renameCostume.
-    target.componentController = {};
+    target.componentController = {sync: jest.fn()};
     target.component = {parts: [{costume: 'Art//Idle'}]};
     target.sprite.costumes = [{name: 'Art//Idle', assetId: 'a', dataFormat: 'svg'},
         {name: 'Idle', assetId: 'b', dataFormat: 'svg'}];

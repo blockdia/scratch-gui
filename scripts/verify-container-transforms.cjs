@@ -87,9 +87,7 @@ const near = (actual, expected, tolerance = 0.01) => actual.forEach((n, i) =>
         const field = name => panel.getByRole('spinbutton', {name, exact: true});
         await button.click();
         assert.equal(await row.getAttribute('aria-expanded'), expanded);
-        assert.equal(await panel.getByRole('spinbutton').count(), 6);
-        assert.equal(await field('x 拉伸 %').inputValue(), '100');
-        assert.equal(await field('y 拉伸 %').inputValue(), '100');
+        assert.equal(await panel.getByRole('spinbutton').count(), 4);
         const eye = row.getByRole('button', {name: /隐藏容器|显示容器/});
         const eyeBounds = await eye.boundingBox();
         const propertyBounds = await button.boundingBox();

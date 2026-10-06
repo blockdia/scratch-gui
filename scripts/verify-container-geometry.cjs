@@ -67,6 +67,17 @@ const near = (actual, expected, tolerance = 3) => actual.forEach((n, i) =>
         const red = [224, 80, 64, 255];
         const blue = [32, 80, 224, 255];
         const white = [255, 255, 255, 255];
+        const referenceFrames = await page.evaluate(() => {
+            const before = vm.renderer.getContainerGeometryFrame('Group');
+            vm.setSpriteContainerTransform('Group', {direction: 45});
+            window.callGeometry('stretch_fitFrame', {CONTAINER: '@container:Group'});
+            const after = vm.runtime.spriteContainers.get('Group').geometry.frame;
+            vm.setSpriteContainerTransform('Group', {direction: 90});
+            return {before, after};
+        });
+        near(['x', 'y', 'width', 'height'].map(key => referenceFrames.after[key]),
+            ['x', 'y', 'width', 'height'].map(key => referenceFrames.before[key]), 0.0001);
+        console.log('PASS reference frame captures local content bounds independently of container rotation');
         const ordinary = await page.evaluate(() => {
             const target = vm.editingTarget;
             window.callGeometry('stretch_set', {TARGET: '_mycontainer_', X: 200, Y: 50});
@@ -337,13 +348,9 @@ const near = (actual, expected, tolerance = 3) => actual.forEach((n, i) =>
         await page.locator('.scratchCategoryMenuItem').filter({hasText: '拉伸'})
             .click();
         await page.locator('[data-container-properties="Controls"]').click();
-        const field = page.locator('[data-container-properties-popup="Controls"] input[name="stretch-x"]');
-        await field.fill('135');
-        await field.press('Enter');
-        const state = await page.evaluate(() => vm.runtime.spriteContainers.get('Controls'));
-        assert.equal(state.stretch.x, 135);
-        assert.equal(state.transform.size, 80);
-        console.log('PASS inspector edits axis stretch independently of size');
+        const panel = page.locator('[data-container-properties-popup="Controls"]');
+        assert.equal(await panel.getByRole('spinbutton').count(), 4);
+        console.log('PASS inspector exposes position, size and direction');
         await page.waitForTimeout(350);
         await page.screenshot({path: process.env.GEOMETRY_SCREENSHOT || '/tmp/blockdia-container-geometry.png'});
         assert.deepEqual(errors, []);

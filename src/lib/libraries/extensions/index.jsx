@@ -397,7 +397,7 @@ export default [
         extensionId: 'stretch',
         iconURL: stretchIconURL,
         description: <FormattedMessage
-            defaultMessage="Stretch sprites and resize interface elements with nine-slice borders."
+            defaultMessage="Stretch and warp sprites, and resize interface elements with nine-slice borders."
             description="Stretch extension description"
             id="stretch.description"
         />,
@@ -414,7 +414,7 @@ export default [
         extensionId: 'clipping',
         iconURL: clippingIconURL,
         description: <FormattedMessage
-            defaultMessage="Clip sprites and containers to rectangles, rounded rectangles, circles, and ellipses."
+            defaultMessage="Clip sprites and containers to shapes, and use costume masks to control sprite opacity."
             description="Clipping extension description"
             id="clipping.description"
         />,

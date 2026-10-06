@@ -293,7 +293,7 @@ const near = (actual, expected, tolerance = 3) => actual.forEach((n, i) =>
             flyout.scrollTo(Math.max(0, mask.getRelativeToSurfaceXY().y - 40));
             return field.getText();
         });
-        assert.equal(label, '当前造型');
+        assert.equal(label, '执行时的当前造型');
         await page.waitForTimeout(200);
         await page.screenshot({path: process.env.GEOMETRY_SCREENSHOT || '/tmp/blockdia-perspective-masks.png'});
         assert.deepEqual(errors, []);

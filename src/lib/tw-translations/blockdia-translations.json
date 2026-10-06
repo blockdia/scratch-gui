@@ -334,7 +334,8 @@
         "clipping.maskNotSet": "尚未设置遮罩。请先使用“将遮罩设为造型…”积木。",
         "clipping.clipNotSet": "尚未设置裁剪形状。请先设置裁剪形状。",
         "clipping.maskCostumeNotFound": "遮罩造型不存在于此角色。",
-        "clipping.invalidMaskBounds": "遮罩范围必须是有限数值，且宽高大于 0。遮罩未更改。"
+        "clipping.invalidMaskBounds": "遮罩范围必须是有限数值，且宽高大于 0。遮罩未更改。",
+        "motion.coordinateTransformFailed": "无法移动或转向：当前位置或目标位置无法通过容器变换进行坐标换算。请检查是否有零拉伸，或位置是否超出了透视可投影范围。原有位置和方向保持不变。"
     },
     "zh-tw": {
         "blockdia.spriteInfo.moreProperties": "更多角色屬性",
@@ -566,7 +567,8 @@
         "clipping.maskNotSet": "尚未設定遮罩。請先使用「將遮罩設為造型…」積木。",
         "clipping.clipNotSet": "尚未設定裁剪形狀。請先設定裁剪形狀。",
         "clipping.maskCostumeNotFound": "遮罩造型不存在於此角色。",
-        "clipping.invalidMaskBounds": "遮罩範圍必須是有限數值，且寬高大於 0。遮罩未更改。"
+        "clipping.invalidMaskBounds": "遮罩範圍必須是有限數值，且寬高大於 0。遮罩未更改。",
+        "motion.coordinateTransformFailed": "無法移動或轉向：目前位置或目標位置無法透過容器變換進行座標換算。請檢查是否有零拉伸，或位置是否超出了透視可投影範圍。原有位置和方向保持不變。"
     },
     "en": {
         "gui.actions.shortcuts": "Keyboard shortcuts",

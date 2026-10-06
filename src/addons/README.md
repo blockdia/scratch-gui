@@ -83,6 +83,7 @@ After the editor has compiled, in terminal 2:
 node scripts/verify-runtime-logs.cjs
 node scripts/verify-clone-limit-logs.cjs
 node scripts/verify-perspective-logs.cjs
+node scripts/verify-clipping-feedback.cjs
 ```
 
 The scripts default to `http://127.0.0.1:8630/editor.html`. Set `COMPONENTS_EDITOR_URL` to use another server,

@@ -6,6 +6,13 @@
     height: 100%;
 }
 
+/* Blockly wraps at spaces; constrain help text so Chinese also wraps on small screens. */
+:global(.blocklyTooltipDiv) {
+    max-width: min(28rem, calc(100vw - 2rem));
+    overflow-wrap: break-word;
+    line-height: 1.5;
+}
+
 .drag-over:after {
     content: '';
     position: absolute;

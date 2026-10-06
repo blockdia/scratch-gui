@@ -1,6 +1,9 @@
 import React from 'react';
 import {FormattedMessage} from 'react-intl';
 
+import stretchIconURL from './geometry/stretch.svg';
+import clippingIconURL from './geometry/clipping.svg';
+
 import clonesIconURL from './clones/clones.svg';
 import clonesInsetIconURL from './clones/clones-small.svg';
 
@@ -383,6 +386,40 @@ export default [
         ),
         tags: ['tw'],
         incompatibleWithScratch: true,
+        featured: true
+    },
+    {
+        name: <FormattedMessage
+            defaultMessage="Stretch"
+            description="Stretch extension name"
+            id="stretch.name"
+        />,
+        extensionId: 'stretch',
+        iconURL: stretchIconURL,
+        description: <FormattedMessage
+            defaultMessage="Stretch sprites and resize interface elements with nine-slice borders."
+            description="Stretch extension description"
+            id="stretch.description"
+        />,
+        incompatibleWithScratch: true,
+        tags: ['tw'],
+        featured: true
+    },
+    {
+        name: <FormattedMessage
+            defaultMessage="Clipping"
+            description="Clipping extension name"
+            id="clipping.name"
+        />,
+        extensionId: 'clipping',
+        iconURL: clippingIconURL,
+        description: <FormattedMessage
+            defaultMessage="Clip sprites and containers to rectangles, rounded rectangles, circles, and ellipses."
+            description="Clipping extension description"
+            id="clipping.description"
+        />,
+        incompatibleWithScratch: true,
+        tags: ['tw'],
         featured: true
     },
     {

@@ -16,7 +16,8 @@ const {APP_NAME} = require('./src/lib/brand');
 
 // Exercise coordinated, unpublished VM/renderer changes in the local editor.
 const localPackages = process.env.BLOCKDIA_LOCAL_PACKAGES === '1';
-const localSources = ['scratch-vm', 'scratch-render'].map(name => path.resolve(__dirname, '..', name, 'src'));
+const localRoot = process.env.BLOCKDIA_LOCAL_ROOT || path.resolve(__dirname, '..');
+const localSources = ['scratch-vm', 'scratch-render'].map(name => path.resolve(localRoot, name, 'src'));
 const localAliases = localPackages ? {
     'scratch-vm$': localSources[0],
     'scratch-vm/src': localSources[0],

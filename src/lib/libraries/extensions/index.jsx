@@ -397,7 +397,7 @@ export default [
         extensionId: 'stretch',
         iconURL: stretchIconURL,
         description: <FormattedMessage
-            defaultMessage="Stretch and warp sprites, and resize interface elements with nine-slice borders."
+            defaultMessage="Stretch sprites and containers with axis scaling, nine-slice resizing, and perspective."
             description="Stretch extension description"
             id="stretch.description"
         />,

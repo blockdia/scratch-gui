@@ -67,11 +67,11 @@ const near = (actual, expected, tolerance = 3) => actual.forEach((n, i) =>
         const half = [239, 167, 159, 255];
         const warp = await page.evaluate(() => {
             window.callGeometry('stretch_setPerspective',
-                {TLX: 20, TLY: 0, TRX: -20, TRY: 0, BRX: 0, BRY: 0, BLX: 0, BLY: 0});
+                {TARGET: '_myself_', TLX: 20, TLY: 0, TRX: -20, TRY: 0, BRX: 0, BRY: 0, BLX: 0, BLY: 0});
             const target = vm.editingTarget;
             const result = [[0, 0], [40, 25], [40, -25]].map(p => window.pixel(...p));
             const before = JSON.stringify(target.perspective);
-            window.callGeometry('stretch_setPerspectiveCorner', {CORNER: 'tr', X: -200, Y: 0});
+            window.callGeometry('stretch_setPerspectiveCorner', {TARGET: '_myself_', CORNER: 'tr', X: -200, Y: 0});
             return {result, valid: JSON.stringify(target.perspective) === before};
         });
         near(warp.result[0], red);
@@ -81,7 +81,7 @@ const near = (actual, expected, tolerance = 3) => actual.forEach((n, i) =>
         console.log('PASS four-corner GPU perspective and invalid-quad rejection');
 
         const masks = await page.evaluate(() => {
-            window.callGeometry('stretch_clearPerspective', {});
+            window.callGeometry('stretch_clearPerspective', {TARGET: '_myself_'});
             window.callGeometry('clipping_setMask', {COSTUME: 'Mask', MODE: 'alpha'});
             const alpha = [-30, 0, 30].map(x => window.pixel(x, 0));
             window.callGeometry('clipping_setMask', {COSTUME: 'Mask', MODE: 'luminance'});
@@ -204,7 +204,8 @@ const near = (actual, expected, tolerance = 3) => actual.forEach((n, i) =>
                 };
                 add('p-flag', 'event_whenflagclicked', null, 'p-corner');
                 add('p-corner', 'stretch_setPerspectiveCorner', 'p-flag', 'p-mask',
-                    {X: 'p-x', Y: 'p-y'}, {CORNER: 'tl'});
+                    {TARGET: 'p-target', X: 'p-x', Y: 'p-y'}, {CORNER: 'tl'});
+                add('p-target', 'stretch_menu_objects', 'p-corner', null, {}, {objects: '_myself_'}, true);
                 add('p-x', 'math_number', 'p-corner', null, {}, {NUM: 20}, true);
                 add('p-y', 'math_number', 'p-corner', null, {}, {NUM: 0}, true);
                 add('p-mask', 'clipping_setMask', 'p-corner', null, {COSTUME: 'p-source'}, {MODE: 'alpha'});

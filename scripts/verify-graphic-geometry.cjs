@@ -68,14 +68,14 @@ const near = (a, b) => a.forEach((n, i) => assert(Math.abs(n - b[i]) <= 3, `${a}
             };
         });
         const slices = await page.evaluate(() => {
-            window.callGeometry('stretch_setBorders', {PART: '_backgrounds_', LEFT: 10, RIGHT: 20, TOP: 8, BOTTOM: 12});
-            window.callGeometry('stretch_setSize', {WIDTH: 200, HEIGHT: 80});
+            window.callGeometry('stretch_setBorders', {TARGET: '_myself_', LEFT: 10, RIGHT: 20, TOP: 8, BOTTOM: 12});
+            window.callGeometry('stretch_setSize', {TARGET: '_myself_', WIDTH: 200, HEIGHT: 80});
             const pixels = [-95, -85, 0, 75, 85, 105].map(x => window.geometryPixel(x, 0));
             const target = vm.editingTarget;
             const bounds = target.getBounds();
             return {pixels,
                 bounds: [bounds.left, bounds.right, bounds.bottom, bounds.top],
-                width: window.callGeometry('stretch_dimension', {DIMENSION: 'width'})};
+                width: window.callGeometry('stretch_dimension', {TARGET: '_myself_', DIMENSION: 'width'})};
         });
         const red = [224, 80, 64, 255];
         const blue = [32, 80, 224, 255];
@@ -107,7 +107,7 @@ const near = (a, b) => a.forEach((n, i) => assert(Math.abs(n - b[i]) <= 3, `${a}
             window.callGeometry('clipping_circle', {TARGET: '_myself_', SPACE: 'stage', X: 30, Y: 20, RADIUS: 20});
             vm.editingTarget.setXY(30, 20);
             vm.editingTarget.setDirection(0);
-            window.callGeometry('stretch_set', {X: -150, Y: 100});
+            window.callGeometry('stretch_set', {TARGET: '_myself_', X: -150, Y: 100});
             const stage = [[30, 20], [48, 38], [0, 0]].map(p => window.geometryPixel(...p));
             return {circle, ellipse, rounded, rectangle, inverse, stage};
         });
@@ -208,8 +208,8 @@ const near = (a, b) => a.forEach((n, i) => assert(Math.abs(n - b[i]) <= 3, `${a}
             await vm.addComponent('slider', 'Slider');
             const target = vm.editingTarget;
             target.setXY(0, 0);
-            window.callGeometry('stretch_setBorders', {PART: '_backgrounds_', LEFT: 6, RIGHT: 6, TOP: 6, BOTTOM: 6});
-            window.callGeometry('stretch_setSize', {WIDTH: 300, HEIGHT: 20});
+            window.callGeometry('stretch_setBorders', {TARGET: '_myself_', LEFT: 6, RIGHT: 6, TOP: 6, BOTTOM: 6});
+            window.callGeometry('stretch_setSize', {TARGET: '_myself_', WIDTH: 300, HEIGHT: 20});
             const controller = target.componentController;
             const thumb = vm.renderer._allDrawables[controller.parts.get('thumb')];
             const before = controller.getTrack();
@@ -300,7 +300,8 @@ const near = (a, b) => a.forEach((n, i) => assert(Math.abs(n - b[i]) <= 3, `${a}
                             .map(([name, block]) => [name, {name, block, shadow: block}]))});
                 };
                 add('g-flag', 'event_whenflagclicked', null, 'g-stretch');
-                add('g-stretch', 'stretch_set', 'g-flag', 'g-clip', {X: 'g-x', Y: 'g-y'});
+                add('g-stretch', 'stretch_set', 'g-flag', 'g-clip', {TARGET: 'g-stretch-target', X: 'g-x', Y: 'g-y'});
+                add('g-stretch-target', 'stretch_menu_objects', 'g-stretch', null, {}, {objects: '_myself_'}, true);
                 add('g-x', 'math_number', 'g-stretch', null, {}, {NUM: 160}, true);
                 add('g-y', 'math_number', 'g-stretch', null, {}, {NUM: 70}, true);
                 add('g-clip', 'clipping_clear', 'g-stretch', null, {TARGET: 'g-target'});
@@ -332,8 +333,8 @@ const near = (a, b) => a.forEach((n, i) => assert(Math.abs(n - b[i]) <= 3, `${a}
                 if (!source) throw new Error(`Missing flyout block ${opcode}`);
                 const copy = blockly.Xml.domToBlock(blockly.Xml.blockToDom(source), main);
                 copy.moveBy(20, 180 + (index * 100));
-                const menu = copy.getInputTargetBlock(opcode.startsWith('clipping') ? 'TARGET' : 'PART');
-                const field = menu.getField(opcode.startsWith('clipping') ? 'objects' : 'parts');
+                const menu = copy.getInputTargetBlock('TARGET');
+                const field = menu.getField('objects');
                 result.push({value: field.getValue(), label: field.getText()});
                 if (opcode.startsWith('clipping')) {
                     const targets = field.getOptions().map(item => item[0]);
@@ -345,7 +346,7 @@ const near = (a, b) => a.forEach((n, i) => assert(Math.abs(n - b[i]) <= 3, `${a}
             main.setScale(0.6);
             return result;
         });
-        assert.deepEqual(ui.map(item => item.value), ['_myself_', '_backgrounds_']);
+        assert.deepEqual(ui.map(item => item.value), ['_myself_', '_myself_']);
         assert(ui.every(item => item.value !== item.label), 'menus show localized labels');
         console.log('PASS extension blocks, localized menus and named container choices');
         const category = page.locator('.scratchCategoryMenuItem').filter({hasText: '裁剪'});

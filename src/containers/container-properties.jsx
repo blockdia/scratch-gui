@@ -48,6 +48,7 @@ const ContainerProperties = ({vm, path, container, disabled, intl}) => {
     };
     if (!container) return null;
     const transform = {...defaults, ...container.transform};
+    const stretch = {x: 100, y: 100, ...container.stretch};
     const title = intl.formatMessage(messages.properties);
     const sizeLabel = (<FormattedMessage
         id="gui.SpriteInfo.size"
@@ -99,6 +100,21 @@ const ContainerProperties = ({vm, path, container, disabled, intl}) => {
                     onChangeDirection={value => submit('direction', value)}
                     onChangeRotationStyle={value => submit('rotationStyle', value)}
                 />
+                {['x', 'y'].map(axis => (<Label
+                    key={`stretch-${axis}`}
+                    text={intl.formatMessage({id: `stretch.panel${axis.toUpperCase()}`,
+                        defaultMessage: `${axis} stretch %`})}
+                >
+                    <BufferedInput
+                        small
+                        type="number"
+                        name={`stretch-${axis}`}
+                        value={Math.round(stretch[axis])}
+                        onSubmit={value => {
+                            if (!cancelled.current) vm.setSpriteContainerStretch(path, {...stretch, [axis]: value});
+                        }}
+                    />
+                </Label>))}
             </div>}
             className={infoStyles.propertiesPopover}
             isOpen={open && !disabled}
@@ -138,7 +154,7 @@ const ContainerProperties = ({vm, path, container, disabled, intl}) => {
 ContainerProperties.propTypes = {
     vm: PropTypes.object.isRequired,
     path: PropTypes.string.isRequired,
-    container: PropTypes.shape({transform: PropTypes.object}),
+    container: PropTypes.shape({transform: PropTypes.object, stretch: PropTypes.object}),
     disabled: PropTypes.bool,
     intl: intlShape.isRequired
 };

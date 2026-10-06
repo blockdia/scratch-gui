@@ -4,6 +4,7 @@ import createThreadsTab from "./threads.js";
 import createPerformanceTab from "./performance.js";
 import Utils from "../find-bar/blockly/Utils.js";
 import createDebuggerWindow from "./window.jsx";
+import { logToRuntime } from "./runtime-logs.js";
 
 
 export default async function ({ addon, console, msg }) {
@@ -12,14 +13,9 @@ export default async function ({ addon, console, msg }) {
   let logsTab;
   let windowHandle;
   let unread = false;
-  const messagesLoggedBeforeLogsTabLoaded = [];
-  const logMessage = (...args) => {
-    if (logsTab) {
-      logsTab.addLog(...args);
-    } else {
-      messagesLoggedBeforeLogsTabLoaded.push(args);
-    }
-  };
+  const vm = addon.tab.traps.vm;
+  const logMessage = (...args) => logToRuntime(vm.runtime.logger, ...args);
+  const hidden = !addon.settings.get("show_blocks");
 
   let hasLoggedPauseError = false;
   const pause = (_, thread) => {
@@ -34,11 +30,13 @@ export default async function ({ addon, console, msg }) {
     if (windowHandle) windowHandle.open({ pinned: true });
   };
   addon.tab.addBlock("\u200B\u200Bbreakpoint\u200B\u200B", {
+    hidden,
     args: [],
     displayName: msg("block-breakpoint"),
     callback: pause,
   });
   addon.tab.addBlock("\u200B\u200Blog\u200B\u200B %s", {
+    hidden,
     args: ["content"],
     displayName: msg("block-log"),
     callback: ({ content }, thread) => {
@@ -46,6 +44,7 @@ export default async function ({ addon, console, msg }) {
     },
   });
   addon.tab.addBlock("\u200B\u200Bwarn\u200B\u200B %s", {
+    hidden,
     args: ["content"],
     displayName: msg("block-warn"),
     callback: ({ content }, thread) => {
@@ -53,6 +52,7 @@ export default async function ({ addon, console, msg }) {
     },
   });
   addon.tab.addBlock("\u200B\u200Berror\u200B\u200B %s", {
+    hidden,
     args: ["content"],
     displayName: msg("block-error"),
     callback: ({ content }, thread) => {
@@ -60,7 +60,6 @@ export default async function ({ addon, console, msg }) {
     },
   });
 
-  const vm = addon.tab.traps.vm;
   await new Promise((resolve, reject) => {
     if (vm.editingTarget) return resolve();
     vm.runtime.once("PROJECT_LOADED", resolve);
@@ -157,9 +156,13 @@ export default async function ({ addon, console, msg }) {
 
     const { exists, name, originalId } = targetInfo;
     link.textContent = name;
+    link.title = name;
     if (exists) {
       // We use mousedown instead of click so that you can still go to blocks when logs are rapidly scrolling
       link.addEventListener("mousedown", () => {
+        // The original or the block may have been deleted since the diagnostic was recorded.
+        const target = vm.runtime.getTargetById(originalId);
+        if (!target || !getBlock(target, blockId)) return;
         switchToSprite(originalId);
         activateCodeTab();
         goToBlock(blockId);
@@ -172,7 +175,7 @@ export default async function ({ addon, console, msg }) {
   };
 
   const switchToSprite = (targetId) => {
-    if (targetId !== vm.editingTarget.id) {
+    if (targetId !== vm.editingTarget?.id) {
       if (vm.runtime.getTargetById(targetId)) {
         vm.setEditingTarget(targetId);
       }
@@ -403,11 +406,6 @@ export default async function ({ addon, console, msg }) {
   const performanceTab = await createPerformanceTab(api);
   const allTabs = [logsTab, threadsTab, performanceTab];
 
-  for (const message of messagesLoggedBeforeLogsTabLoaded) {
-    logsTab.addLog(...message);
-  }
-  messagesLoggedBeforeLogsTabLoaded.length = 0;
-
   windowHandle = addon.tab.createWindow({
     id: "debugger",
     title: { id: "addons.debugger.title" },
@@ -434,13 +432,6 @@ export default async function ({ addon, console, msg }) {
 
   const ogMakeClone = vm.runtime.targets[0].constructor.prototype.makeClone;
   vm.runtime.targets[0].constructor.prototype.makeClone = function (...args) {
-    if (addon.settings.get("log_failed_clone_creation") && !vm.runtime.clonesAvailable()) {
-      logsTab.addLog(
-        msg("log-msg-clone-cap", { sprite: this.getName() }),
-        vm.runtime.sequencer.activeThread,
-        "internal-warn"
-      );
-    }
     var clone = ogMakeClone.call(this, ...args);
     if (addon.settings.get("log_clone_create") && clone) {
       logsTab.addLog(

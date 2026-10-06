@@ -1,4 +1,5 @@
 {
+    "debugger/export-format-help": "Available placeholders: {placeholders}.",
     "linter/limit-runtime-clone": "Clone existence, ID collisions, creation order and clone limits can only be checked while the project runs.",
     "linter/reason-invalid-clone-id-reference": "This operation requires a complete clone ID beginning with {prefix}, followed by a nonempty suffix without leading or trailing whitespace or another reserved prefix.",
     "linter/invalid-clone-id-reference": "Invalid clone reference “{name}”",

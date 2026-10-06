@@ -178,6 +178,7 @@
 }
 
 .sa-debugger-log-repeats {
+  flex-shrink: 0;
   background-color: hsla(163, 85%, 40%, 1);
   color: white;
   border-radius: 100px;
@@ -186,6 +187,7 @@
 }
 
 .sa-debugger-log-icon {
+  flex-shrink: 0;
   width: 16px;
   height: 16px;
   margin-right: 4px;
@@ -207,7 +209,11 @@
   text-decoration: underline;
   float: right;
   text-align: right;
-  max-width: 100%;
+  max-width: 45%;
+  flex-shrink: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   padding-left: 4px;
   margin-right: 4px;
   margin-left: auto;

@@ -1,5 +1,6 @@
 import downloadBlob from "../../libraries/common/cs/download-blob.js";
 import LogView from "./log-view.js";
+import { followRuntimeLogs, isCloneLimit, logToRuntime } from "./runtime-logs.js";
 
 export default async function createLogsTab({ debug, addon, console, msg }) {
   const vm = addon.tab.traps.vm;
@@ -31,6 +32,8 @@ export default async function createLogsTab({ debug, addon, console, msg }) {
       root.classList.add("sa-debugger-log-internal");
     }
     root.dataset.type = row.type;
+    root.dataset.source = row.source;
+    root.dataset.code = row.code;
 
     const icon = document.createElement("div");
     icon.className = "sa-debugger-log-icon";
@@ -95,22 +98,27 @@ export default async function createLogsTab({ debug, addon, console, msg }) {
   exportButton.element.addEventListener("click", async (e) => {
     const defaultFormat = "{sprite}: {content} ({type})";
     const exportFormat = e.shiftKey
-      ? await addon.tab.prompt(msg("export"), msg("enter-format"), defaultFormat, { useEditorClasses: true })
+      ? await addon.tab.prompt(msg("export"), `${msg("enter-format")}\n${msg("export-format-help", {
+        placeholders: "{sprite}, {content}, {type}, {count}, {source}, {code}",
+      })}`, defaultFormat, { useEditorClasses: true })
       : defaultFormat;
     if (!exportFormat) return;
     const file = logView.rows
-      .map(({ text, targetInfo, type, count }) =>
+      .map(({ text, targetInfo, type, count, source, code }) =>
         (
           exportFormat.replace(
-            /\{(sprite|type|content)\}/g,
+            /\{(sprite|type|content|count|source|code)\}/g,
             (_, match) =>
               ({
                 sprite: targetInfo ? targetInfo.name : msg("unknown-sprite"),
                 type,
                 content: text,
+                count,
+                source,
+                code,
               })[match]
-          ) + "\n"
-        ).repeat(count)
+          ) + (count > 1 ? ` (×${count})` : "") + "\n"
+        )
       )
       .join("");
     downloadText("logs.txt", file);
@@ -124,51 +132,25 @@ export default async function createLogsTab({ debug, addon, console, msg }) {
     clearLogs();
   });
 
-  const areLogsEqual = (a, b) =>
-    a.text === b.text &&
-    a.type === b.type &&
-    a.internal === b.internal &&
-    a.blockId === b.blockId &&
-    a.targetId === b.targetId;
+  const addLog = (text, thread, type) => logToRuntime(vm.runtime.logger, text, thread, type);
 
-  const addLog = (text, thread, type) => {
-    const log = {
-      text,
-      type,
-      count: 1,
-      preview: true,
-    };
-    if (thread) {
-      log.blockId = thread.peekStack();
-      const targetId = thread.target.id;
-      log.targetId = targetId;
-      log.targetInfo = debug.getTargetInfoById(targetId);
-    }
-    if (type === "internal") {
-      log.internal = true;
-      log.preview = false;
-      log.type = "log";
-    }
-    if (type === "internal-warn") {
-      log.internal = true;
-      log.type = "warn";
-    }
-
-    const previousLog = logView.rows[logView.rows.length - 1];
-    if (previousLog && areLogsEqual(log, previousLog)) {
-      previousLog.count++;
-      logView.queueUpdateContent();
+  // The debugger runs once per page; disabling it requires reload. Keep collecting while its window is closed.
+  followRuntimeLogs(vm.runtime.logger, msg, (rows, hasNewMessage) => {
+    if (!rows.length) {
+      logView.clear();
+      debug.setHasUnreadMessage(false);
     } else {
-      logView.append(log);
+      logView.rows = rows;
+      logView.queueUpdateContent();
+      logView._queueScrollToEnd();
+      if (!logView.visible && hasNewMessage) debug.setHasUnreadMessage(true);
     }
-
-    if (!logView.visible && !log.internal) {
-      debug.setHasUnreadMessage(true);
-    }
-  };
+  }, (entry) => !isCloneLimit(entry) || addon.settings.get("log_failed_clone_creation"));
+  const refreshLogs = () => vm.runtime.logger.flush();
+  addon.settings.addEventListener("change", refreshLogs);
 
   const clearLogs = () => {
-    logView.clear();
+    vm.runtime.logger.clear();
   };
 
   const show = () => {

@@ -100,6 +100,11 @@ const base = {
             }
         },
         {
+            test: /\.json$/,
+            include: path.resolve(__dirname, 'src/addons/addons-l10n') + path.sep,
+            loader: path.resolve(__dirname, 'scripts/loaders/addon-translations.js')
+        },
+        {
             test: /\.css$/,
             use: [{
                 loader: 'style-loader'

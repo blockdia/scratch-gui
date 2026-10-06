@@ -1,4 +1,5 @@
 {
+    "debugger/export-format-help": "可用占位符：{placeholders}。",
     "linter/limit-runtime-clone": "克隆体是否存在、ID 是否冲突、创建顺序及克隆数量限制只能在作品运行时确定。",
     "linter/reason-invalid-clone-id-reference": "此操作需要以 {prefix} 开头的完整克隆体 ID，后缀不能为空、不能有首尾空白，也不能以另一个保留前缀开头。",
     "linter/invalid-clone-id-reference": "克隆体引用“{name}”无效",

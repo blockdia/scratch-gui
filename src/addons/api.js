@@ -458,7 +458,7 @@ class Tab extends EventTargetShim {
         return true;
     }
 
-    addBlock (procedureCode, {args, displayName, callback}) {
+    addBlock (procedureCode, {args, displayName, callback, hidden = false}) {
         const procCodeArguments = parseArguments(procedureCode);
         if (args.length !== procCodeArguments.length) {
             throw new Error('Procedure code and argument list do not match');
@@ -482,6 +482,7 @@ class Tab extends EventTargetShim {
             procedureCode,
             arguments: args,
             callback: wrappedCallback,
+            hidden,
             // Ignored by VM but used by scratch-blocks traps
             displayName
         });

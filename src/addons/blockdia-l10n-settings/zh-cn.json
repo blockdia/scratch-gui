@@ -1,4 +1,6 @@
 {
+    "debugger/@description": "在调试器窗口中查看作品日志、运行中的脚本和性能图表。可在设置中开启调试器积木，将日志、警告、错误和断点积木显示在积木栏中。隐藏积木栏中的调试器积木不影响作品中已有积木的运行。",
+    "debugger/@settings-name-show_blocks": "显示调试器积木",
     "short-names/@name": "短名称",
     "short-names/@description": "在选定的名称输入框中隐藏文件夹路径。编辑短名时，只改短名会保留目录，输入含 // 的完整名称会直接替换路径。列表始终显示短名。",
     "short-names/@settings-name-spriteName": "角色名称输入框",
